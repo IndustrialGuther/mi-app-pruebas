@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Planta5</title>
+  <title>Control de Planta55</title>
   <style>
     :root { --primary: #0284c7; --admin: #0f172a; --setup: #059669; --tec: #d97706; --bg: #f8fafc; --card: #ffffff; }
     body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1e293b; }
@@ -50,16 +50,13 @@
     .chk-group label { margin-top: 0; font-weight: normal; font-size: 0.9rem; display: flex; align-items: center; gap: 4px; }
     .chk-group input { width: auto; margin: 0; }
 
-    /* Estilos Tiempos Muertos */
     .tm-box { background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 8px; margin-top: 8px; font-size: 0.85rem; color: #92400e; }
     .tm-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #fde68a; padding: 6px 0; }
     .tm-item:last-child { border-bottom: none; }
 
-    /* Modal / Form Flotante */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background: white; border-radius: 12px; padding: 20px; width: 90%; max-width: 450px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 
-    /* TV Dashboard Styles */
     .tv-board { display: flex; gap: 15px; overflow-x: auto; height: calc(100vh - 100px); padding-bottom: 20px;}
     .tv-nave-col { flex: 1; min-width: 380px; background: #1e293b; border-radius: 12px; border: 1px solid #475569; display: flex; flex-direction: column; overflow: hidden; }
     .tv-nave-header { background: #0f172a; color: white; text-align: center; padding: 12px; font-size: 1.5rem; font-weight: bold; border-bottom: 2px solid #3b82f6; }
@@ -78,11 +75,7 @@
       0%, 100% { border-color: #ef4444; box-shadow: 0 0 12px #ef4444; }
       50% { border-color: #334155; box-shadow: none; }
     }
-    .tvc-alarmed {
-      animation: blink-red 1s infinite !important;
-      border-width: 4px !important;
-    }
-
+    .tvc-alarmed { animation: blink-red 1s infinite !important; border-width: 4px !important; }
     .pulse-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10b981; margin-right: 6px; animation: blink 1.5s infinite; }
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
   </style>
@@ -186,7 +179,7 @@
       <div id="historialSol"></div>
     </div>
 
-    <!-- REGISTRO DE MAQUINAS (SETUP / AJUSTE / CAIDA / CORRIENDO) -->
+    <!-- REGISTRO DE MÁQUINAS -->
     <div id="formSetup" class="card hidden">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h2 class="setup-title">Registro de Máquinas</h2>
@@ -224,7 +217,6 @@
             <input type="text" id="regTiempo" readonly style="background:#f1f5f9;" placeholder="Se calcula automáticamente">
           </div>
           
-          <!-- Piezas unicamente para Corriendo -->
           <div class="g-piezas hidden" style="display:flex; gap:5px;">
             <div style="flex:1;"><label id="lblRegPzPlan">Pz Plan *</label><input type="number" id="regPzPlan" oninput="calcDeltaReg()"></div>
             <div style="flex:1;"><label id="lblRegPzReal">Pz Real *</label><input type="number" id="regPzReal" oninput="calcDeltaReg()"></div>
@@ -241,10 +233,9 @@
         <label style="color:#047857;">🔍 Filtros de Visualización / Reporte:</label>
         <div style="display:flex; gap:10px; align-items:center;">
           <input type="date" id="filtroFechaMaq" onchange="renderHistoriales()">
-          <input type="time" id="filtroHoraMaq" onchange="renderHistoriales()" title="Muestra todo lo trabajado desde la hora seleccionada en adelante">
+          <input type="time" id="filtroHoraMaq" onchange="renderHistoriales()">
           <button type="button" class="btn-secondary" onclick="resetFiltrosSetup()">Restablecer Filtrado</button>
         </div>
-        <small style="color:#047857;">* Al seleccionar una hora (ej. 07:00 AM), mostrará todo lo registrado desde esa hora en adelante.</small>
         <div class="chk-group" style="margin-top:10px;">
           <label><input type="checkbox" id="chkCopyCaida" checked onchange="renderHistoriales()"> Caídas</label>
           <label><input type="checkbox" id="chkCopyCorr" checked onchange="renderHistoriales()"> Corriendo</label>
@@ -290,12 +281,8 @@
       <h2 style="color: var(--admin)">📊 Consulta Historial General</h2>
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px; background:#f1f5f9; padding:10px; border-radius:8px;">
         <div style="flex:1; min-width:150px;">
-          <label>Filtrar por Supervisor</label>
-          <select id="histFiltroSup" onchange="renderHistorialGeneralAdmin()"></select>
-        </div>
-        <div style="flex:1; min-width:150px;">
-          <label>Filtrar por Técnico</label>
-          <select id="histFiltroTec" onchange="renderHistorialGeneralAdmin()"></select>
+          <label>Filtrar por Usuario / Técnico</label>
+          <select id="histFiltroUsr" onchange="renderHistorialGeneralAdmin()"></select>
         </div>
         <div style="flex:1; min-width:150px;">
           <label>Tipo de Registro</label>
@@ -332,7 +319,6 @@
     <div id="panelAdmin" class="card hidden">
       <h2 style="color: var(--admin)">Gestión de Catálogos y Usuarios (Admin)</h2>
       
-      <!-- CONFIGURACIÓN DE ALARMA Y SONIDO -->
       <h3>⏰ Control de Alarma y Sonido (Pizarra TV)</h3>
       <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin-bottom:15px;">
         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
@@ -340,9 +326,7 @@
           <input type="number" id="cfgAlarmMin" value="150" style="width:120px; margin:0;" min="1">
           <button class="btn-admin" onclick="guardarConfigAlarma()">Guardar Límite</button>
         </div>
-
         <hr style="border:0; border-top:1px dashed #cbd5e1; margin:10px 0;">
-
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; align-items:center;">
           <div>
             <label>Volumen del Sonido: <span id="lblSoundVol">50%</span></label>
@@ -353,16 +337,14 @@
             <input type="range" id="cfgSoundFreq" min="300" max="2500" step="10" value="880" oninput="document.getElementById('lblSoundFreq').textContent = this.value+' Hz'">
           </div>
           <div>
-            <label>Velocidad / Ritmo del Pitido: <span id="lblSoundSpeed">300 ms</span></label>
+            <label>Velocidad del Pitido: <span id="lblSoundSpeed">300 ms</span></label>
             <input type="range" id="cfgSoundSpeed" min="100" max="1000" step="50" value="300" oninput="document.getElementById('lblSoundSpeed').textContent = this.value+' ms'">
-            <small style="color:#64748b;">(Menor tiempo = pitido más rápido pi-pi-pi)</small>
           </div>
           <div style="grid-column: 1 / -1;">
-            <label>Dispositivo de Salida de Audio (Bocina):</label>
+            <label>Dispositivo de Salida de Audio:</label>
             <select id="cfgAudioDevice"><option value="">Cargando dispositivos...</option></select>
           </div>
         </div>
-
         <div style="display:flex; gap:10px; margin-top:12px;">
           <button type="button" class="btn-admin" onclick="guardarConfigSonido()">💾 Guardar Ajustes Sonido</button>
           <button type="button" class="btn-secondary" onclick="triggerAlarmBeep(true)">🔊 Probar Sonido Alarma</button>
@@ -370,7 +352,6 @@
       </div>
       <hr>
 
-      <!-- USUARIOS -->
       <h3>👥 Usuarios y Accesos</h3>
       <div style="background:#f1f5f9; padding:15px; border-radius:8px; margin-bottom:10px;">
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
@@ -400,12 +381,10 @@
       </div>
       <div id="listAdminUsuarios"></div><hr>
 
-      <!-- NAVES -->
       <h3>🏢 Naves</h3>
       <div style="display:flex; gap:5px;"><input type="text" id="addNave" placeholder="Ej: Nave 1"><button class="btn-admin" onclick="addCat('Naves', 'addNave')" style="width:120px;">Agregar</button></div>
       <div id="listAdminNaves"></div><hr>
 
-      <!-- MAQUINAS -->
       <h3>🏭 Máquinas</h3>
       <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px;">
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -418,17 +397,14 @@
       </div>
       <div id="listAdminMaquinas"></div><hr>
       
-      <!-- TIEMPOS MUERTOS -->
       <h3>⏱️ Tiempos Muertos Predefinidos</h3>
       <div style="display:flex; gap:5px;"><input type="text" id="addTM" placeholder="Ej: Paro por ajuste de programa"><button class="btn-admin" onclick="addCat('TiemposMuertos', 'addTM')" style="width:120px;">Agregar</button></div>
       <div id="listAdminTiemposMuertos"></div><hr>
 
-      <!-- MARCAS SOLUBLE -->
       <h3>🧪 Marcas de Soluble</h3>
       <div style="display:flex; gap:5px;"><input type="text" id="addMarca" placeholder="Ej: Fuchs"><button class="btn-admin" onclick="addCat('Marcas', 'addMarca')" style="width:120px;">Agregar</button></div>
       <div id="listAdminMarcas"></div><hr>
 
-      <!-- OTROS CATALOGOS -->
       <h3>👷 Operadores</h3><div style="display:flex; gap:5px;"><input type="text" id="addOp"><button class="btn-admin" onclick="addCat('Operadores', 'addOp')">Agregar</button></div><div id="listAdminOperadores"></div><hr>
       <h3>📦 Ítems</h3><div style="display:flex; gap:5px;"><input type="text" id="addItem"><button class="btn-admin" onclick="addCat('Items', 'addItem')">Agregar</button></div><div id="listAdminItems"></div><hr>
       <h3>🔧 Técnicos</h3><div style="display:flex; gap:5px;"><input type="text" id="addTecnico"><button class="btn-admin" onclick="addCat('Tecnicos', 'addTecnico')">Agregar</button></div><div id="listAdminTecnicos"></div><hr>
@@ -547,7 +523,6 @@
     return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   }
 
-  // Parseo preciso de fecha y hora local para evitar fallos de zona horaria (UTC)
   function parseLocalDateTime(fStr, hStr) {
     if (!fStr || !hStr) return null;
     let normF = normalizeDateStr(fStr);
@@ -589,10 +564,7 @@
     return list.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
   }
 
-  // --- NOTIFICACIONES CON CONMUTADOR ON/OFF PERMANENTE POR USUARIO ---
-  function isNotifEnabled() {
-    return localStorage.getItem('user_notif_enabled') === 'true';
-  }
+  function isNotifEnabled() { return localStorage.getItem('user_notif_enabled') === 'true'; }
 
   function updateNotifButtonsUI() {
     let enabled = isNotifEnabled();
@@ -604,38 +576,29 @@
   }
 
   function solicitarNotificaciones() {
-    if (!("Notification" in window)) {
-      alert("Este navegador no soporta notificaciones de sistema.");
-      return;
-    }
+    if (!("Notification" in window)) return alert("Este navegador no soporta notificaciones.");
     let current = isNotifEnabled();
     if (!current) {
       Notification.requestPermission().then(perm => {
         if(perm === 'granted') {
           localStorage.setItem('user_notif_enabled', 'true');
-          alert("¡Notificaciones activadas correctamente en tu dispositivo!");
+          alert("¡Notificaciones activadas!");
           updateNotifButtonsUI();
-        } else {
-          alert("Permiso de notificaciones denegado en tu navegador.");
-        }
+        } else alert("Permiso denegado.");
       });
     } else {
       localStorage.setItem('user_notif_enabled', 'false');
-      alert("Notificaciones desactivadas para tu usuario.");
+      alert("Notificaciones desactivadas.");
       updateNotifButtonsUI();
     }
   }
 
   function dispararNotificacion(titulo, cuerpo) {
     if (isNotifEnabled() && "Notification" in window && Notification.permission === "granted") {
-      new Notification(titulo, {
-        body: cuerpo,
-        icon: "https://cdn-icons-png.flaticon.com/512/1827/1827349.png"
-      });
+      new Notification(titulo, { body: cuerpo, icon: "https://cdn-icons-png.flaticon.com/512/1827/1827349.png" });
     }
   }
 
-  // --- AUDIO Y BOCINAS ---
   function loadAudioDevices() {
     if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
       navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -643,7 +606,7 @@
         if(!sel) return;
         sel.innerHTML = '<option value="">Predeterminado del sistema</option>';
         devices.filter(d => d.kind === 'audiooutput').forEach((d, idx) => {
-          sel.innerHTML += `<option value="${d.deviceId}">${d.label || 'Bocina / Salida ' + (idx + 1)}</option>`;
+          sel.innerHTML += `<option value="${d.deviceId}">${d.label || 'Bocina ' + (idx + 1)}</option>`;
         });
       }).catch(e => console.log(e));
     }
@@ -656,12 +619,8 @@
       btn.innerHTML = isMuted ? '🔇 Sonido: SILENCIADO' : '🔊 Sonido: ACTIVADO';
       btn.style.background = isMuted ? '#ef4444' : '#475569';
     }
-    
-    if (isMuted) {
-      stopContinuousBeep();
-    } else if (!document.getElementById('panelTV').classList.contains('hidden')) {
-      renderTV();
-    }
+    if (isMuted) stopContinuousBeep();
+    else if (!document.getElementById('panelTV').classList.contains('hidden')) renderTV();
   }
 
   function playSingleBeep() {
@@ -677,7 +636,6 @@
       if(selDev && selDev.value && audioCtx.setSinkId) audioCtx.setSinkId(selDev.value).catch(e => console.log(e));
 
       let durationSec = Math.min(0.15, (speedMs / 1000) * 0.5);
-
       let osc = audioCtx.createOscillator();
       let gain = audioCtx.createGain();
       
@@ -688,16 +646,13 @@
 
       osc.connect(gain);
       gain.connect(audioCtx.destination);
-
       osc.start();
       osc.stop(audioCtx.currentTime + durationSec);
     } catch(e) { console.log(e); }
   }
 
   function startContinuousBeep() {
-    if (continuousBeepInterval) return;
-    if (isMuted) return;
-    
+    if (continuousBeepInterval || isMuted) return;
     let speedMs = parseFloat(dbData.soundSpeed) || 300;
     continuousBeepInterval = setInterval(() => {
       if (isMuted) { stopContinuousBeep(); return; }
@@ -723,7 +678,6 @@
     }, speedMs);
   }
 
-  // --- OBTENER DATOS Y SYNC CON CACHE INSTANTÁNEO ---
   async function syncData() {
     try {
       let res = await fetch(API_URL);
@@ -731,28 +685,11 @@
       dbData = { ...dbData, ...data };
       localStorage.setItem('plant_control_db', JSON.stringify(dbData));
 
-      if(dbData.alarmMinutes) {
-        let el = document.getElementById('cfgAlarmMin');
-        if(el) el.value = dbData.alarmMinutes;
-      }
-      if(dbData.soundVol) {
-        let elV = document.getElementById('cfgSoundVol');
-        let lblV = document.getElementById('lblSoundVol');
-        if(elV) elV.value = dbData.soundVol;
-        if(lblV) lblV.textContent = dbData.soundVol + '%';
-      }
-      if(dbData.soundFreq) {
-        let elF = document.getElementById('cfgSoundFreq');
-        let lblF = document.getElementById('lblSoundFreq');
-        if(elF) elF.value = dbData.soundFreq;
-        if(lblF) lblF.textContent = dbData.soundFreq + ' Hz';
-      }
-      if(dbData.soundSpeed) {
-        let elS = document.getElementById('cfgSoundSpeed');
-        let lblS = document.getElementById('lblSoundSpeed');
-        if(elS) elS.value = dbData.soundSpeed;
-        if(lblS) lblS.textContent = dbData.soundSpeed + ' ms';
-      }
+      if(dbData.alarmMinutes) document.getElementById('cfgAlarmMin').value = dbData.alarmMinutes;
+      if(dbData.soundVol) { document.getElementById('cfgSoundVol').value = dbData.soundVol; document.getElementById('lblSoundVol').textContent = dbData.soundVol + '%'; }
+      if(dbData.soundFreq) { document.getElementById('cfgSoundFreq').value = dbData.soundFreq; document.getElementById('lblSoundFreq').textContent = dbData.soundFreq + ' Hz'; }
+      if(dbData.soundSpeed) { document.getElementById('cfgSoundSpeed').value = dbData.soundSpeed; document.getElementById('lblSoundSpeed').textContent = dbData.soundSpeed + ' ms'; }
+      
       renderDataLists();
       if(!document.getElementById('panelTV').classList.contains('hidden')) renderTV();
       if(!document.getElementById('formTecnico').classList.contains('hidden')) renderVistaTecnico();
@@ -762,7 +699,7 @@
   function fillS(id, list) { 
     let s = document.getElementById(id); 
     if(s){ 
-      let currentVal = s.value; // Preserva la selección actual para no borrar opciones al escribir
+      let currentVal = s.value;
       s.innerHTML = '<option value="">Seleccione...</option>'; 
       (list||[]).forEach(i => s.innerHTML += `<option value="${i}">${i}</option>`); 
       if(currentVal) s.value = currentVal;
@@ -789,20 +726,15 @@
   }
 
   async function init() { 
-    // 1. Cargar desde LocalStorage para apertura instantánea (0s)
     let cached = localStorage.getItem('plant_control_db');
     if (cached) {
-      try {
-        dbData = { ...dbData, ...JSON.parse(cached) };
-        renderDataLists();
-      } catch (e) { console.error(e); }
+      try { dbData = { ...dbData, ...JSON.parse(cached) }; renderDataLists(); } catch (e) { console.error(e); }
     }
 
     document.querySelectorAll('input[type="date"]').forEach(i => { if(!i.value) i.value = getTodayString(); }); 
     loadAudioDevices();
     updateNotifButtonsUI();
 
-    // 2. Sincronizar en segundo plano
     await syncData(); 
     syncLoopInterval = setInterval(syncData, 5000);
   }
@@ -845,11 +777,8 @@
       if(perms.includes('Maquinas')) { document.getElementById('btnTabSet').classList.remove('hidden'); initialTab = initialTab || 'setup'; }
       if(perms.includes('Tecnico')) { document.getElementById('btnTabTec').classList.remove('hidden'); initialTab = initialTab || 'tecnico'; }
       
-      if(initialTab) {
-        switchTab(initialTab);
-      } else {
-        alert("Tu usuario no tiene ningún acceso asignado. Contacta al administrador.");
-      }
+      if(initialTab) switchTab(initialTab);
+      else alert("Tu usuario no tiene ningún acceso asignado.");
     } else alert("Usuario o contraseña incorrectos");
   }
 
@@ -893,12 +822,10 @@
     document.body.style.background = "var(--bg)";
   }
 
-  // --- FORMULARIO OPERADORES ---
   function guardarOperador(e) {
     e.preventDefault();
     let id = document.getElementById('editOpId').value;
     let nowStr = getNowMxString();
-    
     let existingObj = id ? (dbData.registrosOperadores||[]).find(x => x.id === id) : null;
     let pld = {
       action: id ? "EDIT_REGISTRO_OP" : "ADD_REGISTRO_OP",
@@ -949,13 +876,11 @@
     document.getElementById('filtroFechaOp').value = getTodayString(); renderHistoriales();
   }
 
-  // --- FORMULARIO SOLUBLES ---
   function guardarSoluble(e) {
     e.preventDefault();
     let id = document.getElementById('editSolId').value;
     let nowStr = getNowMxString();
     let nowTime = getNowTimeMxString();
-
     let existingObj = id ? (dbData.registrosSolubles||[]).find(x => x.id === id) : null;
 
     let pld = {
@@ -1014,7 +939,6 @@
     document.getElementById('filtroFechaSol').value = getTodayString(); renderHistoriales();
   }
 
-  // --- FORMULARIO REGISTRO MÁQUINAS ---
   function toggleRegCampos() {
     let est = document.getElementById('regEstatus').value;
     let d = document.getElementById('regDinamico');
@@ -1103,8 +1027,10 @@
       dbData.registrosSetup.push(pld);
     }
 
+    // NOTIFICACIÓN AJUSTADA: MAQUINA - ITEM - ESTATUS REGISTRADO
     if(est === 'Set up' || est === 'Ajuste') {
-      dispararNotificacion("⚙️ Setup / Ajuste Registrado", `Máquina: ${pld.maquina} | Estatus: ${est}`);
+      let itemTxt = pld.item ? ` - ${pld.item}` : '';
+      dispararNotificacion(`${pld.maquina}${itemTxt}`, `${est} registrado por ${currentUser}`);
     }
 
     document.getElementById('filtroFechaMaq').value = pld.fecha;
@@ -1136,7 +1062,6 @@
     window.scrollTo({top: 0});
   }
 
-  // --- RENDERING HISTORIALES ---
   function renderHistoriales() {
     let act = getActiveMaquinasLogs();
     let fDateM = document.getElementById('filtroFechaMaq') ? document.getElementById('filtroFechaMaq').value : getTodayString();
@@ -1228,7 +1153,6 @@
     let divSol = document.getElementById('historialSol'); if(divSol) divSol.innerHTML = htmlSol;
   }
 
-  // --- SECCIÓN TÉCNICOS ---
   function renderVistaTecnico() {
     let fDate = document.getElementById('filtroFechaTec') ? document.getElementById('filtroFechaTec').value : getTodayString();
     
@@ -1296,11 +1220,9 @@
     if(divCon) divCon.innerHTML = conTM.map(renderCardTec).join('') || '<p style="color:#94a3b8;">No hay registros con tiempos muertos.</p>';
   }
 
-  // --- MODAL Y REGISTRO DE TIEMPOS MUERTOS ---
   function abrirModalTM(regId, tmId = null) {
     document.getElementById('tmRegId').value = regId;
     document.getElementById('tmEditId').value = tmId || '';
-    
     let nowTime = new Date().toLocaleTimeString("en-GB", {hour: '2-digit', minute:'2-digit'});
 
     if(tmId) {
@@ -1342,9 +1264,7 @@
     }
   }
 
-  function cerrarModalTM() {
-    document.getElementById('modalTM').classList.add('hidden');
-  }
+  function cerrarModalTM() { document.getElementById('modalTM').classList.add('hidden'); }
 
   function guardarTiempoMuerto() {
     let regId = document.getElementById('tmRegId').value;
@@ -1354,9 +1274,7 @@
     let hFin = document.getElementById('tmHFin').value;
     let comentarios = document.getElementById('tmComentarios').value.trim();
 
-    if(!motivo || !hInicio) {
-      return alert("Selecciona un motivo e ingresa la hora de inicio.");
-    }
+    if(!motivo || !hInicio) return alert("Selecciona un motivo e ingresa la hora de inicio.");
 
     let r = (dbData.registrosSetup||[]).find(x => x.id === regId);
     let duracionMins = calcMinutesBetween(r ? r.fecha : getTodayString(), hInicio, hFin);
@@ -1386,8 +1304,10 @@
       dbData.registrosTiemposMuertos.push(pld);
     }
 
-    let maqName = r ? r.maquina : "";
-    dispararNotificacion("⏱️ Tiempo Muerto Registrado", `Máquina: ${maqName} | Motivo: ${motivo} | Por: ${currentUser}`);
+    // NOTIFICACIÓN AJUSTADA: MAQUINA - ITEM - TIEMPO MUERTO REGISTRADO
+    let maqName = r ? r.maquina : "Máquina";
+    let itemTxt = (r && r.item) ? ` - ${r.item}` : '';
+    dispararNotificacion(`${maqName}${itemTxt}`, `Tiempo muerto registrado por ${currentUser}`);
 
     cerrarModalTM();
     renderVistaTecnico();
@@ -1406,7 +1326,7 @@
     }
   }
 
-  // --- HISTORIAL GENERAL ADMIN ---
+  // --- HISTORIAL GENERAL CORREGIDO POR USUARIOS ---
   function toggleHistSubfiltro() {
     let t = document.getElementById('histFiltroTipo').value;
     let div = document.getElementById('divHistSubfiltroMaq');
@@ -1417,26 +1337,17 @@
   function renderHistorialGeneralAdmin() {
     if(!isAdmin) return;
     
-    let selSup = document.getElementById('histFiltroSup');
-    if(selSup && selSup.options.length <= 1) {
-      selSup.innerHTML = '<option value="TODOS">Todos los supervisores</option>';
-      let sups = new Set();
-      (dbData.usuarios||[]).forEach(u => sups.add(u.user));
-      (dbData.registrosSetup||[]).forEach(r => sups.add(getSupervisor(r)));
-      sups.forEach(s => selSup.innerHTML += `<option value="${s}">${s}</option>`);
+    let selUsr = document.getElementById('histFiltroUsr');
+    if(selUsr && selUsr.options.length <= 1) {
+      selUsr.innerHTML = '<option value="TODOS">Todos los usuarios</option>';
+      let usrs = new Set();
+      (dbData.usuarios||[]).forEach(u => usrs.add(u.user));
+      (dbData.registrosSetup||[]).forEach(r => usrs.add(getSupervisor(r)));
+      (dbData.registrosTiemposMuertos||[]).forEach(tm => usrs.add(tm.usuario));
+      usrs.forEach(u => selUsr.innerHTML += `<option value="${u}">${u}</option>`);
     }
 
-    let selTec = document.getElementById('histFiltroTec');
-    if(selTec && selTec.options.length <= 1) {
-      selTec.innerHTML = '<option value="TODOS">Todos los técnicos</option>';
-      let tecs = new Set();
-      (dbData.tecnicos||[]).forEach(t => tecs.add(t));
-      (dbData.registrosTiemposMuertos||[]).forEach(tm => tecs.add(tm.usuario));
-      tecs.forEach(t => selTec.innerHTML += `<option value="${t}">${t}</option>`);
-    }
-
-    let filterSup = selSup ? selSup.value : "TODOS";
-    let filterTec = selTec ? selTec.value : "TODOS";
+    let filterUsr = selUsr ? selUsr.value : "TODOS";
     let filterTipo = document.getElementById('histFiltroTipo') ? document.getElementById('histFiltroTipo').value : "TODOS";
     let filterSubEst = document.getElementById('histFiltroSubEstatus') ? document.getElementById('histFiltroSubEstatus').value : "TODOS";
     let filterFecha = document.getElementById('histFiltroFecha') ? document.getElementById('histFiltroFecha').value : "";
@@ -1446,21 +1357,20 @@
     if(filterTipo === "TODOS" || filterTipo === "MAQUINAS") {
       let reqs = getActiveMaquinasLogs();
       if(filterFecha) reqs = reqs.filter(r => normalizeDateStr(r.fecha) === filterFecha);
-      if(filterSup !== "TODOS") reqs = reqs.filter(r => getSupervisor(r).toLowerCase() === filterSup.toLowerCase());
-      if(filterTec !== "TODOS") reqs = reqs.filter(r => (r.tecnico||'').toLowerCase() === filterTec.toLowerCase());
+      if(filterUsr !== "TODOS") reqs = reqs.filter(r => getSupervisor(r).toLowerCase() === filterUsr.toLowerCase() || (r.tecnico||'').toLowerCase() === filterUsr.toLowerCase());
       if(filterSubEst !== "TODOS") reqs = reqs.filter(r => r.estatus === filterSubEst);
       
       html += `<h3>🏭 Registros de Máquinas / Setup (${reqs.length})</h3>`;
       if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
       reqs.forEach(r => {
         let dur = r.hFin ? (r.tiempo||'-') : (getPendingMinutes(r.fecha, r.hInicio) + ' mins (en curso)');
-        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${r.maquina}</b> (${r.estatus}) | Sup: ${getSupervisor(r)} | Tec: ${r.tecnico||'N/A'}<br><small>Item: ${r.item||'-'} | Turno: ${r.turno} | H.Ini: ${formatHora(r.hInicio)} H.Fin: ${formatHora(r.hFin)} | Duración: ${dur}</small></div></div>`;
+        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${r.maquina}</b> (${r.estatus}) | Usuario: ${getSupervisor(r)} | Tec: ${r.tecnico||'N/A'}<br><small>Item: ${r.item||'-'} | Turno: ${r.turno} | H.Ini: ${formatHora(r.hInicio)} H.Fin: ${formatHora(r.hFin)} | Duración: ${dur}</small></div></div>`;
       });
     }
 
     if(filterTipo === "TODOS" || filterTipo === "TIEMPOS_MUERTOS") {
       let tms = dbData.registrosTiemposMuertos || [];
-      if(filterTec !== "TODOS") tms = tms.filter(x => (x.usuario||'').toLowerCase() === filterTec.toLowerCase());
+      if(filterUsr !== "TODOS") tms = tms.filter(x => (x.usuario||'').toLowerCase() === filterUsr.toLowerCase());
       if(filterFecha) {
         tms = tms.filter(x => {
           let parent = (dbData.registrosSetup||[]).find(r => r.id === x.regId);
@@ -1480,7 +1390,7 @@
           <div class="item-row" style="border-left-color:#d97706;">
             <div>
               <b>[${fStr}] ${maq}</b> - Motivo: <span style="color:#b45309;">${tm.tiempoMuerto}</span><br>
-              <small><b>Técnico:</b> ${tm.usuario} | <b>Hora Ini:</b> ${formatHora(tm.hInicio)} <b>Hora Fin:</b> ${tm.hFin ? formatHora(tm.hFin) : 'Pendiente'}</small><br>
+              <small><b>Usuario:</b> ${tm.usuario} | <b>Hora Ini:</b> ${formatHora(tm.hInicio)} <b>Hora Fin:</b> ${tm.hFin ? formatHora(tm.hFin) : 'Pendiente'}</small><br>
               <small><b>Duración:</b> ${durDisplay} ${tm.comentarios ? '| <i>Obs: '+tm.comentarios+'</i>' : ''}</small>
             </div>
           </div>`;
@@ -1490,24 +1400,24 @@
     if(filterTipo === "TODOS" || filterTipo === "OPERADORES") {
       let reqs = dbData.registrosOperadores || [];
       if(filterFecha) reqs = reqs.filter(r => normalizeDateStr(r.fecha) === filterFecha);
-      if(filterSup !== "TODOS") reqs = reqs.filter(r => getSupervisor(r).toLowerCase() === filterSup.toLowerCase());
+      if(filterUsr !== "TODOS") reqs = reqs.filter(r => getSupervisor(r).toLowerCase() === filterUsr.toLowerCase());
 
       html += `<h3 style="margin-top:15px;">👷 Registros de Operadores (${reqs.length})</h3>`;
       if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
       reqs.forEach(r => {
-        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${r.maquina}</b> - Turno ${r.turno} | Sup: ${getSupervisor(r)}<br><small>Titular: ${r.operador} ${r.opCubre?'| Cubre: '+r.opCubre:''}</small></div></div>`;
+        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${r.maquina}</b> - Turno ${r.turno} | Usuario: ${getSupervisor(r)}<br><small>Titular: ${r.operador} ${r.opCubre?'| Cubre: '+r.opCubre:''}</small></div></div>`;
       });
     }
 
     if(filterTipo === "TODOS" || filterTipo === "SOLUBLES") {
       let reqs = dbData.registrosSolubles || [];
       if(filterFecha) reqs = reqs.filter(r => normalizeDateStr(r.fecha) === filterFecha);
-      if(filterSup !== "TODOS") reqs = reqs.filter(r => getSupervisor(r).toLowerCase() === filterSup.toLowerCase());
+      if(filterUsr !== "TODOS") reqs = reqs.filter(r => getSupervisor(r).toLowerCase() === filterUsr.toLowerCase());
 
       html += `<h3 style="margin-top:15px;">🧪 Registros de Soluble (${reqs.length})</h3>`;
       if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
       reqs.forEach(r => {
-        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${r.maquina}</b> - ${r.marca} | Sup: ${getSupervisor(r)}<br><small>Brix: ${r.brixAnt}➔${r.brixNue} | pH: ${r.phAnt}➔${r.phNue} | Hora: ${r.horaRegistro||'N/A'}</small></div></div>`;
+        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${r.maquina}</b> - ${r.marca} | Usuario: ${getSupervisor(r)}<br><small>Brix: ${r.brixAnt}➔${r.brixNue} | pH: ${r.phAnt}➔${r.phNue} | Hora: ${r.horaRegistro||'N/A'}</small></div></div>`;
       });
     }
 
@@ -1516,8 +1426,7 @@
   }
 
   function resetFiltrosHistorialGral() {
-    document.getElementById('histFiltroSup').value = "TODOS";
-    document.getElementById('histFiltroTec').value = "TODOS";
+    document.getElementById('histFiltroUsr').value = "TODOS";
     document.getElementById('histFiltroTipo').value = "TODOS";
     document.getElementById('histFiltroSubEstatus').value = "TODOS";
     document.getElementById('histFiltroFecha').value = "";
@@ -1525,7 +1434,6 @@
     renderHistorialGeneralAdmin();
   }
 
-  // --- WHATSAPP COPIAR ---
   function copiarWhatsApp(soloTiemposMuertos = false) {
     let act = getActiveMaquinasLogs();
     let fDate = document.getElementById('filtroFechaMaq').value;
@@ -1552,10 +1460,10 @@
     if(!rs.length) return alert("Sin registros con esos filtros.");
 
     let incluirTM = document.getElementById('chkCopyTM').checked;
-    let txt = `📋 *REPORTE DE MÁQUINAS (${fDate})*\n👤 Supervisor: ${currentUser}\n\n`;
+    let txt = `📋 *REPORTE DE MÁQUINAS (${fDate})*\n👤 Usuario: ${currentUser}\n\n`;
 
     if(soloTiemposMuertos) {
-      txt = `⏱️ *REPORTE DE TIEMPOS MUERTOS (${fDate})*\n👤 Supervisor: ${currentUser}\n\n`;
+      txt = `⏱️ *REPORTE DE TIEMPOS MUERTOS (${fDate})*\n👤 Usuario: ${currentUser}\n\n`;
       let tmCont = 0;
       rs.forEach(r => {
         let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
@@ -1573,7 +1481,7 @@
           txt += `\n`;
         }
       });
-      if(tmCont === 0) return alert("No hay tiempos muertos registrados para el filtro seleccionado.");
+      if(tmCont === 0) return alert("No hay tiempos muertos registrados.");
     } else {
       sts.forEach(st => {
         let sub = rs.filter(x => x.estatus === st);
@@ -1657,18 +1565,15 @@
     ta.select(); 
     document.execCommand('copy'); 
     document.body.removeChild(ta);
-    alert("Copiado al portapapeles. ¡Listo para pegar en WhatsApp!");
+    alert("Copiado al portapapeles.");
   }
 
-  // --- TV RENDERING ---
   function renderTV() {
     let board = document.getElementById('tvBoard');
     let winY = window.scrollY;
     let boardX = board ? board.scrollLeft : 0;
     let sectionScrolls = {};
-    document.querySelectorAll('.tv-section').forEach((sec, idx) => {
-      sectionScrolls[idx] = sec.scrollTop;
-    });
+    document.querySelectorAll('.tv-section').forEach((sec, idx) => { sectionScrolls[idx] = sec.scrollTop; });
 
     let fDate = document.getElementById('tvFilterFecha').value;
     let filterEst = document.getElementById('tvFilterEstatus').value;
@@ -1735,7 +1640,7 @@
           <div class="tv-card ${cardClass}">
             <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;">
               <span>🏭 ${r.maquina} <span style="font-size:0.8rem; background:#475569; padding:2px 4px; border-radius:4px;">${r.estatus}</span></span>
-              <span style="font-size:0.85rem; color:#cbd5e1;">Sup: ${getSupervisor(r)}</span>
+              <span style="font-size:0.85rem; color:#cbd5e1;">Usuario: ${getSupervisor(r)}</span>
             </div>
             
             ${r.item ? `<div style="color:#38bdf8; font-size:0.9rem; margin-top:2px;">📦 Item: <b>${r.item}</b></div>` : ''}
@@ -1761,7 +1666,6 @@
             </div>
 
             ${tmsHtml}
-
             ${r.comentarios ? `<div style="font-size:0.8rem; margin-top:4px; color:#cbd5e1;">💬 ${r.comentarios}</div>` : ''}
           </div>`;
       };
@@ -1791,14 +1695,10 @@
       if(sectionScrolls[idx] !== undefined) sec.scrollTop = sectionScrolls[idx];
     });
 
-    if (hasAlarmTriggered && !isMuted) {
-      startContinuousBeep();
-    } else {
-      stopContinuousBeep();
-    }
+    if (hasAlarmTriggered && !isMuted) startContinuousBeep();
+    else stopContinuousBeep();
   }
 
-  // --- CONFIGURACIÓN DE ALARMA Y SONIDO ---
   function guardarConfigAlarma() {
     let val = parseInt(document.getElementById('cfgAlarmMin').value, 10);
     if(isNaN(val) || val <= 0) return alert("Ingresa un número válido de minutos.");
@@ -1818,12 +1718,10 @@
     postData({ action: "SAVE_SOUND_CONFIG", soundVol: vol, soundFreq: freq, soundSpeed: speed });
   }
 
-  // --- ADMIN CATALOGOS Y USUARIOS ---
   function renderAdminLists() {
     let fill = (cat, id) => {
       let div = document.getElementById(id);
       if(!div) return;
-      
       let list = dbData[cat.toLowerCase()] || [];
       div.innerHTML = list.map(i => `<div class="item-row">
         <span>${i}</span>
@@ -1859,58 +1757,26 @@
     let divM = document.getElementById('listAdminMaquinas');
     if(divM) {
       divM.innerHTML = (dbData.maquinas||[]).map(m => {
-        let mName = typeof m === 'object' ? m.maquina : m;
-        let mNave = typeof m === 'object' ? (m.nave||'Sin Nave') : 'Sin Nave';
+        let name = typeof m === 'object' ? m.maquina : m;
+        let nave = typeof m === 'object' ? (m.nave || 'Sin Nave') : 'Sin Nave';
         return `
           <div class="item-row">
-            <div><b>${mName}</b> <small style="color:#0284c7;">[${mNave}]</small></div>
+            <div><b>${name}</b> <small style="color:#0284c7;">(${nave})</small></div>
             <div class="item-actions">
-              <button class="btn-edit" onclick="editMaqConNave('${mName}', '${mNave}')">✏️</button>
-              <button class="btn-danger" onclick="delMaqConNave('${mName}')">🗑️</button>
+              <button class="btn-edit" onclick="editMaqConNave('${name}')">✏️</button>
+              <button class="btn-danger" onclick="delMaqConNave('${name}')">🗑️</button>
             </div>
           </div>`;
       }).join('');
     }
   }
 
-  function addCat(cat, inputId) {
-    let input = document.getElementById(inputId);
-    let val = input.value.trim();
-    if(!val) return alert("Ingresa un valor válido");
-    let key = cat.toLowerCase();
-    if(!dbData[key]) dbData[key] = [];
-    if(dbData[key].includes(val)) return alert("El elemento ya existe");
-    dbData[key].push(val);
-    input.value = '';
-    renderDataLists();
-    postData({ action: "ADD_CATALOG", catalog: cat, value: val });
-  }
-
-  function editCat(cat, oldVal) {
-    let newVal = prompt("Editar valor:", oldVal);
-    if(newVal && newVal.trim() !== "" && newVal !== oldVal) {
-      let key = cat.toLowerCase();
-      let idx = (dbData[key]||[]).indexOf(oldVal);
-      if(idx !== -1) dbData[key][idx] = newVal.trim();
-      renderDataLists();
-      postData({ action: "EDIT_CATALOG", catalog: cat, oldValue: oldVal, newValue: newVal.trim() });
-    }
-  }
-
-  function delCat(cat, val) {
-    if(confirm(`¿Eliminar "${val}" de ${cat}?`)) {
-      let key = cat.toLowerCase();
-      dbData[key] = (dbData[key]||[]).filter(x => x !== val);
-      renderDataLists();
-      postData({ action: "DELETE_CATALOG", catalog: cat, value: val });
-    }
-  }
-
   function saveUsuario() {
-    let orig = document.getElementById('editUsrOrig').value;
     let u = document.getElementById('addUsrName').value.trim();
     let p = document.getElementById('addUsrPass').value.trim();
-    if(!u || !p) return alert("Completa el usuario y la contraseña.");
+    let orig = document.getElementById('editUsrOrig').value;
+
+    if(!u || !p) return alert("Completa usuario y contraseña");
 
     let perms = [];
     if(document.getElementById('chkPermOp').checked) perms.push('Operadores');
@@ -1918,11 +1784,10 @@
     if(document.getElementById('chkPermSol').checked) perms.push('Solubles');
     if(document.getElementById('chkPermTec').checked) perms.push('Tecnico');
 
-    let pStr = perms.join(',');
-    let pld = { action: orig ? "EDIT_USUARIO" : "ADD_USUARIO", origUser: orig, user: u, pass: p, permisos: pStr };
+    let pStr = perms.join(', ');
 
     if(orig) {
-      let idx = dbData.usuarios.findIndex(x => x.user === orig);
+      let idx = (dbData.usuarios||[]).findIndex(x => x.user === orig);
       if(idx !== -1) dbData.usuarios[idx] = { user: u, pass: p, permisos: pStr };
     } else {
       if(!dbData.usuarios) dbData.usuarios = [];
@@ -1930,21 +1795,22 @@
     }
 
     cancelEditUsr();
-    renderDataLists();
-    postData(pld);
+    renderAdminLists();
+    postData({ action: "SAVE_USUARIO", user: u, pass: p, permisos: pStr, origUser: orig });
   }
 
-  function editUsuario(uName) {
-    let usr = (dbData.usuarios||[]).find(x => x.user === uName);
-    if(!usr) return;
-    document.getElementById('editUsrOrig').value = usr.user;
-    document.getElementById('addUsrName').value = usr.user;
-    document.getElementById('addUsrPass').value = usr.pass;
-    let perms = (usr.permisos||'').split(',');
-    document.getElementById('chkPermOp').checked = perms.includes('Operadores');
-    document.getElementById('chkPermMaq').checked = perms.includes('Maquinas');
-    document.getElementById('chkPermSol').checked = perms.includes('Solubles');
-    document.getElementById('chkPermTec').checked = perms.includes('Tecnico');
+  function editUsuario(usr) {
+    let u = (dbData.usuarios||[]).find(x => x.user === usr); if(!u) return;
+    document.getElementById('editUsrOrig').value = u.user;
+    document.getElementById('addUsrName').value = u.user;
+    document.getElementById('addUsrPass').value = u.pass;
+
+    let p = u.permisos || "";
+    document.getElementById('chkPermOp').checked = p.includes('Operadores');
+    document.getElementById('chkPermMaq').checked = p.includes('Maquinas');
+    document.getElementById('chkPermSol').checked = p.includes('Solubles');
+    document.getElementById('chkPermTec').checked = p.includes('Tecnico');
+
     document.getElementById('btnSaveUsr').textContent = "Guardar Cambios";
     document.getElementById('btnCancelUsr').classList.remove('hidden');
   }
@@ -1961,24 +1827,23 @@
     document.getElementById('btnCancelUsr').classList.add('hidden');
   }
 
-  function delUsuario(uName) {
-    if(confirm(`¿Eliminar al usuario ${uName}?`)) {
-      dbData.usuarios = (dbData.usuarios||[]).filter(x => x.user !== uName);
-      renderDataLists();
-      postData({ action: "DELETE_USUARIO", user: uName });
+  function delUsuario(usr) {
+    if(confirm("¿Eliminar usuario?")) {
+      dbData.usuarios = dbData.usuarios.filter(x => x.user !== usr);
+      renderAdminLists();
+      postData({ action: "DELETE_USUARIO", user: usr });
     }
   }
 
   function saveMaqConNave() {
-    let orig = document.getElementById('editMaqOrig').value;
     let m = document.getElementById('addMaq').value.trim();
     let n = document.getElementById('addMaqNave').value;
-    if(!m) return alert("Ingresa el nombre de la máquina.");
+    let orig = document.getElementById('editMaqOrig').value;
 
-    let pld = { action: orig ? "EDIT_MAQUINA" : "ADD_MAQUINA", origMaquina: orig, maquina: m, nave: n };
+    if(!m) return alert("Escribe el nombre de la máquina.");
 
     if(orig) {
-      let idx = dbData.maquinas.findIndex(x => (typeof x==='object'?x.maquina:x) === orig);
+      let idx = dbData.maquinas.findIndex(x => (typeof x === 'object' ? x.maquina : x) === orig);
       if(idx !== -1) dbData.maquinas[idx] = { maquina: m, nave: n };
     } else {
       if(!dbData.maquinas) dbData.maquinas = [];
@@ -1987,13 +1852,15 @@
 
     cancelEditMaq();
     renderDataLists();
-    postData(pld);
+    postData({ action: "SAVE_MAQUINA", maquina: m, nave: n, origMaquina: orig });
   }
 
-  function editMaqConNave(mName, mNave) {
-    document.getElementById('editMaqOrig').value = mName;
-    document.getElementById('addMaq').value = mName;
-    document.getElementById('addMaqNave').value = mNave;
+  function editMaqConNave(mName) {
+    let m = (dbData.maquinas||[]).find(x => (typeof x === 'object' ? x.maquina : x) === mName); if(!m) return;
+    document.getElementById('editMaqOrig').value = typeof m === 'object' ? m.maquina : m;
+    document.getElementById('addMaq').value = typeof m === 'object' ? m.maquina : m;
+    document.getElementById('addMaqNave').value = typeof m === 'object' ? (m.nave || '') : '';
+
     document.getElementById('btnSaveMaq').textContent = "Guardar Cambios";
     document.getElementById('btnCancelMaq').classList.remove('hidden');
   }
@@ -2007,12 +1874,44 @@
   }
 
   function delMaqConNave(mName) {
-    if(confirm(`¿Eliminar la máquina ${mName}?`)) {
-      dbData.maquinas = (dbData.maquinas||[]).filter(x => (typeof x==='object'?x.maquina:x) !== mName);
+    if(confirm("¿Eliminar máquina?")) {
+      dbData.maquinas = dbData.maquinas.filter(x => (typeof x === 'object' ? x.maquina : x) !== mName);
       renderDataLists();
       postData({ action: "DELETE_MAQUINA", maquina: mName });
     }
   }
+
+  function addCat(cat, idInput) {
+    let val = document.getElementById(idInput).value.trim();
+    if(!val) return;
+    let key = cat.toLowerCase();
+    if(!dbData[key]) dbData[key] = [];
+    dbData[key].push(val);
+    document.getElementById(idInput).value = '';
+    renderDataLists();
+    postData({ action: "ADD_CATALOGO", catalogo: cat, valor: val });
+  }
+
+  function editCat(cat, val) {
+    let n = prompt("Nuevo nombre:", val);
+    if(n && n.trim()) {
+      let key = cat.toLowerCase();
+      let idx = dbData[key].indexOf(val);
+      if(idx !== -1) dbData[key][idx] = n.trim();
+      renderDataLists();
+      postData({ action: "EDIT_CATALOGO", catalogo: cat, viejo: val, nuevo: n.trim() });
+    }
+  }
+
+  function delCat(cat, val) {
+    if(confirm("¿Eliminar registro?")) {
+      let key = cat.toLowerCase();
+      dbData[key] = dbData[key].filter(x => x !== val);
+      renderDataLists();
+      postData({ action: "DELETE_CATALOGO", catalogo: cat, valor: val });
+    }
+  }
 </script>
+
 </body>
 </html>
