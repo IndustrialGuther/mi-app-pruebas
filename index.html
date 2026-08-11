@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Planta</title>
+  <title>Control de Planta2</title>
   <style>
-    :root { --primary: #0284c7; --admin: #0f172a; --setup: #059669; --bg: #f8fafc; --card: #ffffff; }
+    :root { --primary: #0284c7; --admin: #0f172a; --setup: #059669; --tec: #d97706; --bg: #f8fafc; --card: #ffffff; }
     body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1e293b; }
     .container { max-width: 850px; margin: 0 auto; }
     .tv-container { max-width: 98vw; margin: 0 auto; padding: 10px; }
     .card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
     h2, h3 { margin-top: 0; color: var(--primary); }
     h2.setup-title { color: var(--setup); }
+    h2.tec-title { color: var(--tec); }
     label { display: block; margin-top: 10px; font-weight: 600; font-size: 0.85rem; }
     select, input, textarea { width: 100%; padding: 10px; margin-top: 4px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem; }
     
@@ -20,6 +21,7 @@
     .btn-full { width: 100%; margin-top: 15px; padding: 12px; }
     .btn-admin { background: var(--admin); }
     .btn-setup { background: var(--setup); }
+    .btn-tec { background: var(--tec); }
     .btn-secondary { background: #64748b; color: white; }
     .btn-ws { background: #25d366; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
     .btn-danger { background: #ef4444; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
@@ -29,6 +31,7 @@
     .tab-btn { background: #e2e8f0; color: #475569; padding: 10px 5px; border-radius: 6px; flex: 1; min-width: 90px; border: none; font-weight: bold; font-size: 0.85rem; text-align: center; }
     .tab-btn.active { background: var(--primary); color: white; }
     .tab-btn.admin-active { background: var(--admin); color: white; }
+    .tab-btn.tec-active { background: var(--tec); color: white; }
     .hidden { display: none !important; }
 
     .item-row { display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; padding: 10px 12px; border-radius: 6px; margin-top: 8px; font-size: 0.9rem; border-left: 4px solid var(--primary); }
@@ -45,6 +48,15 @@
     .chk-group { display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap; }
     .chk-group label { margin-top: 0; font-weight: normal; font-size: 0.9rem; display: flex; align-items: center; gap: 4px; }
     .chk-group input { width: auto; margin: 0; }
+
+    /* Estilos Tiempos Muertos */
+    .tm-box { background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 8px; margin-top: 8px; font-size: 0.85rem; color: #92400e; }
+    .tm-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #fde68a; padding: 4px 0; }
+    .tm-item:last-child { border-bottom: none; }
+
+    /* Modal / Form Flotante */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: white; border-radius: 12px; padding: 20px; width: 90%; max-width: 450px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 
     /* TV Dashboard Styles */
     .tv-board { display: flex; gap: 15px; overflow-x: auto; height: calc(100vh - 100px); padding-bottom: 20px;}
@@ -80,7 +92,7 @@
   <!-- LOGIN -->
   <div id="secLogin" class="card">
     <h2>Iniciar Sesión</h2>
-    <label>Usuario / Supervisor</label>
+    <label>Usuario</label>
     <input type="text" id="loginUser" placeholder="Ingresa tu usuario">
     <label>Contraseña</label>
     <input type="password" id="loginPass" placeholder="••••••••">
@@ -99,6 +111,7 @@
       <button type="button" id="btnTabOp" class="tab-btn hidden" onclick="switchTab('op')">Operadores</button>
       <button type="button" id="btnTabSol" class="tab-btn hidden" onclick="switchTab('sol')">Solubles</button>
       <button type="button" id="btnTabSet" class="tab-btn hidden" onclick="switchTab('setup')">⚙️ Reg. Máquinas</button>
+      <button type="button" id="btnTabTec" class="tab-btn hidden" onclick="switchTab('tecnico')">🔧 Técnico</button>
       <button type="button" id="btnTabAdminHist" class="tab-btn hidden" onclick="switchTab('adminHist')">📊 Historial Gral</button>
       <button type="button" id="btnTabAdmin" class="tab-btn hidden" onclick="switchTab('admin')">⚙️ Catálogos</button>
       <button type="button" id="btnTabTV" class="tab-btn hidden" onclick="switchTab('tv')">📺 Pizarra TV</button>
@@ -191,14 +204,14 @@
         </select>
         
         <div id="regDinamico" class="hidden" style="margin-top:10px; padding-top:10px; border-top:1px solid #e2e8f0;">
-          <div class="g-turno hidden"><label>Turno</label><select id="regTurno"></select></div>
-          <div class="g-item hidden"><label>Ítem</label><input list="listItems" id="regItem" placeholder="Buscar ítem..."></div>
-          <div class="g-tecnico hidden"><label>Técnico</label><input list="listTecnicos" id="regTecnico" placeholder="Técnico..."></div>
-          <div class="g-operador hidden"><label>Operador Titular</label><input list="listOperadores" id="regOperador"></div>
+          <div class="g-turno hidden"><label id="lblRegTurno">Turno *</label><select id="regTurno"></select></div>
+          <div class="g-item hidden"><label id="lblRegItem">Ítem *</label><input list="listItems" id="regItem" placeholder="Buscar ítem..."></div>
+          <div class="g-tecnico hidden"><label id="lblRegTecnico">Técnico *</label><input list="listTecnicos" id="regTecnico" placeholder="Técnico..."></div>
+          <div class="g-operador hidden"><label id="lblRegOperador">Operador Titular *</label><input list="listOperadores" id="regOperador"></div>
           <div class="g-opCubre hidden"><label>Operador que cubre (Opcional)</label><input list="listOperadores" id="regOpCubre" placeholder="Opcional"></div>
           
           <div class="g-horas hidden" style="display:flex; gap:10px;">
-            <div style="flex:1;"><label>Hora Inicio</label><input type="time" id="regHInicio" oninput="calcTiempoReg()"></div>
+            <div style="flex:1;"><label id="lblRegHInicio">Hora Inicio *</label><input type="time" id="regHInicio" oninput="calcTiempoReg()"></div>
             <div style="flex:1;"><label>Hora Fin (Opcional)</label><input type="time" id="regHFin" oninput="calcTiempoReg()"></div>
           </div>
           
@@ -208,8 +221,8 @@
           </div>
           
           <div class="g-piezas hidden" style="display:flex; gap:5px;">
-            <div style="flex:1;"><label>Pz Plan</label><input type="number" id="regPzPlan" oninput="calcDeltaReg()"></div>
-            <div style="flex:1;"><label>Pz Real</label><input type="number" id="regPzReal" oninput="calcDeltaReg()"></div>
+            <div style="flex:1;"><label id="lblRegPzPlan">Pz Plan *</label><input type="number" id="regPzPlan" oninput="calcDeltaReg()"></div>
+            <div style="flex:1;"><label id="lblRegPzReal">Pz Real *</label><input type="number" id="regPzReal" oninput="calcDeltaReg()"></div>
             <div style="flex:1;"><label>Delta (Faltantes)</label><input type="number" id="regPzDelta" readonly style="background:#f1f5f9;"></div>
           </div>
 
@@ -232,13 +245,35 @@
           <label><input type="checkbox" id="chkCopyCorr" checked onchange="renderHistoriales()"> Corriendo</label>
           <label><input type="checkbox" id="chkCopyAjuste" checked onchange="renderHistoriales()"> Ajuste</label>
           <label><input type="checkbox" id="chkCopySetup" checked onchange="renderHistoriales()"> Set up</label>
+          <label><input type="checkbox" id="chkCopyTM" checked> Incluir Tiempos Muertos</label>
         </div>
-        <div style="display:flex; gap:10px; margin-top:10px;">
-          <button type="button" class="btn-ws" onclick="copiarWhatsApp()">📲 Copiar a WhatsApp</button>
+        <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+          <button type="button" class="btn-ws" onclick="copiarWhatsApp(false)">📲 Copiar Reporte WhatsApp</button>
+          <button type="button" class="btn-secondary" onclick="copiarWhatsApp(true)">⏱️ Copiar Solo Tiempos Muertos</button>
         </div>
       </div>
 
       <div id="historialSetup">Cargando...</div>
+    </div>
+
+    <!-- PESTAÑA TÉCNICO -->
+    <div id="formTecnico" class="card hidden">
+      <h2 class="tec-title">🔧 Módulo para Técnicos</h2>
+      <div class="filter-box" style="background:#fef3c7;">
+        <label style="color:#b45309;">🔍 Filtrar por Fecha:</label>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="date" id="filtroFechaTec" onchange="renderVistaTecnico()">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('filtroFechaTec').value=getTodayString(); renderVistaTecnico();">Hoy</button>
+        </div>
+      </div>
+
+      <div id="tecListaContenedor">
+        <h3 style="color:#b45309; margin-top:15px; border-bottom:2px solid #fde68a; padding-bottom:5px;">⏳ Sin Tiempos Muertos Registrados</h3>
+        <div id="tecSinTM">Cargando...</div>
+
+        <h3 style="color:#047857; margin-top:25px; border-bottom:2px solid #a7f3d0; padding-bottom:5px;">✅ Con Tiempos Muertos Registrados</h3>
+        <div id="tecConTM">Cargando...</div>
+      </div>
     </div>
 
     <!-- HISTORIAL GENERAL (ADMIN) -->
@@ -251,11 +286,21 @@
         </div>
         <div style="flex:1; min-width:150px;">
           <label>Tipo de Registro</label>
-          <select id="histFiltroTipo" onchange="renderHistorialGeneralAdmin()">
+          <select id="histFiltroTipo" onchange="toggleHistSubfiltro(); renderHistorialGeneralAdmin();">
             <option value="TODOS">Todos los tipos</option>
             <option value="MAQUINAS">Máquinas (Setup/Caída/Ajuste/Corr)</option>
             <option value="OPERADORES">Operadores</option>
             <option value="SOLUBLES">Solubles</option>
+          </select>
+        </div>
+        <div id="divHistSubfiltroMaq" style="flex:1; min-width:150px;">
+          <label>Estatus Máquina</label>
+          <select id="histFiltroSubEstatus" onchange="renderHistorialGeneralAdmin()">
+            <option value="TODOS">Todos los estatus</option>
+            <option value="Set up">Set up</option>
+            <option value="Caida">Caída</option>
+            <option value="Ajuste">Ajuste</option>
+            <option value="Corriendo">Corriendo</option>
           </select>
         </div>
         <div style="flex:1; min-width:150px;">
@@ -330,6 +375,9 @@
           <label style="margin-top:0; font-weight:normal; display:flex; align-items:center; gap:4px;">
             <input type="checkbox" id="chkPermSol" style="width:auto; margin:0;"> Reg. Solubles
           </label>
+          <label style="margin-top:0; font-weight:normal; display:flex; align-items:center; gap:4px;">
+            <input type="checkbox" id="chkPermTec" style="width:auto; margin:0;"> Técnico
+          </label>
         </div>
         <div style="display:flex; gap:10px;">
           <button class="btn-admin" id="btnSaveUsr" onclick="saveUsuario()" style="width:140px;">Agregar Nuevo</button>
@@ -356,6 +404,11 @@
       </div>
       <div id="listAdminMaquinas"></div><hr>
       
+      <!-- TIEMPOS MUERTOS -->
+      <h3>⏱️ Tiempos Muertos Predefinidos</h3>
+      <div style="display:flex; gap:5px;"><input type="text" id="addTM" placeholder="Ej: Paro por ajuste de programa"><button class="btn-admin" onclick="addCat('TiemposMuertos', 'addTM')" style="width:120px;">Agregar</button></div>
+      <div id="listAdminTiemposMuertos"></div><hr>
+
       <!-- MARCAS SOLUBLE -->
       <h3>🧪 Marcas de Soluble</h3>
       <div style="display:flex; gap:5px;"><input type="text" id="addMarca" placeholder="Ej: Fuchs"><button class="btn-admin" onclick="addCat('Marcas', 'addMarca')" style="width:120px;">Agregar</button></div>
@@ -370,12 +423,48 @@
   </div>
 </div>
 
+<!-- MODAL REGISTRO DE TIEMPO MUERTO -->
+<div id="modalTM" class="modal-overlay hidden">
+  <div class="modal-content">
+    <h3 style="color:var(--tec); margin-top:0;">⏱️ Registrar Tiempo Muerto</h3>
+    <input type="hidden" id="tmRegId">
+    <input type="hidden" id="tmEditId">
+    
+    <label>Motivo de Tiempo Muerto *</label>
+    <select id="tmSelectMotivo" required></select>
+    
+    <label>Duración (en minutos) *</label>
+    <input type="number" id="tmDuracionMin" min="1" required placeholder="Ej: 15">
+    
+    <label>Comentarios (Opcional)</label>
+    <textarea id="tmComentarios" rows="2" placeholder="Opcional"></textarea>
+    
+    <div style="display:flex; gap:10px; margin-top:15px;">
+      <button type="button" class="btn-tec" style="flex:1;" onclick="guardarTiempoMuerto()">Guardar</button>
+      <button type="button" class="btn-secondary" style="flex:1;" onclick="cerrarModalTM()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- PIZARRA TV -->
 <div id="panelTV" class="tv-container hidden">
   <div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; color:white; padding:10px 20px; border-radius:8px; margin-bottom:10px; border:1px solid #334155; flex-wrap:wrap; gap:10px;">
     <h1 style="margin:0; font-size:1.5rem;"><span class="pulse-dot"></span>Monitor de Planta en Vivo</h1>
-    <div style="display:flex; gap:10px; align-items:center;">
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
       <button id="btnMuteTV" onclick="toggleMuteTV()" class="btn-secondary" style="background:#475569;">🔊 Sonido: ACTIVADO</button>
+      
+      <select id="tvFilterEstatus" onchange="renderTV()" style="margin:0; width:150px; background:#1e293b; color:white;">
+        <option value="TODOS">Todos los estatus</option>
+        <option value="Corriendo">Corriendo</option>
+        <option value="Set up">Set up</option>
+        <option value="Ajuste">Ajuste</option>
+        <option value="Caida">Caídas</option>
+      </select>
+
+      <label style="margin:0; color:white; font-weight:normal; display:flex; align-items:center; gap:4px; font-size:0.85rem;">
+        <input type="checkbox" id="chkTVShowTM" checked onchange="renderTV()" style="width:auto; margin:0;"> Ver Tiempos Muertos
+      </label>
+
       <input type="date" id="tvFilterFecha" onchange="renderTV()" style="margin:0; width:140px; background:#1e293b; color:white;">
       <button onclick="cerrarTV()" class="btn-danger">Cerrar</button>
     </div>
@@ -390,7 +479,7 @@
 
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbxs13Toc_nhK9OTL2aB1nwOofnlXk6VOSnGLszNgvFoks9j6btQcTLTgqXj6_ovzoT6/exec";
-  let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300 };
+  let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], tiemposMuertos:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], registrosTiemposMuertos:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300 };
   let currentUser = null, isAdmin = false;
   let tvInterval = null;
   let isMuted = false;
@@ -433,6 +522,18 @@
     return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   }
 
+  function getPendingMinutes(fStr, hIniStr) {
+    if(!hIniStr) return 0;
+    let normF = normalizeDateStr(fStr);
+    let normH = formatTimeInput(hIniStr);
+    if(!normF || !normH) return 0;
+    let startDt = new Date(`${normF}T${normH}:00`);
+    if(isNaN(startDt.getTime())) return 0;
+    let now = new Date();
+    let diffMs = now - startDt;
+    return Math.max(0, Math.round(diffMs / 60000));
+  }
+
   function getSupervisor(r) { return (r.usuario || r.user || "Desconocido").trim(); }
   function normalizeDateStr(f) {
     if(!f) return ""; let str = String(f).trim().split("T")[0];
@@ -445,7 +546,7 @@
     return list.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
   }
 
-  // --- AUDIO Y DISPOSITIVOS ---
+  // --- AUDIO Y BOCINAS ---
   function loadAudioDevices() {
     if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
       navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -587,9 +688,11 @@
     fillS('regTurno', dbData.turnos); 
     fillS('solMarca', dbData.marcas); 
     fillS('addMaqNave', dbData.naves);
+    fillS('tmSelectMotivo', dbData.tiemposMuertos);
 
     renderAdminLists();
     renderHistoriales();
+    if(!document.getElementById('formTecnico').classList.contains('hidden')) renderVistaTecnico();
   }
 
   async function init() { 
@@ -609,13 +712,14 @@
       isAdmin = false;
       let perms = val.permisos || "";
       
-      document.getElementById('userDisp').textContent = `Usuario: ${currentUser} (Accesos limitados)`;
+      document.getElementById('userDisp').textContent = `Usuario: ${currentUser}`;
       document.getElementById('secLogin').classList.add('hidden'); 
       document.getElementById('secApp').classList.remove('hidden');
       
       document.getElementById('btnTabOp').classList.add('hidden'); 
       document.getElementById('btnTabSol').classList.add('hidden'); 
       document.getElementById('btnTabSet').classList.add('hidden');
+      document.getElementById('btnTabTec').classList.add('hidden');
       document.getElementById('btnTabAdmin').classList.add('hidden'); 
       document.getElementById('btnTabAdminHist').classList.add('hidden');
       document.getElementById('btnTabTV').classList.add('hidden');
@@ -624,6 +728,7 @@
       if(perms.includes('Operadores')) { document.getElementById('btnTabOp').classList.remove('hidden'); initialTab = initialTab || 'op'; }
       if(perms.includes('Solubles')) { document.getElementById('btnTabSol').classList.remove('hidden'); initialTab = initialTab || 'sol'; }
       if(perms.includes('Maquinas')) { document.getElementById('btnTabSet').classList.remove('hidden'); initialTab = initialTab || 'setup'; }
+      if(perms.includes('Tecnico')) { document.getElementById('btnTabTec').classList.remove('hidden'); initialTab = initialTab || 'tecnico'; }
       
       if(initialTab) {
         switchTab(initialTab);
@@ -654,12 +759,13 @@
       document.body.style.background = "#020617"; document.getElementById('tvFilterFecha').value = getTodayString(); renderTV();
       tvInterval = setInterval(() => { syncData(); }, 15000); return;
     }
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'admin-active'));
-    ['formOperadores','formSolubles','formSetup','panelAdminHistorial','panelAdmin'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'admin-active', 'tec-active'));
+    ['formOperadores','formSolubles','formSetup','formTecnico','panelAdminHistorial','panelAdmin'].forEach(id => document.getElementById(id).classList.add('hidden'));
     
     if(t==='op'){ document.getElementById('btnTabOp').classList.add('active'); document.getElementById('formOperadores').classList.remove('hidden'); }
     else if(t==='sol'){ document.getElementById('btnTabSol').classList.add('active'); document.getElementById('formSolubles').classList.remove('hidden'); }
     else if(t==='setup'){ document.getElementById('btnTabSet').classList.add('active'); document.getElementById('formSetup').classList.remove('hidden'); }
+    else if(t==='tecnico'){ document.getElementById('btnTabTec').classList.add('tec-active'); document.getElementById('formTecnico').classList.remove('hidden'); renderVistaTecnico(); }
     else if(t==='adminHist'){ document.getElementById('btnTabAdminHist').classList.add('admin-active'); document.getElementById('panelAdminHistorial').classList.remove('hidden'); renderHistorialGeneralAdmin(); }
     else if(t==='admin'){ document.getElementById('btnTabAdmin').classList.add('admin-active'); document.getElementById('panelAdmin').classList.remove('hidden'); loadAudioDevices(); }
     renderHistoriales();
@@ -800,6 +906,11 @@
     let btn = document.getElementById('btnSaveReg');
     document.querySelectorAll('#regDinamico > div').forEach(el => el.classList.add('hidden'));
     
+    // Resetear atributos required
+    ['regTurno','regItem','regTecnico','regOperador','regHInicio','regPzPlan','regPzReal'].forEach(id => {
+      let el = document.getElementById(id); if(el) el.removeAttribute('required');
+    });
+
     if(!est) { d.classList.add('hidden'); btn.classList.add('hidden'); return; }
     
     d.classList.remove('hidden'); btn.classList.remove('hidden');
@@ -807,10 +918,13 @@
     
     if(est === 'Caida') {
       d.querySelector('.g-turno').classList.remove('hidden');
+      document.getElementById('regTurno').setAttribute('required', 'true');
     } else if (est === 'Corriendo') {
       ['g-turno','g-item','g-horas','g-tiempo','g-operador','g-opCubre','g-piezas'].forEach(c => d.querySelector('.'+c).classList.remove('hidden'));
+      ['regTurno','regItem','regOperador','regHInicio','regPzPlan','regPzReal'].forEach(id => document.getElementById(id).setAttribute('required', 'true'));
     } else if (est === 'Ajuste' || est === 'Set up') {
-      ['g-turno','g-item','g-tecnico','g-horas','g-tiempo'].forEach(c => d.querySelector('.'+c).classList.remove('hidden'));
+      ['g-turno','g-item','g-tecnico','g-horas','g-tiempo','g-piezas'].forEach(c => d.querySelector('.'+c).classList.remove('hidden'));
+      ['regTurno','regItem','regTecnico','regHInicio','regPzPlan','regPzReal'].forEach(id => document.getElementById(id).setAttribute('required', 'true'));
     }
   }
 
@@ -820,6 +934,9 @@
       let m = ((new Date("2000-01-01T"+f) - new Date("2000-01-01T"+i)) / 60000);
       if(m < 0) m += 1440;
       document.getElementById('regTiempo').value = Math.round(m) + " mins";
+    } else if (i) {
+      let mins = getPendingMinutes(document.getElementById('regFecha').value || getTodayString(), i);
+      document.getElementById('regTiempo').value = mins + " mins (en curso)";
     } else document.getElementById('regTiempo').value = "";
   }
 
@@ -836,6 +953,7 @@
     document.getElementById('chkCopyCorr').checked = true;
     document.getElementById('chkCopyAjuste').checked = true;
     document.getElementById('chkCopySetup').checked = true;
+    document.getElementById('chkCopyTM').checked = true;
     renderHistoriales();
   }
 
@@ -877,6 +995,8 @@
   function delMaqReg(id) {
     if(confirm("¿Borrar este registro?")) {
       dbData.registrosSetup = dbData.registrosSetup.filter(x => x.id !== id);
+      // Eliminar tiempos muertos asociados
+      dbData.registrosTiemposMuertos = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId !== id);
       renderHistoriales(); postData({ action: "DELETE_REGISTRO_SETUP", id: id });
     }
   }
@@ -889,7 +1009,8 @@
     document.getElementById('regTurno').value = r.turno||''; document.getElementById('regItem').value = r.item||'';
     document.getElementById('regTecnico').value = r.tecnico||''; document.getElementById('regOperador').value = r.operador||'';
     document.getElementById('regOpCubre').value = r.opCubre||''; document.getElementById('regHInicio').value = formatTimeInput(r.hInicio);
-    document.getElementById('regHFin').value = formatTimeInput(r.hFin); document.getElementById('regTiempo').value = r.tiempo||'';
+    document.getElementById('regHFin').value = formatTimeInput(r.hFin);
+    calcTiempoReg();
     document.getElementById('regPzPlan').value = r.piezasPlan||''; document.getElementById('regPzReal').value = r.piezasReal||'';
     document.getElementById('regPzDelta').value = r.piezasDelta||''; document.getElementById('regComentarios').value = r.comentarios||'';
     window.scrollTo({top: 0});
@@ -923,10 +1044,23 @@
           let cls = st==='Caida'?'st-caida': st==='Corriendo'?'st-corriendo': st==='Ajuste'?'st-ajuste':'st-setup';
           if(term && st !== 'Caida') cls += ' st-term';
           
+          let dur = term ? (r.tiempo || '-') : (getPendingMinutes(r.fecha, r.hInicio) + ' mins (en curso)');
+
           let det = `<small><b>Turno:</b> ${r.turno} | <b>Supervisor:</b> ${getSupervisor(r)}</small><br>`;
           if(st !== 'Caida') det += `<small><b>Item:</b> ${r.item} | <b>Ini:</b> ${formatHora(r.hInicio)} <b>Fin:</b> ${term ? formatHora(r.hFin) : '<i>Pendiente</i>'}</small><br>`;
-          if(st === 'Corriendo') det += `<small><b>Op:</b> ${r.operador} ${r.opCubre?`(Cubre:${r.opCubre})`:''} | <b>Duración:</b> ${r.tiempo||'-'}<br><b>Plan:</b> ${r.piezasPlan||0} | <b>Real:</b> ${r.piezasReal||0} | <b>Delta (Falta):</b> ${r.piezasDelta||0}</small><br>`;
-          if(st === 'Ajuste' || st === 'Set up') det += `<small><b>Tec:</b> ${r.tecnico} | <b>Duración:</b> ${r.tiempo||'-'}</small><br>`;
+          if(st === 'Corriendo') det += `<small><b>Op:</b> ${r.operador} ${r.opCubre?`(Cubre:${r.opCubre})`:''} | <b>Duración:</b> ${dur}<br><b>Plan:</b> ${r.piezasPlan||0} | <b>Real:</b> ${r.piezasReal||0} | <b>Delta (Falta):</b> ${r.piezasDelta||0}</small><br>`;
+          if(st === 'Ajuste' || st === 'Set up') det += `<small><b>Tec:</b> ${r.tecnico} | <b>Duración:</b> ${dur}<br><b>Plan:</b> ${r.piezasPlan||0} | <b>Real:</b> ${r.piezasReal||0} | <b>Delta:</b> ${r.piezasDelta||0}</small><br>`;
+          
+          // Tiempos Muertos adjuntos
+          let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
+          if(tms.length > 0) {
+            det += `<div class="tm-box"><b>⏱️ Tiempos Muertos (${tms.length}):</b>`;
+            tms.forEach(tm => {
+              det += `<div class="tm-item"><span>• <b>${tm.tiempoMuerto}:</b> ${tm.duracion} mins <small style="color:#64748b;">(${tm.usuario})</small>${tm.comentarios ? ' - <i>'+tm.comentarios+'</i>' : ''}</span></div>`;
+            });
+            det += `</div>`;
+          }
+
           if(r.fechaRegistro) det += `<small style="color:#64748b;">📅 <b>Reg:</b> ${r.fechaRegistro} ${r.fechaActualizacion?'| ✏️ <b>Act:</b> '+r.fechaActualizacion:''}</small><br>`;
           if(r.comentarios) det += `<small style="color:#64748b;"><i>${r.comentarios}</i></small>`;
 
@@ -944,7 +1078,6 @@
     // 2. Historial Operadores
     let fDateOp = document.getElementById('filtroFechaOp') ? document.getElementById('filtroFechaOp').value : getTodayString();
     let filOp = (dbData.registrosOperadores||[]).filter(r => normalizeDateStr(r.fecha) === fDateOp && (isAdmin || getSupervisor(r).toLowerCase() === currentUser.toLowerCase()));
-    
     filOp.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
 
     let htmlOp = (filOp.length > 0) ? filOp.map(r => `
@@ -962,7 +1095,6 @@
     // 3. Historial Solubles
     let fDateSol = document.getElementById('filtroFechaSol') ? document.getElementById('filtroFechaSol').value : getTodayString();
     let filSol = (dbData.registrosSolubles||[]).filter(r => normalizeDateStr(r.fecha) === fDateSol && (isAdmin || getSupervisor(r).toLowerCase() === currentUser.toLowerCase()));
-    
     filSol.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
 
     let htmlSol = (filSol.length > 0) ? filSol.map(r => `
@@ -978,7 +1110,158 @@
     let divSol = document.getElementById('historialSol'); if(divSol) divSol.innerHTML = htmlSol;
   }
 
+  // --- SECCIÓN TÉCNICOS ---
+  function renderVistaTecnico() {
+    let fDate = document.getElementById('filtroFechaTec') ? document.getElementById('filtroFechaTec').value : getTodayString();
+    
+    // Solo registros de Set up y Ajuste
+    let lista = (dbData.registrosSetup || []).filter(r => 
+      normalizeDateStr(r.fecha) === fDate && (r.estatus === 'Set up' || r.estatus === 'Ajuste')
+    );
+
+    let sinTM = [], conTM = [];
+    lista.forEach(r => {
+      let tms = (dbData.registrosTiemposMuertos || []).filter(x => x.regId === r.id);
+      if(tms.length > 0) conTM.push({ reg: r, tms: tms });
+      else sinTM.push({ reg: r, tms: [] });
+    });
+
+    const renderCardTec = (item) => {
+      let r = item.reg;
+      let tms = item.tms;
+      let isTerm = !!r.hFin;
+      let dur = isTerm ? (r.tiempo || '-') : (getPendingMinutes(r.fecha, r.hInicio) + ' mins (en curso)');
+
+      let tmsHtml = '';
+      if(tms.length > 0) {
+        tmsHtml = `<div class="tm-box" style="margin-top:10px;"><b>⏱️ Tiempos Muertos Registrados:</b>`;
+        tms.forEach(tm => {
+          let canEdit = (isAdmin || tm.usuario === currentUser);
+          tmsHtml += `
+            <div class="tm-item">
+              <div>
+                <b>• ${tm.tiempoMuerto}:</b> ${tm.duracion} mins 
+                <small style="color:#64748b;">(por ${tm.usuario})</small>
+                ${tm.comentarios ? `<br><small style="color:#475569;">Obs: <i>${tm.comentarios}</i></small>` : ''}
+              </div>
+              ${canEdit ? `
+                <div class="item-actions">
+                  <button class="btn-edit" onclick="abrirModalTM('${r.id}', '${tm.id}')">✏️</button>
+                  <button class="btn-danger" onclick="delTiempoMuerto('${tm.id}')">🗑️</button>
+                </div>` : ''}
+            </div>`;
+        });
+        tmsHtml += `</div>`;
+      }
+
+      return `
+        <div class="card" style="border-left: 5px solid ${r.estatus==='Set up'?'#10b981':'#f97316'}; margin-bottom:12px; padding:15px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0; color:#1e293b;">🏭 ${r.maquina} <span style="font-size:0.8rem; background:#e2e8f0; padding:2px 6px; border-radius:4px; font-weight:normal;">${r.estatus}</span></h3>
+            <span style="font-size:0.85rem; font-weight:bold; color:${isTerm?'#059669':'#d97706'};">${isTerm?'✅ Terminado':'⏳ Pendiente'}</span>
+          </div>
+          <div style="font-size:0.9rem; margin-top:6px;">
+            <b>Ítem:</b> ${r.item||'-'} | <b>Técnico:</b> ${r.tecnico||'-'} | <b>Turno:</b> ${r.turno||'-'}<br>
+            <b>Supervisor:</b> ${getSupervisor(r)} | <b>Ini:</b> ${formatHora(r.hInicio)} | <b>Fin:</b> ${r.hFin?formatHora(r.hFin):'En curso'}<br>
+            <b>Duración:</b> ${dur} | <b>Plan:</b> ${r.piezasPlan||0} | <b>Real:</b> ${r.piezasReal||0}
+            ${r.comentarios ? `<br><i>Obs: ${r.comentarios}</i>` : ''}
+          </div>
+          ${tmsHtml}
+          <button type="button" class="btn-tec" style="margin-top:10px; width:100%; font-size:0.85rem;" onclick="abrirModalTM('${r.id}')">➕ Agregar Tiempo Muerto</button>
+        </div>`;
+    };
+
+    let divSin = document.getElementById('tecSinTM');
+    if(divSin) divSin.innerHTML = sinTM.map(renderCardTec).join('') || '<p style="color:#94a3b8;">No hay registros sin tiempos muertos.</p>';
+
+    let divCon = document.getElementById('tecConTM');
+    if(divCon) divCon.innerHTML = conTM.map(renderCardTec).join('') || '<p style="color:#94a3b8;">No hay registros con tiempos muertos.</p>';
+  }
+
+  // --- MODAL Y REGISTRO DE TIEMPOS MUERTOS ---
+  function abrirModalTM(regId, tmId = null) {
+    document.getElementById('tmRegId').value = regId;
+    document.getElementById('tmEditId').value = tmId || '';
+    
+    if(tmId) {
+      let tm = (dbData.registrosTiemposMuertos||[]).find(x => x.id === tmId);
+      if(tm) {
+        document.getElementById('tmSelectMotivo').value = tm.tiempoMuerto;
+        document.getElementById('tmDuracionMin').value = tm.duracion;
+        document.getElementById('tmComentarios').value = tm.comentarios || '';
+      }
+    } else {
+      document.getElementById('tmSelectMotivo').value = '';
+      document.getElementById('tmDuracionMin').value = '';
+      document.getElementById('tmComentarios').value = '';
+    }
+    
+    document.getElementById('modalTM').classList.remove('hidden');
+  }
+
+  function cerrarModalTM() {
+    document.getElementById('modalTM').classList.add('hidden');
+  }
+
+  function guardarTiempoMuerto() {
+    let regId = document.getElementById('tmRegId').value;
+    let tmId = document.getElementById('tmEditId').value;
+    let motivo = document.getElementById('tmSelectMotivo').value;
+    let duracion = document.getElementById('tmDuracionMin').value;
+    let comentarios = document.getElementById('tmComentarios').value.trim();
+
+    if(!motivo || !duracion || parseInt(duracion,10) <= 0) {
+      return alert("Selecciona un motivo e ingresa una duración válida en minutos.");
+    }
+
+    let nowStr = getNowMxString();
+    let existingObj = tmId ? (dbData.registrosTiemposMuertos||[]).find(x => x.id === tmId) : null;
+
+    let pld = {
+      action: tmId ? "EDIT_REGISTRO_TM" : "ADD_REGISTRO_TM",
+      id: tmId || ("TM_" + new Date().getTime()),
+      regId: regId,
+      tiempoMuerto: motivo,
+      duracion: duracion,
+      comentarios: comentarios,
+      usuario: currentUser,
+      fechaRegistro: existingObj ? (existingObj.fechaRegistro || nowStr) : nowStr,
+      fechaActualizacion: nowStr
+    };
+
+    if(tmId) {
+      let idx = dbData.registrosTiemposMuertos.findIndex(x => x.id === tmId);
+      if(idx !== -1) dbData.registrosTiemposMuertos[idx] = { ...dbData.registrosTiemposMuertos[idx], ...pld };
+    } else {
+      if(!dbData.registrosTiemposMuertos) dbData.registrosTiemposMuertos = [];
+      dbData.registrosTiemposMuertos.push(pld);
+    }
+
+    cerrarModalTM();
+    renderVistaTecnico();
+    renderHistoriales();
+    if(!document.getElementById('panelTV').classList.contains('hidden')) renderTV();
+    postData(pld);
+  }
+
+  function delTiempoMuerto(id) {
+    if(confirm("¿Eliminar este tiempo muerto?")) {
+      dbData.registrosTiemposMuertos = dbData.registrosTiemposMuertos.filter(x => x.id !== id);
+      renderVistaTecnico();
+      renderHistoriales();
+      if(!document.getElementById('panelTV').classList.contains('hidden')) renderTV();
+      postData({ action: "DELETE_REGISTRO_TM", id: id });
+    }
+  }
+
   // --- HISTORIAL GENERAL ADMIN ---
+  function toggleHistSubfiltro() {
+    let t = document.getElementById('histFiltroTipo').value;
+    let div = document.getElementById('divHistSubfiltroMaq');
+    if(t === 'MAQUINAS' || t === 'TODOS') div.classList.remove('hidden');
+    else div.classList.add('hidden');
+  }
+
   function renderHistorialGeneralAdmin() {
     if(!isAdmin) return;
     
@@ -993,6 +1276,7 @@
 
     let filterSup = selSup ? selSup.value : "TODOS";
     let filterTipo = document.getElementById('histFiltroTipo') ? document.getElementById('histFiltroTipo').value : "TODOS";
+    let filterSubEst = document.getElementById('histFiltroSubEstatus') ? document.getElementById('histFiltroSubEstatus').value : "TODOS";
     let filterFecha = document.getElementById('histFiltroFecha') ? document.getElementById('histFiltroFecha').value : "";
 
     let html = "";
@@ -1001,11 +1285,13 @@
       let reqs = getActiveMaquinasLogs();
       if(filterFecha) reqs = reqs.filter(r => normalizeDateStr(r.fecha) === filterFecha);
       if(filterSup !== "TODOS") reqs = reqs.filter(r => getSupervisor(r).toLowerCase() === filterSup.toLowerCase());
+      if(filterSubEst !== "TODOS") reqs = reqs.filter(r => r.estatus === filterSubEst);
       
       html += `<h3>🏭 Registros de Máquinas / Setup (${reqs.length})</h3>`;
       if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
       reqs.forEach(r => {
-        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${r.maquina}</b> (${r.estatus}) | Sup: ${getSupervisor(r)}<br><small>Item: ${r.item||'-'} | Turno: ${r.turno} | H.Ini: ${formatHora(r.hInicio)} H.Fin: ${formatHora(r.hFin)} | Duración: ${r.tiempo||'-'}</small></div></div>`;
+        let dur = r.hFin ? (r.tiempo||'-') : (getPendingMinutes(r.fecha, r.hInicio) + ' mins (en curso)');
+        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${r.maquina}</b> (${r.estatus}) | Sup: ${getSupervisor(r)}<br><small>Item: ${r.item||'-'} | Turno: ${r.turno} | H.Ini: ${formatHora(r.hInicio)} H.Fin: ${formatHora(r.hFin)} | Duración: ${dur}</small></div></div>`;
       });
     }
 
@@ -1040,12 +1326,14 @@
   function resetFiltrosHistorialGral() {
     document.getElementById('histFiltroSup').value = "TODOS";
     document.getElementById('histFiltroTipo').value = "TODOS";
+    document.getElementById('histFiltroSubEstatus').value = "TODOS";
     document.getElementById('histFiltroFecha').value = "";
+    toggleHistSubfiltro();
     renderHistorialGeneralAdmin();
   }
 
   // --- WHATSAPP COPIAR ---
-  function copiarWhatsApp() {
+  function copiarWhatsApp(soloTiemposMuertos = false) {
     let act = getActiveMaquinasLogs();
     let fDate = document.getElementById('filtroFechaMaq').value;
     
@@ -1070,55 +1358,102 @@
     rs = rs.filter(r => sts.includes(r.estatus));
     if(!rs.length) return alert("Sin registros con esos filtros.");
 
+    let incluirTM = document.getElementById('chkCopyTM').checked;
     let txt = `📋 *REPORTE DE MÁQUINAS (${fDate})*\n👤 Supervisor: ${currentUser}\n\n`;
-    
-    sts.forEach(st => {
-      let sub = rs.filter(x => x.estatus === st);
-      if(sub.length > 0) {
-        let stName = st.toUpperCase();
-        let pendientes = sub.filter(x => !x.hFin && st !== 'Caida');
-        let terminados = sub.filter(x => x.hFin && st !== 'Caida');
-        let caidas = sub.filter(x => st === 'Caida');
 
-        if (pendientes.length > 0) {
-          txt += `⏳ *${stName} PENDIENTES (${pendientes.length})*\n-----------------------------------\n`;
-          pendientes.forEach((r, i) => {
-            txt += `${i+1}. *Máquina:* ${r.maquina}\n`;
-            if(r.item) txt += `   *Ítem:* ${r.item}\n`;
-            if(r.tecnico) txt += `   *Técnico:* ${r.tecnico}\n`;
-            if(r.operador) txt += `   *Operador:* ${r.operador}\n`;
-            txt += `   *Inicio:* ${formatHora(r.hInicio)} | *Fin:* En proceso...\n`;
-            txt += `   *Tiempo:* En proceso\n`;
-            if(r.comentarios) txt += `   *Obs:* ${r.comentarios}\n`;
+    if(soloTiemposMuertos) {
+      txt = `⏱️ *REPORTE DE TIEMPOS MUERTOS (${fDate})*\n👤 Supervisor: ${currentUser}\n\n`;
+      let tmCont = 0;
+      rs.forEach(r => {
+        let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
+        if(tms.length > 0) {
+          tmCont++;
+          txt += `🏭 *Máquina:* ${r.maquina} (${r.estatus})\n`;
+          if(r.item) txt += `   *Ítem:* ${r.item}\n`;
+          txt += `   *Tiempos Muertos:*\n`;
+          tms.forEach(tm => {
+            txt += `     • ${tm.tiempoMuerto}: ${tm.duracion} mins (${tm.usuario})`;
+            if(tm.comentarios) txt += ` - Obs: ${tm.comentarios}`;
             txt += `\n`;
           });
+          txt += `\n`;
         }
+      });
+      if(tmCont === 0) return alert("No hay tiempos muertos registrados para el filtro seleccionado.");
+    } else {
+      sts.forEach(st => {
+        let sub = rs.filter(x => x.estatus === st);
+        if(sub.length > 0) {
+          let stName = st.toUpperCase();
+          let pendientes = sub.filter(x => !x.hFin && st !== 'Caida');
+          let terminados = sub.filter(x => x.hFin && st !== 'Caida');
+          let caidas = sub.filter(x => st === 'Caida');
 
-        if (terminados.length > 0) {
-          txt += `✅ *${stName} TERMINADOS (${terminados.length})*\n-----------------------------------\n`;
-          terminados.forEach((r, i) => {
-            txt += `${i+1}. *Máquina:* ${r.maquina}\n`;
-            if(r.item) txt += `   *Ítem:* ${r.item}\n`;
-            if(r.tecnico) txt += `   *Técnico:* ${r.tecnico}\n`;
-            if(r.operador) txt += `   *Operador:* ${r.operador}\n`;
-            txt += `   *Inicio:* ${formatHora(r.hInicio)} | *Fin:* ${formatHora(r.hFin)}\n`;
-            txt += `   *Tiempo:* ${r.tiempo || '-'}\n`;
-            if(r.comentarios) txt += `   *Obs:* ${r.comentarios}\n`;
-            txt += `\n`;
-          });
-        }
+          if (pendientes.length > 0) {
+            txt += `⏳ *${stName} PENDIENTES (${pendientes.length})*\n-----------------------------------\n`;
+            pendientes.forEach((r, i) => {
+              let durLive = getPendingMinutes(r.fecha, r.hInicio) + " mins en curso";
+              txt += `${i+1}. *Máquina:* ${r.maquina}\n`;
+              if(r.item) txt += `   *Ítem:* ${r.item}\n`;
+              if(r.tecnico) txt += `   *Técnico:* ${r.tecnico}\n`;
+              if(r.operador) txt += `   *Operador:* ${r.operador}\n`;
+              txt += `   *Inicio:* ${formatHora(r.hInicio)} | *Fin:* En proceso...\n`;
+              txt += `   *Duración:* ${durLive}\n`;
+              if(r.comentarios) txt += `   *Obs:* ${r.comentarios}\n`;
 
-        if (caidas.length > 0) {
-          txt += `🛑 *CAÍDAS (${caidas.length})*\n-----------------------------------\n`;
-          caidas.forEach((r, i) => {
-            txt += `${i+1}. *Máquina:* ${r.maquina}\n`;
-            txt += `   *Turno:* ${r.turno || '-'}\n`;
-            if(r.comentarios) txt += `   *Obs:* ${r.comentarios}\n`;
-            txt += `\n`;
-          });
+              if(incluirTM) {
+                let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
+                if(tms.length > 0) {
+                  txt += `   *Tiempos Muertos:*\n`;
+                  tms.forEach(tm => {
+                    txt += `     • ${tm.tiempoMuerto}: ${tm.duracion} mins`;
+                    if(tm.comentarios) txt += ` (Obs: ${tm.comentarios})`;
+                    txt += `\n`;
+                  });
+                }
+              }
+              txt += `\n`;
+            });
+          }
+
+          if (terminados.length > 0) {
+            txt += `✅ *${stName} TERMINADOS (${terminados.length})*\n-----------------------------------\n`;
+            terminados.forEach((r, i) => {
+              txt += `${i+1}. *Máquina:* ${r.maquina}\n`;
+              if(r.item) txt += `   *Ítem:* ${r.item}\n`;
+              if(r.tecnico) txt += `   *Técnico:* ${r.tecnico}\n`;
+              if(r.operador) txt += `   *Operador:* ${r.operador}\n`;
+              txt += `   *Inicio:* ${formatHora(r.hInicio)} | *Fin:* ${formatHora(r.hFin)}\n`;
+              txt += `   *Duración:* ${r.tiempo || '-'}\n`;
+              if(r.comentarios) txt += `   *Obs:* ${r.comentarios}\n`;
+
+              if(incluirTM) {
+                let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
+                if(tms.length > 0) {
+                  txt += `   *Tiempos Muertos:*\n`;
+                  tms.forEach(tm => {
+                    txt += `     • ${tm.tiempoMuerto}: ${tm.duracion} mins`;
+                    if(tm.comentarios) txt += ` (Obs: ${tm.comentarios})`;
+                    txt += `\n`;
+                  });
+                }
+              }
+              txt += `\n`;
+            });
+          }
+
+          if (caidas.length > 0) {
+            txt += `🛑 *CAÍDAS (${caidas.length})*\n-----------------------------------\n`;
+            caidas.forEach((r, i) => {
+              txt += `${i+1}. *Máquina:* ${r.maquina}\n`;
+              txt += `   *Turno:* ${r.turno || '-'}\n`;
+              if(r.comentarios) txt += `   *Obs:* ${r.comentarios}\n`;
+              txt += `\n`;
+            });
+          }
         }
-      }
-    });
+      });
+    }
 
     let ta = document.createElement("textarea"); 
     ta.value = txt; 
@@ -1131,9 +1466,21 @@
 
   // --- TV RENDERING ---
   function renderTV() {
+    let board = document.getElementById('tvBoard');
+    let winY = window.scrollY;
+    let boardX = board ? board.scrollLeft : 0;
+    let sectionScrolls = {};
+    document.querySelectorAll('.tv-section').forEach((sec, idx) => {
+      sectionScrolls[idx] = sec.scrollTop;
+    });
+
     let fDate = document.getElementById('tvFilterFecha').value;
+    let filterEst = document.getElementById('tvFilterEstatus').value;
+    let showTM = document.getElementById('chkTVShowTM').checked;
+
     let act = getActiveMaquinasLogs().filter(r => normalizeDateStr(r.fecha) === fDate);
-    
+    if(filterEst !== "TODOS") act = act.filter(r => r.estatus === filterEst);
+
     let maqNaveMap = {};
     (dbData.maquinas || []).forEach(m => {
        if(typeof m === 'object') maqNaveMap[m.maquina] = m.nave || "Sin Nave";
@@ -1155,7 +1502,6 @@
 
     let hasAlarmTriggered = false;
     let alarmLimitMin = parseInt(dbData.alarmMinutes, 10) || 150;
-    let now = new Date();
 
     let bHtml = "";
     Object.keys(navesData).forEach(nave => {
@@ -1166,27 +1512,28 @@
       let c = regs.filter(r => r.estatus === 'Caida');
 
       const htmlCard = (r, cls) => {
-        let elapsedMin = 0;
+        let elapsedMin = getPendingMinutes(r.fecha, r.hInicio);
         let isAlarmed = false;
 
-        if(r.hInicio) {
-          let fStr = normalizeDateStr(r.fecha);
-          let tStr = formatTimeInput(r.hInicio);
-          if(fStr && tStr) {
-            let startDt = new Date(`${fStr}T${tStr}:00`);
-            if(!isNaN(startDt.getTime())) {
-              let endDt = r.hFin ? new Date(`${fStr}T${formatTimeInput(r.hFin)}:00`) : now;
-              elapsedMin = Math.max(0, Math.round((endDt - startDt) / 60000));
-            }
-          }
-        }
-
-        if(!r.hFin && r.estatus !== 'Caida' && elapsedMin >= alarmLimitMin) {
+        // Solo parpadean y activan alarma los Set up y Ajuste pendientes
+        if(!r.hFin && (r.estatus === 'Set up' || r.estatus === 'Ajuste') && elapsedMin >= alarmLimitMin) {
           isAlarmed = true;
           hasAlarmTriggered = true;
         }
 
         let cardClass = `${cls} ${isAlarmed ? 'tvc-alarmed' : ''}`;
+
+        let tmsHtml = '';
+        if(showTM) {
+          let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
+          if(tms.length > 0) {
+            tmsHtml = `<div style="background:rgba(0,0,0,0.3); padding:4px 6px; border-radius:4px; margin-top:5px; font-size:0.8rem; color:#fde047;">⏱️ <b>T. Muertos:</b>`;
+            tms.forEach(tm => {
+              tmsHtml += `<br>• ${tm.tiempoMuerto}: <b>${tm.duracion}m</b>${tm.comentarios ? ' (<i>'+tm.comentarios+'</i>)' : ''}`;
+            });
+            tmsHtml += `</div>`;
+          }
+        }
 
         return `
           <div class="tv-card ${cardClass}">
@@ -1217,6 +1564,8 @@
               ${!r.hFin && r.estatus !== 'Caida' ? `<span style="font-size:0.75rem; background:${isAlarmed?'#ef4444':'#0284c7'}; color:white; padding:2px 6px; border-radius:10px; font-weight:bold;">${elapsedMin} min</span>` : ''}
             </div>
 
+            ${tmsHtml}
+
             ${r.comentarios ? `<div style="font-size:0.8rem; margin-top:4px; color:#cbd5e1;">💬 ${r.comentarios}</div>` : ''}
           </div>`;
       };
@@ -1237,7 +1586,15 @@
         </div>`;
     });
 
-    document.getElementById('tvBoard').innerHTML = bHtml || '<div style="color:white; padding:20px;">No hay registros para esta fecha.</div>';
+    let boardEl = document.getElementById('tvBoard');
+    if(boardEl) boardEl.innerHTML = bHtml || '<div style="color:white; padding:20px;">No hay registros para esta fecha.</div>';
+
+    // Restaurar el Scroll exacto donde estaba el usuario
+    window.scrollTo(0, winY);
+    if(boardEl) boardEl.scrollLeft = boardX;
+    document.querySelectorAll('.tv-section').forEach((sec, idx) => {
+      if(sectionScrolls[idx] !== undefined) sec.scrollTop = sectionScrolls[idx];
+    });
 
     if (hasAlarmTriggered && !isMuted) {
       startContinuousBeep();
@@ -1288,7 +1645,9 @@
     fill('Items', 'listAdminItems'); 
     fill('Tecnicos', 'listAdminTecnicos'); 
     fill('Turnos', 'listAdminTurnos');
+    fill('TiemposMuertos', 'listAdminTiemposMuertos');
 
+    // MÁQUINAS
     let divM = document.getElementById('listAdminMaquinas');
     if(divM) {
       divM.innerHTML = (dbData.maquinas || []).map(m => {
@@ -1305,6 +1664,7 @@
       }).join('');
     }
 
+    // USUARIOS
     let divU = document.getElementById('listAdminUsuarios');
     if(divU) {
       divU.innerHTML = (dbData.usuarios||[]).map(u => `
@@ -1326,7 +1686,7 @@
     renderDataLists(); document.getElementById(inId).value = '';
     postData({ action: "MANAGE_CATALOGO", op: "ADD", catalogo: cat, val1: v });
   }
-
+  
   function startEditMaq(maq, nave) {
     document.getElementById('editMaqOrig').value = maq;
     document.getElementById('addMaq').value = maq;
@@ -1393,6 +1753,7 @@
     }
   }
 
+  // USUARIOS Y PERMISOS
   function startEditUsuario(u, p, perms) {
     document.getElementById('editUsrOrig').value = u;
     document.getElementById('addUsrName').value = u;
@@ -1401,6 +1762,7 @@
     document.getElementById('chkPermOp').checked = perms.includes('Operadores');
     document.getElementById('chkPermMaq').checked = perms.includes('Maquinas');
     document.getElementById('chkPermSol').checked = perms.includes('Solubles');
+    document.getElementById('chkPermTec').checked = perms.includes('Tecnico');
     
     document.getElementById('btnSaveUsr').textContent = 'Guardar Cambios';
     document.getElementById('btnCancelUsr').classList.remove('hidden');
@@ -1414,6 +1776,7 @@
     document.getElementById('chkPermOp').checked = false;
     document.getElementById('chkPermMaq').checked = false;
     document.getElementById('chkPermSol').checked = false;
+    document.getElementById('chkPermTec').checked = false;
     
     document.getElementById('btnSaveUsr').textContent = 'Agregar Nuevo';
     document.getElementById('btnCancelUsr').classList.add('hidden');
@@ -1429,6 +1792,7 @@
     if(document.getElementById('chkPermOp').checked) perms.push('Operadores');
     if(document.getElementById('chkPermMaq').checked) perms.push('Maquinas');
     if(document.getElementById('chkPermSol').checked) perms.push('Solubles');
+    if(document.getElementById('chkPermTec').checked) perms.push('Tecnico');
     let permStr = perms.join(', ');
 
     if (orig) {
