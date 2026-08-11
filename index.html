@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Planta4</title>
+  <title>Control de Planta1</title>
   <style>
     :root { --primary: #0284c7; --admin: #0f172a; --setup: #059669; --tec: #d97706; --bg: #f8fafc; --card: #ffffff; }
     body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1e293b; }
@@ -26,6 +26,7 @@
     .btn-ws { background: #25d366; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
     .btn-danger { background: #ef4444; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
     .btn-edit { background: #f59e0b; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+    .btn-notify { background: #8b5cf6; color: white; font-size: 0.85rem; padding: 8px 12px; margin-bottom: 10px; }
     
     .tabs { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
     .tab-btn { background: #e2e8f0; color: #475569; padding: 10px 5px; border-radius: 6px; flex: 1; min-width: 90px; border: none; font-weight: bold; font-size: 0.85rem; text-align: center; }
@@ -51,7 +52,7 @@
 
     /* Estilos Tiempos Muertos */
     .tm-box { background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 8px; margin-top: 8px; font-size: 0.85rem; color: #92400e; }
-    .tm-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #fde68a; padding: 4px 0; }
+    .tm-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #fde68a; padding: 6px 0; }
     .tm-item:last-child { border-bottom: none; }
 
     /* Modal / Form Flotante */
@@ -187,7 +188,10 @@
 
     <!-- REGISTRO DE MAQUINAS (SETUP / AJUSTE / CAIDA / CORRIENDO) -->
     <div id="formSetup" class="card hidden">
-      <h2 class="setup-title">Registro de Máquinas</h2>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 class="setup-title">Registro de Máquinas</h2>
+        <button type="button" class="btn-notify" onclick="solicitarNotificaciones()">🔔 Activar Notificaciones de Tiempos Muertos</button>
+      </div>
       <form onsubmit="guardarSetup(event)">
         <input type="hidden" id="regId">
         <label>Fecha del Registro</label>
@@ -220,6 +224,7 @@
             <input type="text" id="regTiempo" readonly style="background:#f1f5f9;" placeholder="Se calcula automáticamente">
           </div>
           
+          <!-- Piezas unicamente para Corriendo -->
           <div class="g-piezas hidden" style="display:flex; gap:5px;">
             <div style="flex:1;"><label id="lblRegPzPlan">Pz Plan *</label><input type="number" id="regPzPlan" oninput="calcDeltaReg()"></div>
             <div style="flex:1;"><label id="lblRegPzReal">Pz Real *</label><input type="number" id="regPzReal" oninput="calcDeltaReg()"></div>
@@ -258,7 +263,11 @@
 
     <!-- PESTAÑA TÉCNICO -->
     <div id="formTecnico" class="card hidden">
-      <h2 class="tec-title">🔧 Módulo para Técnicos</h2>
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <h2 class="tec-title" style="margin:0;">🔧 Módulo para Técnicos</h2>
+        <button type="button" class="btn-notify" onclick="solicitarNotificaciones()">🔔 Activar Notificaciones de Setups</button>
+      </div>
+
       <div class="filter-box" style="background:#fef3c7;">
         <label style="color:#b45309;">🔍 Filtrar por Fecha:</label>
         <div style="display:flex; gap:10px; align-items:center;">
@@ -268,7 +277,7 @@
       </div>
 
       <div id="tecListaContenedor">
-        <h3 style="color:#b45309; margin-top:15px; border-bottom:2px solid #fde68a; padding-bottom:5px;">⏳ Sin Tiempos Muertos Registrados</h3>
+        <h3 style="color:#b45309; margin-top:15px; border-bottom:2px solid #fde68a; padding-bottom:5px;">⏳ Setups / Ajustes Pendientes de Tiempo Muerto</h3>
         <div id="tecSinTM">Cargando...</div>
 
         <h3 style="color:#047857; margin-top:25px; border-bottom:2px solid #a7f3d0; padding-bottom:5px;">✅ Con Tiempos Muertos Registrados</h3>
@@ -285,10 +294,15 @@
           <select id="histFiltroSup" onchange="renderHistorialGeneralAdmin()"></select>
         </div>
         <div style="flex:1; min-width:150px;">
+          <label>Filtrar por Técnico</label>
+          <select id="histFiltroTec" onchange="renderHistorialGeneralAdmin()"></select>
+        </div>
+        <div style="flex:1; min-width:150px;">
           <label>Tipo de Registro</label>
           <select id="histFiltroTipo" onchange="toggleHistSubfiltro(); renderHistorialGeneralAdmin();">
             <option value="TODOS">Todos los tipos</option>
             <option value="MAQUINAS">Máquinas (Setup/Caída/Ajuste/Corr)</option>
+            <option value="TIEMPOS_MUERTOS">Tiempos Muertos</option>
             <option value="OPERADORES">Operadores</option>
             <option value="SOLUBLES">Solubles</option>
           </select>
@@ -423,7 +437,7 @@
   </div>
 </div>
 
-<!-- MODAL REGISTRO DE TIEMPO MUERTO -->
+<!-- MODAL REGISTRO DE TIEMPO MUERTO (AHORA CON HORA INICIO Y FIN) -->
 <div id="modalTM" class="modal-overlay hidden">
   <div class="modal-content">
     <h3 style="color:var(--tec); margin-top:0;">⏱️ Registrar Tiempo Muerto</h3>
@@ -433,14 +447,25 @@
     <label>Motivo de Tiempo Muerto *</label>
     <select id="tmSelectMotivo" required></select>
     
-    <label>Duración (en minutos) *</label>
-    <input type="number" id="tmDuracionMin" min="1" required placeholder="Ej: 15">
+    <div style="display:flex; gap:10px; margin-top:5px;">
+      <div style="flex:1;">
+        <label>Hora Inicio *</label>
+        <input type="time" id="tmHInicio" required oninput="calcDuracionTM()">
+      </div>
+      <div style="flex:1;">
+        <label>Hora Fin (Opcional)</label>
+        <input type="time" id="tmHFin" oninput="calcDuracionTM()">
+      </div>
+    </div>
+
+    <label>Duración Estimada/Calculada</label>
+    <input type="text" id="tmDuracionDisplay" readonly style="background:#f1f5f9; font-weight:bold; color:#b45309;" placeholder="Calculando...">
     
     <label>Comentarios (Opcional)</label>
     <textarea id="tmComentarios" rows="2" placeholder="Opcional"></textarea>
     
     <div style="display:flex; gap:10px; margin-top:15px;">
-      <button type="button" class="btn-tec" style="flex:1;" onclick="guardarTiempoMuerto()">Guardar</button>
+      <button type="button" class="btn-tec" style="flex:1;" onclick="guardarTiempoMuerto()">Guardar Tiempo Muerto</button>
       <button type="button" class="btn-secondary" style="flex:1;" onclick="cerrarModalTM()">Cancelar</button>
     </div>
   </div>
@@ -481,7 +506,7 @@
   const API_URL = "https://script.google.com/macros/s/AKfycbwP9vawpPvqX03Z1k6UwGJhc1d1415mk6uUqDdpeqfwU75m966DraunLGTnKGormEF5/exec";
   let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], tiemposMuertos:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], registrosTiemposMuertos:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300 };
   let currentUser = null, isAdmin = false;
-  let tvInterval = null;
+  let tvInterval = null, syncLoopInterval = null;
   let isMuted = false;
   let audioCtx = null;
   let continuousBeepInterval = null;
@@ -534,6 +559,19 @@
     return Math.max(0, Math.round(diffMs / 60000));
   }
 
+  function calcMinutesBetween(fStr, hIniStr, hFinStr) {
+    if(!hIniStr) return 0;
+    if(!hFinStr) return getPendingMinutes(fStr, hIniStr);
+    let normF = normalizeDateStr(fStr || getTodayString());
+    let normI = formatTimeInput(hIniStr);
+    let normF2 = formatTimeInput(hFinStr);
+    if(!normI || !normF2) return 0;
+    let dt1 = new Date(`${normF}T${normI}:00`);
+    let dt2 = new Date(`${normF}T${normF2}:00`);
+    let diff = Math.round((dt2 - dt1) / 60000);
+    return diff < 0 ? diff + 1440 : diff;
+  }
+
   function getSupervisor(r) { return (r.usuario || r.user || "Desconocido").trim(); }
   function normalizeDateStr(f) {
     if(!f) return ""; let str = String(f).trim().split("T")[0];
@@ -544,6 +582,27 @@
   function getActiveMaquinasLogs() {
     let list = (dbData.registrosSetup || []);
     return list.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
+  }
+
+  // --- NOTIFICACIONES ---
+  function solicitarNotificaciones() {
+    if ("Notification" in window) {
+      Notification.requestPermission().then(perm => {
+        if(perm === 'granted') alert("¡Notificaciones activadas en tu dispositivo!");
+        else alert("Permiso de notificaciones denegado.");
+      });
+    } else {
+      alert("Este navegador no soporta notificaciones de sistema.");
+    }
+  }
+
+  function dispararNotificacion(titulo, cuerpo) {
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification(titulo, {
+        body: cuerpo,
+        icon: "https://cdn-icons-png.flaticon.com/512/1827/1827349.png"
+      });
+    }
   }
 
   // --- AUDIO Y BOCINAS ---
@@ -634,7 +693,7 @@
     }, speedMs);
   }
 
-  // --- OBTENER DATOS ---
+  // --- OBTENER DATOS Y SYNC ---
   async function syncData() {
     try {
       let res = await fetch(API_URL);
@@ -664,6 +723,7 @@
       }
       renderDataLists();
       if(!document.getElementById('panelTV').classList.contains('hidden')) renderTV();
+      if(!document.getElementById('formTecnico').classList.contains('hidden')) renderVistaTecnico();
     } catch(e) { console.error(e); }
   }
 
@@ -692,15 +752,25 @@
 
     renderAdminLists();
     renderHistoriales();
-    if(!document.getElementById('formTecnico').classList.contains('hidden')) renderVistaTecnico();
   }
 
   async function init() { 
     await syncData(); 
     document.querySelectorAll('input[type="date"]').forEach(i => i.value = getTodayString()); 
     loadAudioDevices();
+    // Bucle para actualizar datos en segundo plano en tiempo real cada 5s
+    syncLoopInterval = setInterval(syncData, 5000);
   }
   document.addEventListener("DOMContentLoaded", init);
+
+  function postData(payload) {
+    fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }).then(res => res.json())
+      .then(d => syncData())
+      .catch(e => console.error("Error posteando datos:", e));
+  }
 
   function iniciarSesion() {
     let u = document.getElementById('loginUser').value.trim();
@@ -757,7 +827,7 @@
     if(t === 'tv') {
       document.getElementById('mainContainer').classList.add('hidden'); document.getElementById('panelTV').classList.remove('hidden');
       document.body.style.background = "#020617"; document.getElementById('tvFilterFecha').value = getTodayString(); renderTV();
-      tvInterval = setInterval(() => { syncData(); }, 15000); return;
+      tvInterval = setInterval(() => { syncData(); }, 5000); return;
     }
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'admin-active', 'tec-active'));
     ['formOperadores','formSolubles','formSetup','formTecnico','panelAdminHistorial','panelAdmin'].forEach(id => document.getElementById(id).classList.add('hidden'));
@@ -899,7 +969,7 @@
     document.getElementById('filtroFechaSol').value = getTodayString(); renderHistoriales();
   }
 
-  // --- FORMULARIO REGISTRO MÁQUINAS ---
+  // --- FORMULARIO REGISTRO MÁQUINAS (AJUSTE Y SETUP SIN PIEZAS) ---
   function toggleRegCampos() {
     let est = document.getElementById('regEstatus').value;
     let d = document.getElementById('regDinamico');
@@ -923,8 +993,9 @@
       ['g-turno','g-item','g-horas','g-tiempo','g-operador','g-opCubre','g-piezas'].forEach(c => d.querySelector('.'+c).classList.remove('hidden'));
       ['regTurno','regItem','regOperador','regHInicio','regPzPlan','regPzReal'].forEach(id => document.getElementById(id).setAttribute('required', 'true'));
     } else if (est === 'Ajuste' || est === 'Set up') {
-      ['g-turno','g-item','g-tecnico','g-horas','g-tiempo','g-piezas'].forEach(c => d.querySelector('.'+c).classList.remove('hidden'));
-      ['regTurno','regItem','regTecnico','regHInicio','regPzPlan','regPzReal'].forEach(id => document.getElementById(id).setAttribute('required', 'true'));
+      // Piezas NO se muestran en Ajuste ni Set up
+      ['g-turno','g-item','g-tecnico','g-horas','g-tiempo'].forEach(c => d.querySelector('.'+c).classList.remove('hidden'));
+      ['regTurno','regItem','regTecnico','regHInicio'].forEach(id => document.getElementById(id).setAttribute('required', 'true'));
     }
   }
 
@@ -963,15 +1034,19 @@
     let action = id ? "EDIT_REGISTRO_SETUP" : "ADD_REGISTRO_SETUP";
     let nowStr = getNowMxString();
     let existingObj = id ? (dbData.registrosSetup||[]).find(x => x.id === id) : null;
+    let est = document.getElementById('regEstatus').value;
 
     let pld = {
       action: action, id: id || ("RM_" + new Date().getTime()),
       fecha: document.getElementById('regFecha').value, maquina: document.getElementById('regMaquina').value,
-      estatus: document.getElementById('regEstatus').value, turno: document.getElementById('regTurno').value,
+      estatus: est, turno: document.getElementById('regTurno').value,
       hInicio: document.getElementById('regHInicio').value, hFin: document.getElementById('regHFin').value,
       tiempo: document.getElementById('regTiempo').value, operador: document.getElementById('regOperador').value,
-      opCubre: document.getElementById('regOpCubre').value, piezasPlan: document.getElementById('regPzPlan').value,
-      piezasReal: document.getElementById('regPzReal').value, piezasDelta: document.getElementById('regPzDelta').value,
+      opCubre: document.getElementById('regOpCubre').value, 
+      // Limpiar piezas para Ajuste y Setup
+      piezasPlan: est === 'Corriendo' ? document.getElementById('regPzPlan').value : "",
+      piezasReal: est === 'Corriendo' ? document.getElementById('regPzReal').value : "",
+      piezasDelta: est === 'Corriendo' ? document.getElementById('regPzDelta').value : "",
       item: document.getElementById('regItem').value, tecnico: document.getElementById('regTecnico').value,
       comentarios: document.getElementById('regComentarios').value, usuario: currentUser,
       fechaRegistro: existingObj ? (existingObj.fechaRegistro || nowStr) : nowStr,
@@ -986,6 +1061,11 @@
       dbData.registrosSetup.push(pld);
     }
 
+    // Disparar Notificación para Técnicos si es Setup o Ajuste
+    if(est === 'Set up' || est === 'Ajuste') {
+      dispararNotificacion("⚙️ Setup / Ajuste Registrado", `Máquina: ${pld.maquina} | Estatus: ${est}`);
+    }
+
     document.getElementById('filtroFechaMaq').value = pld.fecha;
     renderHistoriales(); e.target.reset(); document.getElementById('regId').value = ''; 
     document.getElementById('regFecha').value = getTodayString(); toggleRegCampos();
@@ -995,7 +1075,6 @@
   function delMaqReg(id) {
     if(confirm("¿Borrar este registro?")) {
       dbData.registrosSetup = dbData.registrosSetup.filter(x => x.id !== id);
-      // Eliminar tiempos muertos asociados
       dbData.registrosTiemposMuertos = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId !== id);
       renderHistoriales(); postData({ action: "DELETE_REGISTRO_SETUP", id: id });
     }
@@ -1018,7 +1097,6 @@
 
   // --- RENDERING HISTORIALES ---
   function renderHistoriales() {
-    // 1. Historial Setup / Máquinas
     let act = getActiveMaquinasLogs();
     let fDateM = document.getElementById('filtroFechaMaq') ? document.getElementById('filtroFechaMaq').value : getTodayString();
     let fTimeM = document.getElementById('filtroHoraMaq') ? document.getElementById('filtroHoraMaq').value : "";
@@ -1049,14 +1127,16 @@
           let det = `<small><b>Turno:</b> ${r.turno} | <b>Supervisor:</b> ${getSupervisor(r)}</small><br>`;
           if(st !== 'Caida') det += `<small><b>Item:</b> ${r.item} | <b>Ini:</b> ${formatHora(r.hInicio)} <b>Fin:</b> ${term ? formatHora(r.hFin) : '<i>Pendiente</i>'}</small><br>`;
           if(st === 'Corriendo') det += `<small><b>Op:</b> ${r.operador} ${r.opCubre?`(Cubre:${r.opCubre})`:''} | <b>Duración:</b> ${dur}<br><b>Plan:</b> ${r.piezasPlan||0} | <b>Real:</b> ${r.piezasReal||0} | <b>Delta (Falta):</b> ${r.piezasDelta||0}</small><br>`;
-          if(st === 'Ajuste' || st === 'Set up') det += `<small><b>Tec:</b> ${r.tecnico} | <b>Duración:</b> ${dur}<br><b>Plan:</b> ${r.piezasPlan||0} | <b>Real:</b> ${r.piezasReal||0} | <b>Delta:</b> ${r.piezasDelta||0}</small><br>`;
+          if(st === 'Ajuste' || st === 'Set up') det += `<small><b>Tec:</b> ${r.tecnico} | <b>Duración:</b> ${dur}</small><br>`;
           
           // Tiempos Muertos adjuntos
           let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
           if(tms.length > 0) {
             det += `<div class="tm-box"><b>⏱️ Tiempos Muertos (${tms.length}):</b>`;
             tms.forEach(tm => {
-              det += `<div class="tm-item"><span>• <b>${tm.tiempoMuerto}:</b> ${tm.duracion} mins <small style="color:#64748b;">(${tm.usuario})</small>${tm.comentarios ? ' - <i>'+tm.comentarios+'</i>' : ''}</span></div>`;
+              let isTmTerm = !!tm.hFin;
+              let tmDur = isTmTerm ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
+              det += `<div class="tm-item"><span>• <b>${tm.tiempoMuerto}:</b> ${tmDur} mins ${isTmTerm?'':'(en curso)'} <small style="color:#64748b;">(${tm.usuario})</small>${tm.comentarios ? ' - <i>'+tm.comentarios+'</i>' : ''}</span></div>`;
             });
             det += `</div>`;
           }
@@ -1114,7 +1194,7 @@
   function renderVistaTecnico() {
     let fDate = document.getElementById('filtroFechaTec') ? document.getElementById('filtroFechaTec').value : getTodayString();
     
-    // Solo registros de Set up y Ajuste
+    // Set up y Ajuste
     let lista = (dbData.registrosSetup || []).filter(r => 
       normalizeDateStr(r.fecha) === fDate && (r.estatus === 'Set up' || r.estatus === 'Ajuste')
     );
@@ -1136,19 +1216,20 @@
       if(tms.length > 0) {
         tmsHtml = `<div class="tm-box" style="margin-top:10px;"><b>⏱️ Tiempos Muertos Registrados:</b>`;
         tms.forEach(tm => {
-          let canEdit = (isAdmin || tm.usuario === currentUser);
+          let isTmPending = !tm.hFin;
+          let minsLive = isTmPending ? getPendingMinutes(r.fecha, tm.hInicio) : tm.duracion;
+          
           tmsHtml += `
             <div class="tm-item">
               <div>
-                <b>• ${tm.tiempoMuerto}:</b> ${tm.duracion} mins 
-                <small style="color:#64748b;">(por ${tm.usuario})</small>
+                <b>• ${tm.tiempoMuerto}:</b> <span style="color:${isTmPending?'#d97706':'#059669'}; font-weight:bold;">${minsLive} mins ${isTmPending?'⌛ (En proceso...)':'✅ (Finalizado)'}</span>
+                <br><small style="color:#64748b;">Inicio: ${formatHora(tm.hInicio)} ${tm.hFin ? '| Fin: '+formatHora(tm.hFin) : ''} | Por: ${tm.usuario}</small>
                 ${tm.comentarios ? `<br><small style="color:#475569;">Obs: <i>${tm.comentarios}</i></small>` : ''}
               </div>
-              ${canEdit ? `
-                <div class="item-actions">
-                  <button class="btn-edit" onclick="abrirModalTM('${r.id}', '${tm.id}')">✏️</button>
-                  <button class="btn-danger" onclick="delTiempoMuerto('${tm.id}')">🗑️</button>
-                </div>` : ''}
+              <div class="item-actions">
+                <button class="btn-edit" title="Editar / Finalizar Tiempo Muerto" onclick="abrirModalTM('${r.id}', '${tm.id}')">${isTmPending?'⏱️ Finalizar':'✏️'}</button>
+                <button class="btn-danger" onclick="delTiempoMuerto('${tm.id}')">🗑️</button>
+              </div>
             </div>`;
         });
         tmsHtml += `</div>`;
@@ -1163,40 +1244,65 @@
           <div style="font-size:0.9rem; margin-top:6px;">
             <b>Ítem:</b> ${r.item||'-'} | <b>Técnico:</b> ${r.tecnico||'-'} | <b>Turno:</b> ${r.turno||'-'}<br>
             <b>Supervisor:</b> ${getSupervisor(r)} | <b>Ini:</b> ${formatHora(r.hInicio)} | <b>Fin:</b> ${r.hFin?formatHora(r.hFin):'En curso'}<br>
-            <b>Duración:</b> ${dur} | <b>Plan:</b> ${r.piezasPlan||0} | <b>Real:</b> ${r.piezasReal||0}
+            <b>Duración Total:</b> ${dur}
             ${r.comentarios ? `<br><i>Obs: ${r.comentarios}</i>` : ''}
           </div>
           ${tmsHtml}
-          <button type="button" class="btn-tec" style="margin-top:10px; width:100%; font-size:0.85rem;" onclick="abrirModalTM('${r.id}')">➕ Agregar Tiempo Muerto</button>
+          <button type="button" class="btn-tec" style="margin-top:10px; width:100%; font-size:0.85rem;" onclick="abrirModalTM('${r.id}')">➕ Registrar Tiempo Muerto</button>
         </div>`;
     };
 
     let divSin = document.getElementById('tecSinTM');
-    if(divSin) divSin.innerHTML = sinTM.map(renderCardTec).join('') || '<p style="color:#94a3b8;">No hay registros sin tiempos muertos.</p>';
+    if(divSin) divSin.innerHTML = sinTM.map(renderCardTec).join('') || '<p style="color:#94a3b8;">No hay registros pendientes.</p>';
 
     let divCon = document.getElementById('tecConTM');
     if(divCon) divCon.innerHTML = conTM.map(renderCardTec).join('') || '<p style="color:#94a3b8;">No hay registros con tiempos muertos.</p>';
   }
 
-  // --- MODAL Y REGISTRO DE TIEMPOS MUERTOS ---
+  // --- MODAL Y REGISTRO DE TIEMPOS MUERTOS (CON HORA INICIO Y FIN) ---
   function abrirModalTM(regId, tmId = null) {
     document.getElementById('tmRegId').value = regId;
     document.getElementById('tmEditId').value = tmId || '';
     
+    let nowTime = new Date().toLocaleTimeString("en-GB", {hour: '2-digit', minute:'2-digit'});
+
     if(tmId) {
       let tm = (dbData.registrosTiemposMuertos||[]).find(x => x.id === tmId);
       if(tm) {
         document.getElementById('tmSelectMotivo').value = tm.tiempoMuerto;
-        document.getElementById('tmDuracionMin').value = tm.duracion;
+        document.getElementById('tmHInicio').value = formatTimeInput(tm.hInicio);
+        document.getElementById('tmHFin').value = formatTimeInput(tm.hFin);
         document.getElementById('tmComentarios').value = tm.comentarios || '';
       }
     } else {
       document.getElementById('tmSelectMotivo').value = '';
-      document.getElementById('tmDuracionMin').value = '';
+      document.getElementById('tmHInicio').value = nowTime;
+      document.getElementById('tmHFin').value = '';
       document.getElementById('tmComentarios').value = '';
     }
     
+    calcDuracionTM();
     document.getElementById('modalTM').classList.remove('hidden');
+  }
+
+  function calcDuracionTM() {
+    let regId = document.getElementById('tmRegId').value;
+    let r = (dbData.registrosSetup||[]).find(x => x.id === regId);
+    let fStr = r ? r.fecha : getTodayString();
+    let ini = document.getElementById('tmHInicio').value;
+    let fin = document.getElementById('tmHFin').value;
+
+    if(!ini) {
+      document.getElementById('tmDuracionDisplay').value = "Ingresa hora de inicio";
+      return;
+    }
+
+    let mins = calcMinutesBetween(fStr, ini, fin);
+    if(fin) {
+      document.getElementById('tmDuracionDisplay').value = `${mins} minutos (Finalizado)`;
+    } else {
+      document.getElementById('tmDuracionDisplay').value = `${mins} minutos transcurridos (En proceso...)`;
+    }
   }
 
   function cerrarModalTM() {
@@ -1207,12 +1313,16 @@
     let regId = document.getElementById('tmRegId').value;
     let tmId = document.getElementById('tmEditId').value;
     let motivo = document.getElementById('tmSelectMotivo').value;
-    let duracion = document.getElementById('tmDuracionMin').value;
+    let hInicio = document.getElementById('tmHInicio').value;
+    let hFin = document.getElementById('tmHFin').value;
     let comentarios = document.getElementById('tmComentarios').value.trim();
 
-    if(!motivo || !duracion || parseInt(duracion,10) <= 0) {
-      return alert("Selecciona un motivo e ingresa una duración válida en minutos.");
+    if(!motivo || !hInicio) {
+      return alert("Selecciona un motivo e ingresa la hora de inicio.");
     }
+
+    let r = (dbData.registrosSetup||[]).find(x => x.id === regId);
+    let duracionMins = calcMinutesBetween(r ? r.fecha : getTodayString(), hInicio, hFin);
 
     let nowStr = getNowMxString();
     let existingObj = tmId ? (dbData.registrosTiemposMuertos||[]).find(x => x.id === tmId) : null;
@@ -1222,7 +1332,9 @@
       id: tmId || ("TM_" + new Date().getTime()),
       regId: regId,
       tiempoMuerto: motivo,
-      duracion: duracion,
+      hInicio: hInicio,
+      hFin: hFin,
+      duracion: duracionMins,
       comentarios: comentarios,
       usuario: currentUser,
       fechaRegistro: existingObj ? (existingObj.fechaRegistro || nowStr) : nowStr,
@@ -1236,6 +1348,10 @@
       if(!dbData.registrosTiemposMuertos) dbData.registrosTiemposMuertos = [];
       dbData.registrosTiemposMuertos.push(pld);
     }
+
+    // Disparar Notificación para Supervisores
+    let maqName = r ? r.maquina : "";
+    dispararNotificacion("⏱️ Tiempo Muerto Registrado", `Máquina: ${maqName} | Motivo: ${motivo} | Por: ${currentUser}`);
 
     cerrarModalTM();
     renderVistaTecnico();
@@ -1265,6 +1381,7 @@
   function renderHistorialGeneralAdmin() {
     if(!isAdmin) return;
     
+    // Llenar select de supervisores
     let selSup = document.getElementById('histFiltroSup');
     if(selSup && selSup.options.length <= 1) {
       selSup.innerHTML = '<option value="TODOS">Todos los supervisores</option>';
@@ -1274,7 +1391,18 @@
       sups.forEach(s => selSup.innerHTML += `<option value="${s}">${s}</option>`);
     }
 
+    // Llenar select de técnicos
+    let selTec = document.getElementById('histFiltroTec');
+    if(selTec && selTec.options.length <= 1) {
+      selTec.innerHTML = '<option value="TODOS">Todos los técnicos</option>';
+      let tecs = new Set();
+      (dbData.tecnicos||[]).forEach(t => tecs.add(t));
+      (dbData.registrosTiemposMuertos||[]).forEach(tm => tecs.add(tm.usuario));
+      tecs.forEach(t => selTec.innerHTML += `<option value="${t}">${t}</option>`);
+    }
+
     let filterSup = selSup ? selSup.value : "TODOS";
+    let filterTec = selTec ? selTec.value : "TODOS";
     let filterTipo = document.getElementById('histFiltroTipo') ? document.getElementById('histFiltroTipo').value : "TODOS";
     let filterSubEst = document.getElementById('histFiltroSubEstatus') ? document.getElementById('histFiltroSubEstatus').value : "TODOS";
     let filterFecha = document.getElementById('histFiltroFecha') ? document.getElementById('histFiltroFecha').value : "";
@@ -1285,13 +1413,43 @@
       let reqs = getActiveMaquinasLogs();
       if(filterFecha) reqs = reqs.filter(r => normalizeDateStr(r.fecha) === filterFecha);
       if(filterSup !== "TODOS") reqs = reqs.filter(r => getSupervisor(r).toLowerCase() === filterSup.toLowerCase());
+      if(filterTec !== "TODOS") reqs = reqs.filter(r => (r.tecnico||'').toLowerCase() === filterTec.toLowerCase());
       if(filterSubEst !== "TODOS") reqs = reqs.filter(r => r.estatus === filterSubEst);
       
       html += `<h3>🏭 Registros de Máquinas / Setup (${reqs.length})</h3>`;
       if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
       reqs.forEach(r => {
         let dur = r.hFin ? (r.tiempo||'-') : (getPendingMinutes(r.fecha, r.hInicio) + ' mins (en curso)');
-        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${r.maquina}</b> (${r.estatus}) | Sup: ${getSupervisor(r)}<br><small>Item: ${r.item||'-'} | Turno: ${r.turno} | H.Ini: ${formatHora(r.hInicio)} H.Fin: ${formatHora(r.hFin)} | Duración: ${dur}</small></div></div>`;
+        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${r.maquina}</b> (${r.estatus}) | Sup: ${getSupervisor(r)} | Tec: ${r.tecnico||'N/A'}<br><small>Item: ${r.item||'-'} | Turno: ${r.turno} | H.Ini: ${formatHora(r.hInicio)} H.Fin: ${formatHora(r.hFin)} | Duración: ${dur}</small></div></div>`;
+      });
+    }
+
+    if(filterTipo === "TODOS" || filterTipo === "TIEMPOS_MUERTOS") {
+      let tms = dbData.registrosTiemposMuertos || [];
+      if(filterTec !== "TODOS") tms = tms.filter(x => (x.usuario||'').toLowerCase() === filterTec.toLowerCase());
+      if(filterFecha) {
+        tms = tms.filter(x => {
+          let parent = (dbData.registrosSetup||[]).find(r => r.id === x.regId);
+          return parent && normalizeDateStr(parent.fecha) === filterFecha;
+        });
+      }
+
+      html += `<h3 style="margin-top:15px;">⏱️ Registros de Tiempos Muertos (${tms.length})</h3>`;
+      if(tms.length === 0) html += `<p style="color:#94a3b8;">Sin tiempos muertos capturados para este criterio.</p>`;
+      tms.forEach(tm => {
+        let parent = (dbData.registrosSetup||[]).find(r => r.id === tm.regId);
+        let maq = parent ? parent.maquina : 'Máquina Desconocida';
+        let fStr = parent ? normalizeDateStr(parent.fecha) : 'N/A';
+        let durDisplay = tm.hFin ? `${tm.duracion} mins` : `${getPendingMinutes(fStr, tm.hInicio)} mins (En proceso)`;
+
+        html += `
+          <div class="item-row" style="border-left-color:#d97706;">
+            <div>
+              <b>[${fStr}] ${maq}</b> - Motivo: <span style="color:#b45309;">${tm.tiempoMuerto}</span><br>
+              <small><b>Técnico:</b> ${tm.usuario} | <b>Hora Ini:</b> ${formatHora(tm.hInicio)} <b>Hora Fin:</b> ${tm.hFin ? formatHora(tm.hFin) : 'Pendiente'}</small><br>
+              <small><b>Duración:</b> ${durDisplay} ${tm.comentarios ? '| <i>Obs: '+tm.comentarios+'</i>' : ''}</small>
+            </div>
+          </div>`;
       });
     }
 
@@ -1325,6 +1483,7 @@
 
   function resetFiltrosHistorialGral() {
     document.getElementById('histFiltroSup').value = "TODOS";
+    document.getElementById('histFiltroTec').value = "TODOS";
     document.getElementById('histFiltroTipo').value = "TODOS";
     document.getElementById('histFiltroSubEstatus').value = "TODOS";
     document.getElementById('histFiltroFecha').value = "";
@@ -1372,7 +1531,8 @@
           if(r.item) txt += `   *Ítem:* ${r.item}\n`;
           txt += `   *Tiempos Muertos:*\n`;
           tms.forEach(tm => {
-            txt += `     • ${tm.tiempoMuerto}: ${tm.duracion} mins (${tm.usuario})`;
+            let durTm = tm.hFin ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
+            txt += `     • ${tm.tiempoMuerto}: ${durTm} mins (${tm.usuario})`;
             if(tm.comentarios) txt += ` - Obs: ${tm.comentarios}`;
             txt += `\n`;
           });
@@ -1406,7 +1566,8 @@
                 if(tms.length > 0) {
                   txt += `   *Tiempos Muertos:*\n`;
                   tms.forEach(tm => {
-                    txt += `     • ${tm.tiempoMuerto}: ${tm.duracion} mins`;
+                    let durTm = tm.hFin ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
+                    txt += `     • ${tm.tiempoMuerto}: ${durTm} mins`;
                     if(tm.comentarios) txt += ` (Obs: ${tm.comentarios})`;
                     txt += `\n`;
                   });
@@ -1432,7 +1593,8 @@
                 if(tms.length > 0) {
                   txt += `   *Tiempos Muertos:*\n`;
                   tms.forEach(tm => {
-                    txt += `     • ${tm.tiempoMuerto}: ${tm.duracion} mins`;
+                    let durTm = tm.hFin ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
+                    txt += `     • ${tm.tiempoMuerto}: ${durTm} mins`;
                     if(tm.comentarios) txt += ` (Obs: ${tm.comentarios})`;
                     txt += `\n`;
                   });
@@ -1515,7 +1677,7 @@
         let elapsedMin = getPendingMinutes(r.fecha, r.hInicio);
         let isAlarmed = false;
 
-        // Solo parpadean y activan alarma los Set up y Ajuste pendientes
+        // Alarmas activas para Setup y Ajustes excedidos
         if(!r.hFin && (r.estatus === 'Set up' || r.estatus === 'Ajuste') && elapsedMin >= alarmLimitMin) {
           isAlarmed = true;
           hasAlarmTriggered = true;
@@ -1529,7 +1691,8 @@
           if(tms.length > 0) {
             tmsHtml = `<div style="background:rgba(0,0,0,0.3); padding:4px 6px; border-radius:4px; margin-top:5px; font-size:0.8rem; color:#fde047;">⏱️ <b>T. Muertos:</b>`;
             tms.forEach(tm => {
-              tmsHtml += `<br>• ${tm.tiempoMuerto}: <b>${tm.duracion}m</b>${tm.comentarios ? ' (<i>'+tm.comentarios+'</i>)' : ''}`;
+              let durTm = tm.hFin ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
+              tmsHtml += `<br>• ${tm.tiempoMuerto}: <b>${durTm}m</b> ${!tm.hFin ? '⌛' : ''} ${tm.comentarios ? '(<i>'+tm.comentarios+'</i>)' : ''}`;
             });
             tmsHtml += `</div>`;
           }
@@ -1589,7 +1752,6 @@
     let boardEl = document.getElementById('tvBoard');
     if(boardEl) boardEl.innerHTML = bHtml || '<div style="color:white; padding:20px;">No hay registros para esta fecha.</div>';
 
-    // Restaurar el Scroll exacto donde estaba el usuario
     window.scrollTo(0, winY);
     if(boardEl) boardEl.scrollLeft = boardX;
     document.querySelectorAll('.tv-section').forEach((sec, idx) => {
@@ -1777,7 +1939,6 @@
     document.getElementById('chkPermMaq').checked = false;
     document.getElementById('chkPermSol').checked = false;
     document.getElementById('chkPermTec').checked = false;
-    
     document.getElementById('btnSaveUsr').textContent = 'Agregar Nuevo';
     document.getElementById('btnCancelUsr').classList.add('hidden');
   }
@@ -1786,44 +1947,36 @@
     let orig = document.getElementById('editUsrOrig').value;
     let u = document.getElementById('addUsrName').value.trim();
     let p = document.getElementById('addUsrPass').value.trim();
-    if(!u || !p) return alert("Ingresa usuario y contraseña.");
     
-    let perms = [];
-    if(document.getElementById('chkPermOp').checked) perms.push('Operadores');
-    if(document.getElementById('chkPermMaq').checked) perms.push('Maquinas');
-    if(document.getElementById('chkPermSol').checked) perms.push('Solubles');
-    if(document.getElementById('chkPermTec').checked) perms.push('Tecnico');
-    let permStr = perms.join(', ');
+    if(!u || !p) return alert("Ingresa usuario y contraseña.");
 
-    if (orig) {
-      let uObj = (dbData.usuarios || []).find(x => x.user === orig);
-      if(uObj) { 
-        uObj.user = u; 
-        uObj.pass = p; 
-        uObj.permisos = permStr; 
-      }
-      postData({ action: "EDIT_USER", origUser: orig, newUser: u, pass: p, permisos: permStr });
+    let permsArr = [];
+    if(document.getElementById('chkPermOp').checked) permsArr.push('Operadores');
+    if(document.getElementById('chkPermMaq').checked) permsArr.push('Maquinas');
+    if(document.getElementById('chkPermSol').checked) permsArr.push('Solubles');
+    if(document.getElementById('chkPermTec').checked) permsArr.push('Tecnico');
+    let permsStr = permsArr.join(', ');
+
+    if(orig) {
+      let item = dbData.usuarios.find(x => x.user === orig);
+      if(item) { item.user = u; item.pass = p; item.permisos = permsStr; }
+      postData({ action: "MANAGE_USUARIO", op: "EDIT", val1: orig, newVal1: u, val2: p, val3: permsStr });
     } else {
       if(!dbData.usuarios) dbData.usuarios = [];
-      dbData.usuarios.push({user: u, pass: p, permisos: permStr});
-      postData({ action: "ADD_USER", user: u, pass: p, permisos: permStr });
+      dbData.usuarios.push({ user: u, pass: p, permisos: permsStr });
+      postData({ action: "MANAGE_USUARIO", op: "ADD", val1: u, val2: p, val3: permsStr });
     }
-    
-    renderAdminLists(); 
+
+    renderDataLists();
     cancelEditUsr();
   }
 
   function delUsuario(u) {
     if(confirm(`¿Eliminar al usuario ${u}?`)) {
       dbData.usuarios = dbData.usuarios.filter(x => x.user !== u);
-      renderAdminLists();
-      postData({ action: "DELETE_USER", user: u });
+      renderDataLists();
+      postData({ action: "MANAGE_USUARIO", op: "DELETE", val1: u });
     }
-  }
-
-  async function postData(data) {
-    try { await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) }); } 
-    catch(e) { console.error(e); }
   }
 </script>
 </body>
