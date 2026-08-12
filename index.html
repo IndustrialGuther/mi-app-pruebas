@@ -26,7 +26,7 @@
     .btn-ws { background: #25d366; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
     .btn-danger { background: #ef4444; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
     .btn-edit { background: #f59e0b; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
-    .btn-notify { background: #059669; color: white; font-size: 0.85rem; padding: 8px 12px; margin-bottom: 10px; }
+    .btn-notify { background: #8b5cf6; color: white; font-size: 0.85rem; padding: 8px 12px; margin-bottom: 10px; }
     
     .tabs { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
     .tab-btn { background: #e2e8f0; color: #475569; padding: 10px 5px; border-radius: 6px; flex: 1; min-width: 90px; border: none; font-weight: bold; font-size: 0.85rem; text-align: center; }
@@ -190,7 +190,7 @@
     <div id="formSetup" class="card hidden">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h2 class="setup-title">Registro de Máquinas</h2>
-        <button type="button" class="btn-notify" onclick="solicitarNotificaciones()">🔔 Notificaciones: ACTIVADAS</button>
+        <button type="button" class="btn-notify" onclick="solicitarNotificaciones()">🔔 Activar Notificaciones de Tiempos Muertos</button>
       </div>
       <form onsubmit="guardarSetup(event)">
         <input type="hidden" id="regId">
@@ -265,7 +265,7 @@
     <div id="formTecnico" class="card hidden">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <h2 class="tec-title" style="margin:0;">🔧 Módulo para Técnicos</h2>
-        <button type="button" class="btn-notify" onclick="solicitarNotificaciones()">🔔 Notificaciones: ACTIVADAS</button>
+        <button type="button" class="btn-notify" onclick="solicitarNotificaciones()">🔔 Activar Notificaciones de Setups</button>
       </div>
 
       <div class="filter-box" style="background:#fef3c7;">
@@ -437,7 +437,7 @@
   </div>
 </div>
 
-<!-- MODAL REGISTRO DE TIEMPO MUERTO -->
+<!-- MODAL REGISTRO DE TIEMPO MUERTO (AHORA CON HORA INICIO Y FIN) -->
 <div id="modalTM" class="modal-overlay hidden">
   <div class="modal-content">
     <h3 style="color:var(--tec); margin-top:0;">⏱️ Registrar Tiempo Muerto</h3>
@@ -547,32 +547,27 @@
     return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   }
 
-  // Parseo preciso de fecha y hora local para evitar fallos de zona horaria (UTC)
-  function parseLocalDateTime(fStr, hStr) {
-    if (!fStr || !hStr) return null;
-    let normF = normalizeDateStr(fStr);
-    let normH = formatTimeInput(hStr);
-    if (!normF || !normH) return null;
-    let [y, m, d] = normF.split('-').map(Number);
-    let [hh, mm] = normH.split(':').map(Number);
-    if (isNaN(y) || isNaN(m) || isNaN(d) || isNaN(hh) || isNaN(mm)) return null;
-    return new Date(y, m - 1, d, hh, mm, 0);
-  }
-
   function getPendingMinutes(fStr, hIniStr) {
-    let startDt = parseLocalDateTime(fStr, hIniStr);
-    if (!startDt) return 0;
+    if(!hIniStr) return 0;
+    let normF = normalizeDateStr(fStr);
+    let normH = formatTimeInput(hIniStr);
+    if(!normF || !normH) return 0;
+    let startDt = new Date(`${normF}T${normH}:00`);
+    if(isNaN(startDt.getTime())) return 0;
     let now = new Date();
     let diffMs = now - startDt;
     return Math.max(0, Math.round(diffMs / 60000));
   }
 
   function calcMinutesBetween(fStr, hIniStr, hFinStr) {
-    if (!hIniStr) return 0;
-    if (!hFinStr) return getPendingMinutes(fStr, hIniStr);
-    let dt1 = parseLocalDateTime(fStr, hIniStr);
-    let dt2 = parseLocalDateTime(fStr, hFinStr);
-    if (!dt1 || !dt2) return 0;
+    if(!hIniStr) return 0;
+    if(!hFinStr) return getPendingMinutes(fStr, hIniStr);
+    let normF = normalizeDateStr(fStr || getTodayString());
+    let normI = formatTimeInput(hIniStr);
+    let normF2 = formatTimeInput(hFinStr);
+    if(!normI || !normF2) return 0;
+    let dt1 = new Date(`${normF}T${normI}:00`);
+    let dt2 = new Date(`${normF}T${normF2}:00`);
     let diff = Math.round((dt2 - dt1) / 60000);
     return diff < 0 ? diff + 1440 : diff;
   }
@@ -589,45 +584,20 @@
     return list.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
   }
 
-  // --- NOTIFICACIONES CON CONMUTADOR ON/OFF PERMANENTE POR USUARIO ---
-  function isNotifEnabled() {
-    return localStorage.getItem('user_notif_enabled') === 'true';
-  }
-
-  function updateNotifButtonsUI() {
-    let enabled = isNotifEnabled();
-    let text = enabled ? "🔔 Notificaciones: ACTIVADAS" : "🔕 Notificaciones: DESACTIVADAS";
-    document.querySelectorAll('.btn-notify').forEach(btn => {
-      btn.textContent = text;
-      btn.style.background = enabled ? "#059669" : "#64748b";
-    });
-  }
-
+  // --- NOTIFICACIONES ---
   function solicitarNotificaciones() {
-    if (!("Notification" in window)) {
-      alert("Este navegador no soporta notificaciones de sistema.");
-      return;
-    }
-    let current = isNotifEnabled();
-    if (!current) {
+    if ("Notification" in window) {
       Notification.requestPermission().then(perm => {
-        if(perm === 'granted') {
-          localStorage.setItem('user_notif_enabled', 'true');
-          alert("¡Notificaciones activadas correctamente en tu dispositivo!");
-          updateNotifButtonsUI();
-        } else {
-          alert("Permiso de notificaciones denegado en tu navegador.");
-        }
+        if(perm === 'granted') alert("¡Notificaciones activadas en tu dispositivo!");
+        else alert("Permiso de notificaciones denegado.");
       });
     } else {
-      localStorage.setItem('user_notif_enabled', 'false');
-      alert("Notificaciones desactivadas para tu usuario.");
-      updateNotifButtonsUI();
+      alert("Este navegador no soporta notificaciones de sistema.");
     }
   }
 
   function dispararNotificacion(titulo, cuerpo) {
-    if (isNotifEnabled() && "Notification" in window && Notification.permission === "granted") {
+    if ("Notification" in window && Notification.permission === "granted") {
       new Notification(titulo, {
         body: cuerpo,
         icon: "https://cdn-icons-png.flaticon.com/512/1827/1827349.png"
@@ -723,14 +693,12 @@
     }, speedMs);
   }
 
-  // --- OBTENER DATOS Y SYNC CON CACHE INSTANTÁNEO ---
+  // --- OBTENER DATOS Y SYNC ---
   async function syncData() {
     try {
       let res = await fetch(API_URL);
       let data = await res.json();
       dbData = { ...dbData, ...data };
-      localStorage.setItem('plant_control_db', JSON.stringify(dbData));
-
       if(dbData.alarmMinutes) {
         let el = document.getElementById('cfgAlarmMin');
         if(el) el.value = dbData.alarmMinutes;
@@ -759,16 +727,6 @@
     } catch(e) { console.error(e); }
   }
 
-  function fillS(id, list) { 
-    let s = document.getElementById(id); 
-    if(s){ 
-      let currentVal = s.value; // Preserva la selección actual para no borrar opciones al escribir
-      s.innerHTML = '<option value="">Seleccione...</option>'; 
-      (list||[]).forEach(i => s.innerHTML += `<option value="${i}">${i}</option>`); 
-      if(currentVal) s.value = currentVal;
-    } 
-  }
-
   function renderDataLists() {
     let maqs = (dbData.maquinas || []).map(m => typeof m === 'object' ? (m.maquina || 'Sin Nombre') : m);
     let lM = document.getElementById('listMaquinas'); lM.innerHTML = ''; maqs.forEach(m => lM.innerHTML += `<option value="${m}">`);
@@ -776,6 +734,14 @@
     let ops = document.getElementById('listOperadores'); ops.innerHTML=''; (dbData.operadores||[]).forEach(i => ops.innerHTML += `<option value="${i}">`);
     let itm = document.getElementById('listItems'); itm.innerHTML=''; (dbData.items||[]).forEach(i => itm.innerHTML += `<option value="${i}">`);
     let tec = document.getElementById('listTecnicos'); tec.innerHTML=''; (dbData.tecnicos||[]).forEach(i => tec.innerHTML += `<option value="${i}">`);
+    
+    let fillS = (id, list) => { 
+      let s=document.getElementById(id); 
+      if(s){ 
+        s.innerHTML='<option value="">Seleccione...</option>'; 
+        (list||[]).forEach(i=>s.innerHTML+=`<option value="${i}">${i}</option>`); 
+      } 
+    };
     
     fillS('opTurno', dbData.turnos); 
     fillS('solTurno', dbData.turnos); 
@@ -789,21 +755,10 @@
   }
 
   async function init() { 
-    // 1. Cargar desde LocalStorage para apertura instantánea (0s)
-    let cached = localStorage.getItem('plant_control_db');
-    if (cached) {
-      try {
-        dbData = { ...dbData, ...JSON.parse(cached) };
-        renderDataLists();
-      } catch (e) { console.error(e); }
-    }
-
-    document.querySelectorAll('input[type="date"]').forEach(i => { if(!i.value) i.value = getTodayString(); }); 
-    loadAudioDevices();
-    updateNotifButtonsUI();
-
-    // 2. Sincronizar en segundo plano
     await syncData(); 
+    document.querySelectorAll('input[type="date"]').forEach(i => i.value = getTodayString()); 
+    loadAudioDevices();
+    // Bucle para actualizar datos en segundo plano en tiempo real cada 5s
     syncLoopInterval = setInterval(syncData, 5000);
   }
   document.addEventListener("DOMContentLoaded", init);
@@ -1014,13 +969,14 @@
     document.getElementById('filtroFechaSol').value = getTodayString(); renderHistoriales();
   }
 
-  // --- FORMULARIO REGISTRO MÁQUINAS ---
+  // --- FORMULARIO REGISTRO MÁQUINAS (AJUSTE Y SETUP SIN PIEZAS) ---
   function toggleRegCampos() {
     let est = document.getElementById('regEstatus').value;
     let d = document.getElementById('regDinamico');
     let btn = document.getElementById('btnSaveReg');
     document.querySelectorAll('#regDinamico > div').forEach(el => el.classList.add('hidden'));
     
+    // Resetear atributos required
     ['regTurno','regItem','regTecnico','regOperador','regHInicio','regPzPlan','regPzReal'].forEach(id => {
       let el = document.getElementById(id); if(el) el.removeAttribute('required');
     });
@@ -1037,6 +993,7 @@
       ['g-turno','g-item','g-horas','g-tiempo','g-operador','g-opCubre','g-piezas'].forEach(c => d.querySelector('.'+c).classList.remove('hidden'));
       ['regTurno','regItem','regOperador','regHInicio','regPzPlan','regPzReal'].forEach(id => document.getElementById(id).setAttribute('required', 'true'));
     } else if (est === 'Ajuste' || est === 'Set up') {
+      // Piezas NO se muestran en Ajuste ni Set up
       ['g-turno','g-item','g-tecnico','g-horas','g-tiempo'].forEach(c => d.querySelector('.'+c).classList.remove('hidden'));
       ['regTurno','regItem','regTecnico','regHInicio'].forEach(id => document.getElementById(id).setAttribute('required', 'true'));
     }
@@ -1044,12 +1001,12 @@
 
   function calcTiempoReg() {
     let i=document.getElementById('regHInicio').value, f=document.getElementById('regHFin').value;
-    let fecha = document.getElementById('regFecha').value || getTodayString();
     if(i && f) {
-      let m = calcMinutesBetween(fecha, i, f);
-      document.getElementById('regTiempo').value = m + " mins";
+      let m = ((new Date("2000-01-01T"+f) - new Date("2000-01-01T"+i)) / 60000);
+      if(m < 0) m += 1440;
+      document.getElementById('regTiempo').value = Math.round(m) + " mins";
     } else if (i) {
-      let mins = getPendingMinutes(fecha, i);
+      let mins = getPendingMinutes(document.getElementById('regFecha').value || getTodayString(), i);
       document.getElementById('regTiempo').value = mins + " mins (en curso)";
     } else document.getElementById('regTiempo').value = "";
   }
@@ -1086,6 +1043,7 @@
       hInicio: document.getElementById('regHInicio').value, hFin: document.getElementById('regHFin').value,
       tiempo: document.getElementById('regTiempo').value, operador: document.getElementById('regOperador').value,
       opCubre: document.getElementById('regOpCubre').value, 
+      // Limpiar piezas para Ajuste y Setup
       piezasPlan: est === 'Corriendo' ? document.getElementById('regPzPlan').value : "",
       piezasReal: est === 'Corriendo' ? document.getElementById('regPzReal').value : "",
       piezasDelta: est === 'Corriendo' ? document.getElementById('regPzDelta').value : "",
@@ -1103,6 +1061,7 @@
       dbData.registrosSetup.push(pld);
     }
 
+    // Disparar Notificación para Técnicos si es Setup o Ajuste
     if(est === 'Set up' || est === 'Ajuste') {
       dispararNotificacion("⚙️ Setup / Ajuste Registrado", `Máquina: ${pld.maquina} | Estatus: ${est}`);
     }
@@ -1170,6 +1129,7 @@
           if(st === 'Corriendo') det += `<small><b>Op:</b> ${r.operador} ${r.opCubre?`(Cubre:${r.opCubre})`:''} | <b>Duración:</b> ${dur}<br><b>Plan:</b> ${r.piezasPlan||0} | <b>Real:</b> ${r.piezasReal||0} | <b>Delta (Falta):</b> ${r.piezasDelta||0}</small><br>`;
           if(st === 'Ajuste' || st === 'Set up') det += `<small><b>Tec:</b> ${r.tecnico} | <b>Duración:</b> ${dur}</small><br>`;
           
+          // Tiempos Muertos adjuntos
           let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
           if(tms.length > 0) {
             det += `<div class="tm-box"><b>⏱️ Tiempos Muertos (${tms.length}):</b>`;
@@ -1195,6 +1155,7 @@
     let divM = document.getElementById('historialSetup');
     if(divM) divM.innerHTML = htmlM || '<p style="color:#94a3b8;">Sin registros para estos criterios.</p>';
 
+    // 2. Historial Operadores
     let fDateOp = document.getElementById('filtroFechaOp') ? document.getElementById('filtroFechaOp').value : getTodayString();
     let filOp = (dbData.registrosOperadores||[]).filter(r => normalizeDateStr(r.fecha) === fDateOp && (isAdmin || getSupervisor(r).toLowerCase() === currentUser.toLowerCase()));
     filOp.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
@@ -1211,6 +1172,7 @@
       </div>`).join('') : '<p style="color:#94a3b8;">Sin registros de operadores.</p>';
     let divOp = document.getElementById('historialOp'); if(divOp) divOp.innerHTML = htmlOp;
 
+    // 3. Historial Solubles
     let fDateSol = document.getElementById('filtroFechaSol') ? document.getElementById('filtroFechaSol').value : getTodayString();
     let filSol = (dbData.registrosSolubles||[]).filter(r => normalizeDateStr(r.fecha) === fDateSol && (isAdmin || getSupervisor(r).toLowerCase() === currentUser.toLowerCase()));
     filSol.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
@@ -1232,6 +1194,7 @@
   function renderVistaTecnico() {
     let fDate = document.getElementById('filtroFechaTec') ? document.getElementById('filtroFechaTec').value : getTodayString();
     
+    // Set up y Ajuste
     let lista = (dbData.registrosSetup || []).filter(r => 
       normalizeDateStr(r.fecha) === fDate && (r.estatus === 'Set up' || r.estatus === 'Ajuste')
     );
@@ -1296,7 +1259,7 @@
     if(divCon) divCon.innerHTML = conTM.map(renderCardTec).join('') || '<p style="color:#94a3b8;">No hay registros con tiempos muertos.</p>';
   }
 
-  // --- MODAL Y REGISTRO DE TIEMPOS MUERTOS ---
+  // --- MODAL Y REGISTRO DE TIEMPOS MUERTOS (CON HORA INICIO Y FIN) ---
   function abrirModalTM(regId, tmId = null) {
     document.getElementById('tmRegId').value = regId;
     document.getElementById('tmEditId').value = tmId || '';
@@ -1386,6 +1349,7 @@
       dbData.registrosTiemposMuertos.push(pld);
     }
 
+    // Disparar Notificación para Supervisores
     let maqName = r ? r.maquina : "";
     dispararNotificacion("⏱️ Tiempo Muerto Registrado", `Máquina: ${maqName} | Motivo: ${motivo} | Por: ${currentUser}`);
 
@@ -1417,6 +1381,7 @@
   function renderHistorialGeneralAdmin() {
     if(!isAdmin) return;
     
+    // Llenar select de supervisores
     let selSup = document.getElementById('histFiltroSup');
     if(selSup && selSup.options.length <= 1) {
       selSup.innerHTML = '<option value="TODOS">Todos los supervisores</option>';
@@ -1426,6 +1391,7 @@
       sups.forEach(s => selSup.innerHTML += `<option value="${s}">${s}</option>`);
     }
 
+    // Llenar select de técnicos
     let selTec = document.getElementById('histFiltroTec');
     if(selTec && selTec.options.length <= 1) {
       selTec.innerHTML = '<option value="TODOS">Todos los técnicos</option>';
@@ -1711,6 +1677,7 @@
         let elapsedMin = getPendingMinutes(r.fecha, r.hInicio);
         let isAlarmed = false;
 
+        // Alarmas activas para Setup y Ajustes excedidos
         if(!r.hFin && (r.estatus === 'Set up' || r.estatus === 'Ajuste') && elapsedMin >= alarmLimitMin) {
           isAlarmed = true;
           hasAlarmTriggered = true;
@@ -1837,116 +1804,131 @@
     fill('Naves', 'listAdminNaves'); 
     fill('Marcas', 'listAdminMarcas'); 
     fill('Operadores', 'listAdminOperadores'); 
-    fill('Items', 'listAdminItems');
-    fill('Tecnicos', 'listAdminTecnicos');
+    fill('Items', 'listAdminItems'); 
+    fill('Tecnicos', 'listAdminTecnicos'); 
     fill('Turnos', 'listAdminTurnos');
     fill('TiemposMuertos', 'listAdminTiemposMuertos');
 
-    let divU = document.getElementById('listAdminUsuarios');
-    if(divU) {
-      divU.innerHTML = (dbData.usuarios||[]).map(u => `
-        <div class="item-row">
-          <div>
-            <b>${u.user}</b> <small style="color:#64748b;">(Permisos: ${u.permisos||'Ninguno'})</small>
-          </div>
-          <div class="item-actions">
-            <button class="btn-edit" onclick="editUsuario('${u.user}')">✏️</button>
-            <button class="btn-danger" onclick="delUsuario('${u.user}')">🗑️</button>
-          </div>
-        </div>`).join('');
-    }
-
+    // MÁQUINAS
     let divM = document.getElementById('listAdminMaquinas');
     if(divM) {
-      divM.innerHTML = (dbData.maquinas||[]).map(m => {
-        let mName = typeof m === 'object' ? m.maquina : m;
-        let mNave = typeof m === 'object' ? (m.nave||'Sin Nave') : 'Sin Nave';
+      divM.innerHTML = (dbData.maquinas || []).map(m => {
+        let maq = typeof m === 'object' ? m.maquina : m;
+        let nav = typeof m === 'object' ? (m.nave || 'Sin Nave') : 'Sin Nave';
         return `
           <div class="item-row">
-            <div><b>${mName}</b> <small style="color:#0284c7;">[${mNave}]</small></div>
+            <span><b>${maq}</b> <small style="color:#64748b;">(Nave: ${nav})</small></span>
             <div class="item-actions">
-              <button class="btn-edit" onclick="editMaqConNave('${mName}', '${mNave}')">✏️</button>
-              <button class="btn-danger" onclick="delMaqConNave('${mName}')">🗑️</button>
+              <button class="btn-edit" onclick="startEditMaq('${maq}', '${nav}')">✏️</button>
+              <button class="btn-danger" onclick="delCat('Maquinas', '${maq}')">🗑️</button>
             </div>
           </div>`;
       }).join('');
     }
+
+    // USUARIOS
+    let divU = document.getElementById('listAdminUsuarios');
+    if(divU) {
+      divU.innerHTML = (dbData.usuarios||[]).map(u => `
+        <div class="item-row">
+          <span><b>${u.user}</b> <small>(Accesos: ${u.permisos||'Ninguno'})</small></span>
+          <div class="item-actions">
+            <button class="btn-edit" onclick="startEditUsuario('${u.user}', '${u.pass}', '${u.permisos||''}')">✏️</button>
+            <button class="btn-danger" onclick="delUsuario('${u.user}')">🗑️</button>
+          </div>
+        </div>`).join('');
+    }
   }
 
-  function addCat(cat, inputId) {
-    let input = document.getElementById(inputId);
-    let val = input.value.trim();
-    if(!val) return alert("Ingresa un valor válido");
-    let key = cat.toLowerCase();
-    if(!dbData[key]) dbData[key] = [];
-    if(dbData[key].includes(val)) return alert("El elemento ya existe");
-    dbData[key].push(val);
-    input.value = '';
-    renderDataLists();
-    postData({ action: "ADD_CATALOG", catalog: cat, value: val });
+  function addCat(cat, inId) {
+    let v = document.getElementById(inId).value.trim(); if(!v) return;
+    let k = cat.toLowerCase(); 
+    if(!dbData[k]) dbData[k] = [];
+    dbData[k].push(v);
+    renderDataLists(); document.getElementById(inId).value = '';
+    postData({ action: "MANAGE_CATALOGO", op: "ADD", catalogo: cat, val1: v });
+  }
+  
+  function startEditMaq(maq, nave) {
+    document.getElementById('editMaqOrig').value = maq;
+    document.getElementById('addMaq').value = maq;
+    document.getElementById('addMaqNave').value = nave;
+    document.getElementById('btnSaveMaq').textContent = 'Guardar Cambios';
+    document.getElementById('btnCancelMaq').classList.remove('hidden');
+    window.scrollTo({top: document.getElementById('btnSaveMaq').offsetTop - 100, behavior: 'smooth'});
+  }
+
+  function cancelEditMaq() {
+    document.getElementById('editMaqOrig').value = '';
+    document.getElementById('addMaq').value = '';
+    document.getElementById('addMaqNave').value = '';
+    document.getElementById('btnSaveMaq').textContent = 'Agregar Nueva';
+    document.getElementById('btnCancelMaq').classList.add('hidden');
+  }
+
+  function saveMaqConNave() {
+    let orig = document.getElementById('editMaqOrig').value;
+    let maq = document.getElementById('addMaq').value.trim();
+    let nav = document.getElementById('addMaqNave').value.trim();
+    if(!maq || !nav) return alert("Indica la máquina y selecciona una nave.");
+    
+    if (orig) {
+      let item = dbData.maquinas.find(x => (typeof x === 'object' ? x.maquina : x) === orig);
+      if (item && typeof item === 'object') { 
+        item.maquina = maq; 
+        item.nave = nav; 
+      } else { 
+        let idx = dbData.maquinas.indexOf(item); 
+        dbData.maquinas[idx] = { maquina: maq, nave: nav }; 
+      }
+      postData({ action: "MANAGE_CATALOGO", op: "EDIT", catalogo: "Maquinas", val1: orig, newVal1: maq, val2: nav });
+    } else {
+      if(!dbData.maquinas) dbData.maquinas = [];
+      dbData.maquinas.push({ maquina: maq, nave: nav });
+      postData({ action: "MANAGE_CATALOGO", op: "ADD", catalogo: "Maquinas", val1: maq, val2: nav });
+    }
+    
+    renderDataLists(); 
+    cancelEditMaq();
   }
 
   function editCat(cat, oldVal) {
-    let newVal = prompt("Editar valor:", oldVal);
-    if(newVal && newVal.trim() !== "" && newVal !== oldVal) {
-      let key = cat.toLowerCase();
-      let idx = (dbData[key]||[]).indexOf(oldVal);
-      if(idx !== -1) dbData[key][idx] = newVal.trim();
+    let newVal = prompt(`Editar ${cat}:`, oldVal);
+    if (newVal && newVal.trim() !== "" && newVal !== oldVal) {
+      newVal = newVal.trim();
+      let k = cat.toLowerCase();
+      if (dbData[k]) {
+        let idx = dbData[k].indexOf(oldVal);
+        if (idx !== -1) dbData[k][idx] = newVal;
+      }
       renderDataLists();
-      postData({ action: "EDIT_CATALOG", catalog: cat, oldValue: oldVal, newValue: newVal.trim() });
+      postData({ action: "MANAGE_CATALOGO", op: "EDIT", catalogo: cat, val1: oldVal, newVal1: newVal });
     }
   }
 
   function delCat(cat, val) {
-    if(confirm(`¿Eliminar "${val}" de ${cat}?`)) {
-      let key = cat.toLowerCase();
-      dbData[key] = (dbData[key]||[]).filter(x => x !== val);
-      renderDataLists();
-      postData({ action: "DELETE_CATALOG", catalog: cat, value: val });
+    if(confirm(`¿Eliminar ${val}?`)) {
+      let k = cat.toLowerCase();
+      if(k==='maquinas') dbData.maquinas = dbData.maquinas.filter(x => (typeof x === 'object' ? x.maquina : x) !== val);
+      else if(dbData[k]) dbData[k] = dbData[k].filter(x => x !== val);
+      renderDataLists(); postData({ action: "MANAGE_CATALOGO", op: "DELETE", catalogo: cat, val1: val });
     }
   }
 
-  function saveUsuario() {
-    let orig = document.getElementById('editUsrOrig').value;
-    let u = document.getElementById('addUsrName').value.trim();
-    let p = document.getElementById('addUsrPass').value.trim();
-    if(!u || !p) return alert("Completa el usuario y la contraseña.");
-
-    let perms = [];
-    if(document.getElementById('chkPermOp').checked) perms.push('Operadores');
-    if(document.getElementById('chkPermMaq').checked) perms.push('Maquinas');
-    if(document.getElementById('chkPermSol').checked) perms.push('Solubles');
-    if(document.getElementById('chkPermTec').checked) perms.push('Tecnico');
-
-    let pStr = perms.join(',');
-    let pld = { action: orig ? "EDIT_USUARIO" : "ADD_USUARIO", origUser: orig, user: u, pass: p, permisos: pStr };
-
-    if(orig) {
-      let idx = dbData.usuarios.findIndex(x => x.user === orig);
-      if(idx !== -1) dbData.usuarios[idx] = { user: u, pass: p, permisos: pStr };
-    } else {
-      if(!dbData.usuarios) dbData.usuarios = [];
-      dbData.usuarios.push({ user: u, pass: p, permisos: pStr });
-    }
-
-    cancelEditUsr();
-    renderDataLists();
-    postData(pld);
-  }
-
-  function editUsuario(uName) {
-    let usr = (dbData.usuarios||[]).find(x => x.user === uName);
-    if(!usr) return;
-    document.getElementById('editUsrOrig').value = usr.user;
-    document.getElementById('addUsrName').value = usr.user;
-    document.getElementById('addUsrPass').value = usr.pass;
-    let perms = (usr.permisos||'').split(',');
+  // USUARIOS Y PERMISOS
+  function startEditUsuario(u, p, perms) {
+    document.getElementById('editUsrOrig').value = u;
+    document.getElementById('addUsrName').value = u;
+    document.getElementById('addUsrPass').value = p;
+    
     document.getElementById('chkPermOp').checked = perms.includes('Operadores');
     document.getElementById('chkPermMaq').checked = perms.includes('Maquinas');
     document.getElementById('chkPermSol').checked = perms.includes('Solubles');
     document.getElementById('chkPermTec').checked = perms.includes('Tecnico');
-    document.getElementById('btnSaveUsr').textContent = "Guardar Cambios";
+    
+    document.getElementById('btnSaveUsr').textContent = 'Guardar Cambios';
     document.getElementById('btnCancelUsr').classList.remove('hidden');
+    window.scrollTo({top: document.getElementById('btnSaveUsr').offsetTop - 100, behavior: 'smooth'});
   }
 
   function cancelEditUsr() {
@@ -1957,60 +1939,43 @@
     document.getElementById('chkPermMaq').checked = false;
     document.getElementById('chkPermSol').checked = false;
     document.getElementById('chkPermTec').checked = false;
-    document.getElementById('btnSaveUsr').textContent = "Agregar Nuevo";
+    document.getElementById('btnSaveUsr').textContent = 'Agregar Nuevo';
     document.getElementById('btnCancelUsr').classList.add('hidden');
   }
 
-  function delUsuario(uName) {
-    if(confirm(`¿Eliminar al usuario ${uName}?`)) {
-      dbData.usuarios = (dbData.usuarios||[]).filter(x => x.user !== uName);
-      renderDataLists();
-      postData({ action: "DELETE_USUARIO", user: uName });
-    }
-  }
+  function saveUsuario() {
+    let orig = document.getElementById('editUsrOrig').value;
+    let u = document.getElementById('addUsrName').value.trim();
+    let p = document.getElementById('addUsrPass').value.trim();
+    
+    if(!u || !p) return alert("Ingresa usuario y contraseña.");
 
-  function saveMaqConNave() {
-    let orig = document.getElementById('editMaqOrig').value;
-    let m = document.getElementById('addMaq').value.trim();
-    let n = document.getElementById('addMaqNave').value;
-    if(!m) return alert("Ingresa el nombre de la máquina.");
-
-    let pld = { action: orig ? "EDIT_MAQUINA" : "ADD_MAQUINA", origMaquina: orig, maquina: m, nave: n };
+    let permsArr = [];
+    if(document.getElementById('chkPermOp').checked) permsArr.push('Operadores');
+    if(document.getElementById('chkPermMaq').checked) permsArr.push('Maquinas');
+    if(document.getElementById('chkPermSol').checked) permsArr.push('Solubles');
+    if(document.getElementById('chkPermTec').checked) permsArr.push('Tecnico');
+    let permsStr = permsArr.join(', ');
 
     if(orig) {
-      let idx = dbData.maquinas.findIndex(x => (typeof x==='object'?x.maquina:x) === orig);
-      if(idx !== -1) dbData.maquinas[idx] = { maquina: m, nave: n };
+      let item = dbData.usuarios.find(x => x.user === orig);
+      if(item) { item.user = u; item.pass = p; item.permisos = permsStr; }
+      postData({ action: "MANAGE_USUARIO", op: "EDIT", val1: orig, newVal1: u, val2: p, val3: permsStr });
     } else {
-      if(!dbData.maquinas) dbData.maquinas = [];
-      dbData.maquinas.push({ maquina: m, nave: n });
+      if(!dbData.usuarios) dbData.usuarios = [];
+      dbData.usuarios.push({ user: u, pass: p, permisos: permsStr });
+      postData({ action: "MANAGE_USUARIO", op: "ADD", val1: u, val2: p, val3: permsStr });
     }
 
-    cancelEditMaq();
     renderDataLists();
-    postData(pld);
+    cancelEditUsr();
   }
 
-  function editMaqConNave(mName, mNave) {
-    document.getElementById('editMaqOrig').value = mName;
-    document.getElementById('addMaq').value = mName;
-    document.getElementById('addMaqNave').value = mNave;
-    document.getElementById('btnSaveMaq').textContent = "Guardar Cambios";
-    document.getElementById('btnCancelMaq').classList.remove('hidden');
-  }
-
-  function cancelEditMaq() {
-    document.getElementById('editMaqOrig').value = '';
-    document.getElementById('addMaq').value = '';
-    document.getElementById('addMaqNave').value = '';
-    document.getElementById('btnSaveMaq').textContent = "Agregar Nueva";
-    document.getElementById('btnCancelMaq').classList.add('hidden');
-  }
-
-  function delMaqConNave(mName) {
-    if(confirm(`¿Eliminar la máquina ${mName}?`)) {
-      dbData.maquinas = (dbData.maquinas||[]).filter(x => (typeof x==='object'?x.maquina:x) !== mName);
+  function delUsuario(u) {
+    if(confirm(`¿Eliminar al usuario ${u}?`)) {
+      dbData.usuarios = dbData.usuarios.filter(x => x.user !== u);
       renderDataLists();
-      postData({ action: "DELETE_MAQUINA", maquina: mName });
+      postData({ action: "MANAGE_USUARIO", op: "DELETE", val1: u });
     }
   }
 </script>
