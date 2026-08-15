@@ -241,6 +241,7 @@
           <label><input type="checkbox" id="chkCopySetup" checked onchange="renderHistoriales()"> Set up</label>
           <label><input type="checkbox" id="chkCopyTM" checked> Incluir Tiempos Muertos</label>
         </div>
+        <button type="button" class="btn-ws" onclick="copiarWhatsApp()">📱 Copiar a WhatsApp</button>
       </div>
       <div id="historialSetup">Cargando...</div>
     </div>
@@ -664,21 +665,31 @@
   function renderAdminLists() {
     const rList = (id, arr, cat) => {
       let el = document.getElementById(id);
-      if(el) el.innerHTML = (arr||[]).map(x => `<div class="item-row"><span>${x}</span><button class="btn-danger" onclick="delCat('${cat}', '${x}')">🗑️</button></div>`).join('');
+      if(el) el.innerHTML = (arr||[]).map(x => `<div class="item-row"><span>${x}</span> 
+        <div style="display:flex;gap:4px;">
+          <button class="btn-edit" onclick="editCat('${cat}', '${x}')">✏️</button>
+          <button class="btn-danger" onclick="delCat('${cat}', '${x}')">🗑️</button>
+        </div></div>`).join('');
     };
-    rList('listAdminNaves', dbData.naves, 'Naves');
-    rList('listAdminTiemposMuertos', dbData.tiemposMuertos, 'TiemposMuertos');
-    rList('listAdminMarcas', dbData.marcas, 'Marcas');
-    rList('listAdminOperadores', dbData.operadores, 'Operadores');
-    rList('listAdminItems', dbData.items, 'Items');
-    rList('listAdminTecnicos', dbData.tecnicos, 'Tecnicos');
+    rList('listAdminNaves', dbData.naves, 'Naves'); rList('listAdminTiemposMuertos', dbData.tiemposMuertos, 'TiemposMuertos');
+    rList('listAdminMarcas', dbData.marcas, 'Marcas'); rList('listAdminOperadores', dbData.operadores, 'Operadores');
+    rList('listAdminItems', dbData.items, 'Items'); rList('listAdminTecnicos', dbData.tecnicos, 'Tecnicos');
     rList('listAdminTurnos', dbData.turnos, 'Turnos');
 
     let mList = document.getElementById('listAdminMaquinas');
-    if(mList) mList.innerHTML = (dbData.maquinas||[]).map(m => `<div class="item-row"><span><b>${m.maquina}</b> (Nave: ${m.nave})</span><button class="btn-danger" onclick="delCatMaq('${m.maquina}')">🗑️</button></div>`).join('');
-    
-    let uList = document.getElementById('listAdminUsuarios');
-    if(uList) uList.innerHTML = (dbData.usuarios||[]).map(u => `<div class="item-row"><span><b>${u.user}</b> <small>(${u.permisos})</small></span><button class="btn-danger" onclick="delUser('${u.user}')">🗑️</button></div>`).join('');
+    if(mList) mList.innerHTML = (dbData.maquinas||[]).map(m => `<div class="item-row"><span><b>${m.maquina}</b> (Nave: ${m.nave})</span><div style="display:flex;gap:4px;"><button class="btn-edit" onclick="editCatMaq('${m.maquina}', '${m.nave}')">✏️</button><button class="btn-danger" onclick="delCatMaq('${m.maquina}')">🗑️</button></div></div>`).join('');
+  }
+
+  function editCat(cat, oldVal) {
+    let newVal = prompt(`Editar valor de ${cat}:`, oldVal);
+    if(newVal && newVal.trim() !== oldVal.trim()) {
+      postData({action:"MANAGE_CATALOGO", catalogo:cat, op:"EDIT", val1:oldVal, newVal1:newVal.trim()});
+    }
+  }
+
+  function editCatMaq(oldMaq, oldNave) {
+    let newMaq = prompt(`Editar nombre de la máquina:`, oldMaq);
+    if(newMaq) { postData({action:"MANAGE_CATALOGO", catalogo:"Maquinas", op:"EDIT", val1:oldMaq, newVal1:newMaq.trim(), val2:oldNave}); }
   }
 
   async function init() { 
@@ -810,20 +821,26 @@
   }
 
   // --- RENDERIZADO VISUALES Y MODAL ---
+  let textoWhatsAppActual = "";
+
   function renderHistoriales() {
     let act = getActiveMaquinasLogs();
     let fDateM = document.getElementById('filtroFechaMaq') ? document.getElementById('filtroFechaMaq').value : getTodayString();
     let filM = act.filter(r => normalizeDateStr(r.fecha) === fDateM && (isAdmin || getSupervisor(r).toLowerCase() === currentUser.toLowerCase()));
     
-    let htmlM = "";
+    let htmlM = ""; textoWhatsAppActual = `*Reporte de Planta - ${fDateM}*\n`;
     ['Caida','Corriendo','Ajuste','Set up'].forEach(st => {
       let rs = filM.filter(x => x.estatus === st);
       if(rs.length > 0) {
         htmlM += `<h3 style="margin-top:15px; border-bottom:1px solid #ccc;">${st.toUpperCase()}</h3>`;
+        textoWhatsAppActual += `\n*${st.toUpperCase()}*\n`;
         rs.forEach(r => {
           let term = r.hFin ? true : false;
           let dur = term ? (r.tiempo || '-') : (getPendingMinutes(r.fecha, r.hInicio) + ' mins (en curso)');
-          let det = `<small><b>Supervisor:</b> ${getSupervisor(r)} | <b>Ini:</b> ${formatHora(r.hInicio)} <b>Fin:</b> ${term ? formatHora(r.hFin) : '<i>Pendiente</i>'}</small><br>`;
+          let horaRegistro = r.fechaActualizacion || r.timestamp || "Hora desconocida";
+          
+          let det = `<small><b>Supervisor:</b> ${getSupervisor(r)} | <b>Ini:</b> ${formatHora(r.hInicio)} <b>Fin:</b> ${term ? formatHora(r.hFin) : '<i>Pendiente</i>'}<br><i style="color:#64748b;">Registrado/Editado: ${horaRegistro}</i></small>`;
+          textoWhatsAppActual += `• ${r.maquina}: Ini ${formatHora(r.hInicio)} - Fin ${term ? formatHora(r.hFin) : 'Pendiente'} (${dur})\n`;
           
           let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
           if(tms.length > 0) {
@@ -831,16 +848,54 @@
             tms.forEach(tm => {
               let isTmTerm = !!tm.hFin;
               let tmDur = isTmTerm ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
-              // Ahora muestra hInicio y hFin en el historial general también
-              det += `<div class="tm-item"><span>• <b>${tm.tiempoMuerto}:</b> ${tmDur} mins ${isTmTerm?`(${formatHora(tm.hInicio)} a ${formatHora(tm.hFin)})`:`(Desde ${formatHora(tm.hInicio)})`} <small style="color:#64748b;">(${tm.usuario})</small></span></div>`;
+              det += `<div class="tm-item"><span>• <b>${tm.tiempoMuerto}:</b> ${tmDur} mins <small style="color:#64748b;">(${tm.usuario})</small></span></div>`;
+              if(document.getElementById('chkCopyTM') && document.getElementById('chkCopyTM').checked) {
+                textoWhatsAppActual += `  - TM (${tm.tiempoMuerto}): ${tmDur} mins [${tm.usuario}]\n`;
+              }
             });
             det += `</div>`;
           }
-          htmlM += `<div class="item-row"><div><b>${r.maquina}</b> - ${r.estatus}<br>${det}</div></div>`;
+          
+          // Botones de editar y eliminar
+          let btnAcciones = `<div style="margin-top:5px; text-align:right;">
+            <button class="btn-edit" onclick="editarSetup('${r.id}')">✏️ Editar</button>
+            <button class="btn-danger" onclick="eliminarSetup('${r.id}')">🗑️ Borrar</button>
+          </div>`;
+          
+          htmlM += `<div class="item-row" style="display:block;"><div><b>${r.maquina}</b> - ${r.estatus}<br>${det}</div>${btnAcciones}</div>`;
         });
       }
     });
     let divM = document.getElementById('historialSetup'); if(divM) divM.innerHTML = htmlM || '<p>Sin registros.</p>';
+  }
+
+  function copiarWhatsApp() {
+    navigator.clipboard.writeText(textoWhatsAppActual).then(() => alert("Copiado al portapapeles. Listo para pegar en WhatsApp."));
+  }
+
+  function eliminarSetup(id) {
+    if(confirm("¿Eliminar este registro de máquina?")) {
+      dbData.registrosSetup = dbData.registrosSetup.filter(x => x.id !== id);
+      renderHistoriales(); postData({action: "DELETE_REGISTRO_SETUP", id: id});
+    }
+  }
+
+  function editarSetup(id) {
+    let r = dbData.registrosSetup.find(x => x.id === id); if(!r) return;
+    document.getElementById('regId').value = r.id; document.getElementById('regFecha').value = normalizeDateStr(r.fecha);
+    document.getElementById('regMaquina').value = r.maquina; document.getElementById('regEstatus').value = r.estatus;
+    toggleRegCampos(); // Despliega los campos correctos
+    setTimeout(() => {
+      if(document.getElementById('regTurno')) document.getElementById('regTurno').value = r.turno || '';
+      if(document.getElementById('regItem')) document.getElementById('regItem').value = r.item || '';
+      if(document.getElementById('regTecnico')) document.getElementById('regTecnico').value = r.tecnico || '';
+      if(document.getElementById('regOperador')) document.getElementById('regOperador').value = r.operador || '';
+      if(document.getElementById('regOpCubre')) document.getElementById('regOpCubre').value = r.opCubre || '';
+      if(document.getElementById('regHInicio')) document.getElementById('regHInicio').value = formatTimeInput(r.hInicio) || '';
+      if(document.getElementById('regHFin')) document.getElementById('regHFin').value = formatTimeInput(r.hFin) || '';
+      if(document.getElementById('regComentarios')) document.getElementById('regComentarios').value = r.comentarios || '';
+      calcTiempoReg(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   }
 
   function renderVistaTecnico() {
@@ -936,43 +991,67 @@
     let act = getActiveMaquinasLogs().filter(r => normalizeDateStr(r.fecha) === fDate && (fEstatus === 'TODOS' || r.estatus === fEstatus));
     let naves = (dbData.naves && dbData.naves.length > 0) ? dbData.naves : ["Sin Nave"];
     let alarmMins = parseFloat(dbData.alarmMinutes) || 150;
-    
     let anyAlarmTriggered = false;
-    let newHTML = naves.map(nave => {
-      let mNave = act.filter(x => { let m = dbData.maquinas.find(mq => mq.maquina === x.maquina); return (m ? m.nave : "Sin Nave") === nave; });
-      if(mNave.length === 0) return '';
-      let cards = mNave.map(r => {
-        let isTerm = !!r.hFin; let dur = isTerm ? (r.tiempo || '-') : (getPendingMinutes(r.fecha, r.hInicio));
-        if(!isTerm && dur >= alarmMins) anyAlarmTriggered = true;
-        let cClass = r.estatus==='Caida'?'tvc-caida': r.estatus==='Corriendo'?'tvc-corriendo': r.estatus==='Ajuste'?'tvc-ajuste':'tvc-setup';
-        if(isTerm && r.estatus!=='Caida') cClass = 'tvc-term';
-        if(!isTerm && dur >= alarmMins) cClass += ' tvc-alarmed';
 
-        let tmsHtml = '';
-        if(showTM) {
-          let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
-          if(tms.length > 0) {
-            tmsHtml = `<div style="background:rgba(0,0,0,0.3); padding:5px; margin-top:5px; border-radius:4px; font-size:0.85rem;">`;
-            tms.forEach(tm => {
-              let tTerm = !!tm.hFin; let tDur = tTerm ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
-              tmsHtml += `<div>• <b>${tm.tiempoMuerto}</b>: ${tDur} min ${tTerm?`(${formatHora(tm.hInicio)} a ${formatHora(tm.hFin)})`:`(Inicio: ${formatHora(tm.hInicio)})`} <small style="color:#cbd5e1;">[Por: ${tm.usuario}]</small></div>`;
-            });
-            tmsHtml += `</div>`;
-          }
+    // Primero construimos la estructura base de las columnas (Naves) si no existe
+    if(board.children.length === 0 || board.dataset.date !== fDate || board.dataset.estatus !== fEstatus) {
+      board.dataset.date = fDate; board.dataset.estatus = fEstatus;
+      board.innerHTML = naves.map(nave => `<div class="tv-nave-col" id="col_${nave.replace(/\s+/g, '')}"><div class="tv-nave-header">${nave}</div><div class="tv-section" id="sec_${nave.replace(/\s+/g, '')}"></div></div>`).join('');
+    }
+
+    // Llevar registro de las tarjetas activas para limpiar las viejas
+    let activeCards = new Set();
+
+    act.forEach(r => {
+      let mInfo = (dbData.maquinas||[]).find(mq => mq.maquina === r.maquina);
+      let naveLimpia = (mInfo ? mInfo.nave : "Sin Nave").replace(/\s+/g, '');
+      let container = document.getElementById(`sec_${naveLimpia}`);
+      if(!container) return;
+
+      let isTerm = !!r.hFin; let dur = isTerm ? (r.tiempo || '-') : (getPendingMinutes(r.fecha, r.hInicio));
+      if(!isTerm && dur >= alarmMins) anyAlarmTriggered = true;
+      let cClass = r.estatus==='Caida'?'tvc-caida': r.estatus==='Corriendo'?'tvc-corriendo': r.estatus==='Ajuste'?'tvc-ajuste':'tvc-setup';
+      if(isTerm && r.estatus!=='Caida') cClass = 'tvc-term';
+      if(!isTerm && dur >= alarmMins) cClass += ' tvc-alarmed';
+
+      let cardId = `tvc_${r.id}`; activeCards.add(cardId);
+      let cardEl = document.getElementById(cardId);
+
+      let tmsHtml = '';
+      if(showTM) {
+        let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
+        if(tms.length > 0) {
+          tmsHtml = `<div style="background:rgba(0,0,0,0.3); padding:5px; margin-top:5px; border-radius:4px; font-size:0.85rem;">`;
+          tms.forEach(tm => {
+            let tTerm = !!tm.hFin; let tDur = tTerm ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
+            tmsHtml += `<div>• <b>${tm.tiempoMuerto}</b>: ${tDur} min ${tTerm?`[Fin]`:`[En vivo]`}</div>`;
+          });
+          tmsHtml += `</div>`;
         }
-        return `
-          <div class="tv-card ${cClass}">
-            <div style="display:flex; justify-content:space-between;"><b>${r.maquina}</b> <span>${isTerm?'✅':'⏳'} ${r.estatus}</span></div>
-            <div><small>Téc/Op: ${r.tecnico||r.operador||'-'} | Ítem: ${r.item||'-'}</small></div>
-            <div style="font-size:1.1rem; font-weight:bold; margin-top:4px;">⏱️ ${isTerm ? dur : dur + ' mins'}</div>
-            ${tmsHtml}
-          </div>`;
-      }).join('');
-      return `<div class="tv-nave-col"><div class="tv-nave-header">${nave}</div><div class="tv-section">${cards}</div></div>`;
-    }).join('');
+      }
 
-    // Actualizar solo si hay cambios estructurales/de texto para NO romper animaciones CSS
-    if(board.innerHTML !== newHTML) board.innerHTML = newHTML;
+      let cardContent = `
+        <div style="display:flex; justify-content:space-between;"><b>${r.maquina}</b> <span>${isTerm?'✅':'⏳'} ${r.estatus}</span></div>
+        <div><small>Téc/Op: ${r.tecnico||r.operador||'-'} | Ítem: ${r.item||'-'}</small></div>
+        <div style="font-size:1.1rem; font-weight:bold; margin-top:4px;">⏱️ ${isTerm ? dur : dur + ' mins'}</div>
+        ${tmsHtml}`;
+
+      if(cardEl) {
+        // Actualizamos de manera suave si ya existe para no romper la animación CSS
+        if(cardEl.className !== `tv-card ${cClass}`) cardEl.className = `tv-card ${cClass}`;
+        if(cardEl.innerHTML !== cardContent) cardEl.innerHTML = cardContent;
+      } else {
+        // Si no existe, lo creamos
+        let newDiv = document.createElement('div');
+        newDiv.id = cardId; newDiv.className = `tv-card ${cClass}`;
+        newDiv.innerHTML = cardContent;
+        container.appendChild(newDiv);
+      }
+    });
+
+    // Limpiamos las tarjetas que ya no deben verse (cambio de turno o estatus)
+    document.querySelectorAll('.tv-card').forEach(el => { if(!activeCards.has(el.id)) el.remove(); });
+
     if(anyAlarmTriggered) startContinuousBeep(); else stopContinuousBeep();
   }
 
