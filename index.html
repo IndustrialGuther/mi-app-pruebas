@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Planta</title>
+  <title>Control de Planta1</title>
   <style>
     :root { --primary: #0284c7; --admin: #0f172a; --setup: #059669; --tec: #d97706; --bg: #f8fafc; --card: #ffffff; }
     body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1e293b; }
@@ -26,8 +26,7 @@
     .btn-ws { background: #25d366; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
     .btn-danger { background: #ef4444; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
     .btn-edit { background: #f59e0b; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
-    .btn-notify { background: #8b5cf6; color: white; font-size: 0.85rem; padding: 8px 12px; border-radius: 6px; }
-    .btn-notify.active-notify { background: #059669; }
+    .btn-notify { background: #8b5cf6; color: white; font-size: 0.85rem; padding: 8px 12px; margin-bottom: 10px; }
     
     .tabs { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
     .tab-btn { background: #e2e8f0; color: #475569; padding: 10px 5px; border-radius: 6px; flex: 1; min-width: 90px; border: none; font-weight: bold; font-size: 0.85rem; text-align: center; }
@@ -68,7 +67,7 @@
     .tv-section { padding: 10px; flex-grow: 1; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
     .tv-section-title { font-size: 1.1rem; color: #94a3b8; border-bottom: 1px solid #334155; padding-bottom: 5px; margin-bottom: 5px; font-weight: bold; }
     
-    .tv-card { background: #334155; border-radius: 6px; padding: 8px 12px; color: white; font-size: 0.95rem; border-left: 5px solid gray; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background-color 0.3s; }
+    .tv-card { background: #334155; border-radius: 6px; padding: 8px 12px; color: white; font-size: 0.95rem; border-left: 5px solid gray; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.3s; }
     .tvc-caida { border-color: #ef4444; background: #450a0a; }
     .tvc-corriendo { border-color: #3b82f6; background: #172554; }
     .tvc-ajuste { border-color: #f97316; background: #431407; }
@@ -80,9 +79,13 @@
       50% { border-color: #334155; box-shadow: none; }
     }
     .tvc-alarmed {
-      animation: blink-red 1s infinite !important;
+      animation: blink-red 1s linear infinite !important;
       border-width: 4px !important;
+      will-change: border-color, box-shadow;
     }
+    body.tv-mode { overflow: hidden; }
+    body.tv-mode #panelTV { height: 100vh; }
+    #tvBoard.tv-full-height { height: calc(100vh - 100px); }
 
     .pulse-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10b981; margin-right: 6px; animation: blink 1.5s infinite; }
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
@@ -189,9 +192,9 @@
 
     <!-- REGISTRO DE MAQUINAS (SETUP / AJUSTE / CAIDA / CORRIENDO) -->
     <div id="formSetup" class="card hidden">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-        <h2 class="setup-title" style="margin:0;">Registro de Máquinas</h2>
-        <button type="button" id="btnToggleNotifTM" class="btn-notify" onclick="toggleNotificacionesTM()">🔔 Notificaciones Tiempos Muertos: DESACTIVADAS</button>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 class="setup-title">Registro de Máquinas</h2>
+        <button type="button" id="btnNotifyTM" class="btn-notify" onclick="toggleNotificaciones('tm')">🔔 Activar Notificaciones de Tiempos Muertos</button>
       </div>
       <form onsubmit="guardarSetup(event)">
         <input type="hidden" id="regId">
@@ -225,6 +228,7 @@
             <input type="text" id="regTiempo" readonly style="background:#f1f5f9;" placeholder="Se calcula automáticamente">
           </div>
           
+          <!-- Piezas unicamente para Corriendo -->
           <div class="g-piezas hidden" style="display:flex; gap:5px;">
             <div style="flex:1;"><label id="lblRegPzPlan">Pz Plan *</label><input type="number" id="regPzPlan" oninput="calcDeltaReg()"></div>
             <div style="flex:1;"><label id="lblRegPzReal">Pz Real *</label><input type="number" id="regPzReal" oninput="calcDeltaReg()"></div>
@@ -265,7 +269,7 @@
     <div id="formTecnico" class="card hidden">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <h2 class="tec-title" style="margin:0;">🔧 Módulo para Técnicos</h2>
-        <button type="button" id="btnToggleNotifSetup" class="btn-notify" onclick="toggleNotificacionesSetup()">🔔 Notificaciones Setups/Ajustes: DESACTIVADAS</button>
+        <button type="button" id="btnNotifySetup" class="btn-notify" onclick="toggleNotificaciones('setup')">🔔 Activar Notificaciones de Setups</button>
       </div>
 
       <div class="filter-box" style="background:#fef3c7;">
@@ -433,7 +437,7 @@
   </div>
 </div>
 
-<!-- MODAL REGISTRO DE TIEMPO MUERTO -->
+<!-- MODAL REGISTRO DE TIEMPO MUERTO (AHORA CON HORA INICIO Y FIN) -->
 <div id="modalTM" class="modal-overlay hidden">
   <div class="modal-content">
     <h3 style="color:var(--tec); margin-top:0;">⏱️ Registrar Tiempo Muerto</h3>
@@ -473,7 +477,6 @@
     <h1 style="margin:0; font-size:1.5rem;"><span class="pulse-dot"></span>Monitor de Planta en Vivo</h1>
     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
       <button id="btnMuteTV" onclick="toggleMuteTV()" class="btn-secondary" style="background:#475569;">🔊 Sonido: ACTIVADO</button>
-      <button onclick="toggleFullscreenTV()" class="btn-secondary" style="background:#0284c7;">📺 Pantalla Completa</button>
       
       <select id="tvFilterEstatus" onchange="renderTV()" style="margin:0; width:150px; background:#1e293b; color:white;">
         <option value="TODOS">Todos los estatus</option>
@@ -488,7 +491,8 @@
       </label>
 
       <input type="date" id="tvFilterFecha" onchange="renderTV()" style="margin:0; width:140px; background:#1e293b; color:white;">
-      <button onclick="cerrarTV()" class="btn-danger">Cerrar</button>
+      <button type="button" id="btnFullscreenTV" class="btn-secondary" onclick="togglePantallaTV()">⛶ Pantalla completa</button>
+      <button type="button" onclick="cerrarTV()" class="btn-danger">Cerrar</button>
     </div>
   </div>
   <div id="tvBoard" class="tv-board"></div>
@@ -503,29 +507,53 @@
   const API_URL = "https://script.google.com/macros/s/AKfycbwP9vawpPvqX03Z1k6UwGJhc1d1415mk6uUqDdpeqfwU75m966DraunLGTnKGormEF5/exec";
   let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], tiemposMuertos:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], registrosTiemposMuertos:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300 };
   let currentUser = null, isAdmin = false;
-  let tvInterval = null, syncLoopInterval = null;
+  const SYNC_INTERVAL_MS = 3000;
+  const TV_LIVE_INTERVAL_MS = 1000;
+  let tvInterval = null, tvLiveTimer = null, syncLoopInterval = null;
   let isMuted = false;
   let audioCtx = null;
-  let continuousBeepInterval = null;
-  
-  // Control de Notificaciones
-  let notifTMEnabled = localStorage.getItem('notifTMEnabled') === 'true';
-  let notifSetupEnabled = localStorage.getItem('notifSetupEnabled') === 'true';
-  let knownTMIds = new Set();
-  let knownSetupIds = new Set();
-  let isModalTMOpen = false;
+  let alarmSource = null;
+  let alarmGain = null;
+  let alarmBuffer = null;
+  let alarmStopTimer = null;
+  let syncInFlight = false;
+  let notificationPrimed = false;
+  let lastTvFingerprint = "";
+  let pendingRenderAfterSync = false;
 
-  function getTodayString() { let d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
-  function getNowMxString() { return new Date().toLocaleString("es-MX", {timeZone: "America/Mexico_City"}); }
-  function getNowTimeMxString() { return new Date().toLocaleTimeString("es-MX", {hour: '2-digit', minute:'2-digit', second:'2-digit'}); }
+  function getMexicoParts(date = new Date()) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Mexico_City",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false
+    }).formatToParts(date);
+    const out = {};
+    parts.forEach(p => { if(p.type !== 'literal') out[p.type] = p.value; });
+    return out;
+  }
+
+  function getTodayString() {
+    const p = getMexicoParts();
+    return `${p.year}-${p.month}-${p.day}`;
+  }
+
+  function getNowMxString() {
+    return new Date().toLocaleString("es-MX", {timeZone: "America/Mexico_City"});
+  }
+
+  function getNowTimeMxString() {
+    const p = getMexicoParts();
+    return `${p.hour}:${p.minute}:${p.second}`;
+  }
 
   function formatHora(h) {
     if(!h) return "";
-    let formatted = formatTimeInput(h);
+    const formatted = formatTimeInput(h);
     if(!formatted) return String(h);
     let [hh, mm] = formatted.split(":");
     let hInt = parseInt(hh, 10);
-    let ampm = hInt >= 12 ? 'PM' : 'AM';
+    const ampm = hInt >= 12 ? 'PM' : 'AM';
     hInt = hInt % 12 || 12;
     return `${String(hInt).padStart(2,'0')}:${mm} ${ampm}`;
   }
@@ -551,29 +579,47 @@
     return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
   }
 
+  function wallClockDate(fStr, hStr) {
+    const f = normalizeDateStr(fStr || getTodayString());
+    const h = formatTimeInput(hStr);
+    if(!f || !h) return null;
+    const [y,m,d] = f.split('-').map(Number);
+    const [hh,mm] = h.split(':').map(Number);
+    if([y,m,d,hh,mm].some(Number.isNaN)) return null;
+    // Date local: el navegador solo se usa para diferencias de minutos entre horas del mismo día.
+    const dt = new Date(y, m-1, d, hh, mm, 0, 0);
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+
   function getPendingMinutes(fStr, hIniStr) {
-    if(!hIniStr) return 0;
-    let normF = normalizeDateStr(fStr || getTodayString());
-    let normH = formatTimeInput(hIniStr);
-    if(!normF || !normH) return 0;
-    let startDt = new Date(`${normF}T${normH}:00`);
-    if(isNaN(startDt.getTime())) return 0;
-    let now = new Date();
-    let diffMs = now - startDt;
+    const startDt = wallClockDate(fStr, hIniStr);
+    if(!startDt) return 0;
+    const mx = getMexicoParts();
+    const nowMx = new Date(
+      Number(mx.year), Number(mx.month)-1, Number(mx.day),
+      Number(mx.hour), Number(mx.minute), Number(mx.second), 0
+    );
+    const diffMs = nowMx - startDt;
     return Math.max(0, Math.round(diffMs / 60000));
   }
 
   function calcMinutesBetween(fStr, hIniStr, hFinStr) {
     if(!hIniStr) return 0;
     if(!hFinStr) return getPendingMinutes(fStr, hIniStr);
-    let normF = normalizeDateStr(fStr || getTodayString());
-    let normI = formatTimeInput(hIniStr);
-    let normF2 = formatTimeInput(hFinStr);
-    if(!normI || !normF2) return 0;
-    let dt1 = new Date(`${normF}T${normI}:00`);
-    let dt2 = new Date(`${normF}T${normF2}:00`);
-    let diff = Math.round((dt2 - dt1) / 60000);
-    return diff < 0 ? diff + 1440 : diff;
+
+    const normI = formatTimeInput(hIniStr);
+    const normF = formatTimeInput(hFinStr);
+    if(!normI || !normF) return 0;
+
+    const [iy,im,id] = normalizeDateStr(fStr || getTodayString()).split('-').map(Number);
+    const [ih,ii] = normI.split(':').map(Number);
+    const [fh,fi] = normF.split(':').map(Number);
+
+    const dt1 = new Date(iy, im-1, id, ih, ii, 0, 0);
+    let dt2 = new Date(iy, im-1, id, fh, fi, 0, 0);
+    if(dt2 < dt1) dt2 = new Date(iy, im-1, id + 1, fh, fi, 0, 0);
+
+    return Math.max(0, Math.round((dt2 - dt1) / 60000));
   }
 
   function getSupervisor(r) { return (r.usuario || r.user || "Desconocido").trim(); }
@@ -588,101 +634,189 @@
     return list.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
   }
 
-  // --- NOTIFICACIONES EN TIEMPO REAL ---
-  function toggleNotificacionesTM() {
-    if ("Notification" in window) {
-      Notification.requestPermission().then(perm => {
-        if(perm === 'granted') {
-          notifTMEnabled = !notifTMEnabled;
-          localStorage.setItem('notifTMEnabled', notifTMEnabled);
-          actualizarBotonesNotif();
-          alert(notifTMEnabled ? "¡Notificaciones de Tiempos Muertos Activadas!" : "Notificaciones Desactivadas.");
-        } else alert("Permiso de notificaciones denegado en el navegador.");
-      });
-    } else alert("Navegador no soporta notificaciones de sistema.");
+  // --- NOTIFICACIONES ---
+  function notifyKey(kind) {
+    return `planta_notify_${kind}_${(currentUser || 'anon').toLowerCase()}`;
   }
 
-  function toggleNotificacionesSetup() {
-    if ("Notification" in window) {
-      Notification.requestPermission().then(perm => {
-        if(perm === 'granted') {
-          notifSetupEnabled = !notifSetupEnabled;
-          localStorage.setItem('notifSetupEnabled', notifSetupEnabled);
-          actualizarBotonesNotif();
-          alert(notifSetupEnabled ? "¡Notificaciones de Setups Activadas!" : "Notificaciones Desactivadas.");
-        } else alert("Permiso denegado.");
-      });
-    } else alert("Navegador no soporta notificaciones.");
+  function getNotifyEnabled(kind) {
+    return localStorage.getItem(notifyKey(kind)) === "1";
   }
 
-  function actualizarBotonesNotif() {
-    let btnTM = document.getElementById('btnToggleNotifTM');
-    if(btnTM) {
-      btnTM.textContent = notifTMEnabled ? "🔔 Notificaciones Tiempos Muertos: ACTIVADAS" : "🔔 Notificaciones Tiempos Muertos: DESACTIVADAS";
-      btnTM.className = notifTMEnabled ? "btn-notify active-notify" : "btn-notify";
+  function setNotifyEnabled(kind, enabled) {
+    localStorage.setItem(notifyKey(kind), enabled ? "1" : "0");
+    updateNotificationButtons();
+  }
+
+  function updateNotificationButtons() {
+    const bTM = document.getElementById('btnNotifyTM');
+    const bSetup = document.getElementById('btnNotifySetup');
+    if(bTM) bTM.textContent = getNotifyEnabled('tm') ? '🔕 Desactivar Notificaciones de Tiempos Muertos' : '🔔 Activar Notificaciones de Tiempos Muertos';
+    if(bSetup) bSetup.textContent = getNotifyEnabled('setup') ? '🔕 Desactivar Notificaciones de Setups' : '🔔 Activar Notificaciones de Setups';
+  }
+
+  async function toggleNotificaciones(kind) {
+    if(!("Notification" in window)) {
+      alert("Este navegador no soporta notificaciones de sistema.");
+      return;
     }
-    let btnSetup = document.getElementById('btnToggleNotifSetup');
-    if(btnSetup) {
-      btnSetup.textContent = notifSetupEnabled ? "🔔 Notificaciones Setups/Ajustes: ACTIVADAS" : "🔔 Notificaciones Setups/Ajustes: DESACTIVADAS";
-      btnSetup.className = notifSetupEnabled ? "btn-notify active-notify" : "btn-notify";
+    const enabled = getNotifyEnabled(kind);
+    if(enabled) {
+      setNotifyEnabled(kind, false);
+      return;
     }
+
+    let permission = Notification.permission;
+    if(permission !== "granted") {
+      try { permission = await Notification.requestPermission(); } catch(e) { permission = "denied"; }
+    }
+
+    if(permission === "granted") {
+      setNotifyEnabled(kind, true);
+      primeNotificationSnapshot();
+      dispararNotificacion(
+        "✅ Notificaciones activadas",
+        kind === 'tm' ? "Recibirás avisos de tiempos muertos en este dispositivo." : "Recibirás avisos de Set up/Ajuste en este dispositivo."
+      );
+    } else {
+      alert("El navegador no concedió permiso para las notificaciones. Actívalo en la configuración del navegador.");
+    }
+  }
+
+  // Compatibilidad con el botón/llamadas antiguas.
+  function solicitarNotificaciones(kind) {
+    toggleNotificaciones(kind || 'tm');
   }
 
   function dispararNotificacion(titulo, cuerpo) {
     if ("Notification" in window && Notification.permission === "granted") {
-      new Notification(titulo, { body: cuerpo, icon: "https://cdn-icons-png.flaticon.com/512/1827/1827349.png" });
+      try {
+        new Notification(titulo, {
+          body: cuerpo,
+          icon: "https://cdn-icons-png.flaticon.com/512/1827/1827349.png",
+          tag: `planta-${Date.now()}`
+        });
+      } catch(e) {
+        console.warn("No se pudo crear la notificación:", e);
+      }
     }
   }
 
-  function checarCambiosNotificaciones(nuevosTMs, nuevosSetups) {
-    // Check Tiempos Muertos for Supervisors
-    if (notifTMEnabled) {
-      (nuevosTMs || []).forEach(tm => {
-        let key = `${tm.id}_${tm.hFin ? 'FIN' : 'PEN'}`;
-        if (!knownTMIds.has(key)) {
-          knownTMIds.add(key);
-          let reg = (dbData.registrosSetup || []).find(r => r.id === tm.regId) || {};
-          let maq = reg.maquina || 'Máquina';
-          let usu = tm.usuario || 'Técnico';
-          let mot = tm.tiempoMuerto || 'Tiempo Muerto';
-          let hIni = formatHora(tm.hInicio);
-          let hFin = formatHora(tm.hFin);
+  function notificationSignature(obj, type) {
+    if(type === 'tm') {
+      return [
+        obj.id, obj.regId, obj.tiempoMuerto, obj.hInicio, obj.hFin,
+        obj.duracion, obj.usuario, obj.fechaActualizacion, obj.timestamp
+      ].map(v => v == null ? "" : v).join("|");
+    }
+    return [
+      obj.id, obj.estatus, obj.maquina, obj.tecnico, obj.item,
+      obj.hInicio, obj.hFin, obj.usuario, obj.fechaActualizacion, obj.timestamp
+    ].map(v => v == null ? "" : v).join("|");
+  }
 
-          if (!tm.hFin) {
-            dispararNotificacion("⏱️ Tiempo Muerto Pendiente", `Máquina: ${maq}\nUsuario: ${usu}\nMotivo: ${mot}\nHora Inicio: ${hIni}`);
-          } else {
-            dispararNotificacion("✅ Tiempo Muerto Terminado", `Máquina: ${maq}\nUsuario: ${usu}\nMotivo: ${mot}\nHora Inicio: ${hIni}\nHora Fin: ${hFin}`);
-          }
+  function getStoredSeen(kind) {
+    try {
+      return JSON.parse(localStorage.getItem(notifyKey(kind) + "_seen") || "{}");
+    } catch(e) { return {}; }
+  }
+
+  function saveStoredSeen(kind, seen) {
+    try {
+      localStorage.setItem(notifyKey(kind) + "_seen", JSON.stringify(seen));
+    } catch(e) {}
+  }
+
+  function primeNotificationSnapshot() {
+    notificationPrimed = true;
+    ['tm','setup'].forEach(kind => {
+      const seen = {};
+      const arr = kind === 'tm'
+        ? (dbData.registrosTiemposMuertos || [])
+        : (dbData.registrosSetup || []).filter(r => r.estatus === 'Set up' || r.estatus === 'Ajuste');
+      arr.forEach(x => { if(x.id) seen[x.id] = notificationSignature(x, kind); });
+      saveStoredSeen(kind, seen);
+    });
+    updateNotificationButtons();
+  }
+
+  function processRemoteNotifications(previous, current) {
+    if(!notificationPrimed || !currentUser) return;
+
+    // Tiempo muerto -> usuarios con acceso a "Maquinas".
+    if(getNotifyEnabled('tm') && hasPermissionForCurrentUser('Maquinas')) {
+      const oldMap = new Map((previous.registrosTiemposMuertos || []).map(x => [x.id, x]));
+      const seen = getStoredSeen('tm');
+      (current.registrosTiemposMuertos || []).forEach(tm => {
+        if(!tm.id || String(tm.usuario || '').toLowerCase() === String(currentUser).toLowerCase()) return;
+        const parent = (current.registrosSetup || []).find(r => r.id === tm.regId);
+        if(!parent) return;
+
+        const sig = notificationSignature(tm, 'tm');
+        const old = oldMap.get(tm.id);
+        const isNew = !old;
+        const becameFinal = old && !old.hFin && !!tm.hFin;
+        if((isNew || becameFinal) && seen[tm.id] !== sig) {
+          const status = tm.hFin ? "TERMINADO" : "PENDIENTE";
+          const body = tm.hFin
+            ? `Máquina: ${parent.maquina}
+Usuario: ${tm.usuario}
+Tiempo muerto: ${tm.tiempoMuerto}
+Inicio: ${formatHora(tm.hInicio)}
+Final: ${formatHora(tm.hFin)}`
+            : `Máquina: ${parent.maquina}
+Usuario: ${tm.usuario}
+Tiempo muerto: ${tm.tiempoMuerto}
+Inicio: ${formatHora(tm.hInicio)}`;
+          dispararNotificacion(`⏱️ Tiempo Muerto ${status}`, body);
         }
+        seen[tm.id] = sig;
       });
+      saveStoredSeen('tm', seen);
     }
 
-    // Check Setups/Ajustes for Technicians
-    if (notifSetupEnabled) {
-      (nuevosSetups || []).forEach(s => {
-        if (s.estatus === 'Set up' || s.estatus === 'Ajuste') {
-          let key = `${s.id}_${s.hFin ? 'FIN' : 'PEN'}`;
-          if (!knownSetupIds.has(key)) {
-            knownSetupIds.add(key);
-            let est = s.estatus;
-            let maq = s.maquina || 'Máquina';
-            let tec = s.tecnico || 'Sin asignar';
-            let item = s.item || 'Sin item';
-            let hIni = formatHora(s.hInicio);
-            let hFin = formatHora(s.hFin);
+    // Setup/Ajuste -> técnicos con acceso y, preferentemente, solo al técnico asignado.
+    if(getNotifyEnabled('setup') && hasPermissionForCurrentUser('Tecnico')) {
+      const oldMap = new Map((previous.registrosSetup || []).map(x => [x.id, x]));
+      const seen = getStoredSeen('setup');
+      (current.registrosSetup || []).filter(r => r.estatus === 'Set up' || r.estatus === 'Ajuste').forEach(r => {
+        if(!r.id) return;
+        if(r.tecnico && String(r.tecnico).trim() && String(r.tecnico).toLowerCase() !== String(currentUser).toLowerCase()) return;
+        if(String(r.usuario || '').toLowerCase() === String(currentUser).toLowerCase()) return;
 
-            if (!s.hFin) {
-              dispararNotificacion(`⚙️ ${est} Pendiente`, `Máquina: ${maq}\nTécnico: ${tec}\nItem: ${item}\nHora Inicio: ${hIni}`);
-            } else {
-              dispararNotificacion(`✅ ${est} Terminado`, `Máquina: ${maq}\nTécnico: ${tec}\nItem: ${item}\nHora Inicio: ${hIni}\nHora Fin: ${hFin}`);
-            }
-          }
+        const sig = notificationSignature(r, 'setup');
+        const old = oldMap.get(r.id);
+        const isNew = !old;
+        const becameFinal = old && !old.hFin && !!r.hFin;
+        if((isNew || becameFinal) && seen[r.id] !== sig) {
+          const status = r.hFin ? "TERMINADO" : "PENDIENTE";
+          const body = r.hFin
+            ? `${r.estatus}
+Máquina: ${r.maquina}
+Técnico: ${r.tecnico || currentUser}
+Ítem: ${r.item || '-'}
+Inicio: ${formatHora(r.hInicio)}
+Final: ${formatHora(r.hFin)}`
+            : `${r.estatus}
+Máquina: ${r.maquina}
+Técnico: ${r.tecnico || currentUser}
+Ítem: ${r.item || '-'}
+Inicio: ${formatHora(r.hInicio)}`;
+          dispararNotificacion(`⚙️ ${r.estatus} ${status}`, body);
         }
+        seen[r.id] = sig;
       });
+      saveStoredSeen('setup', seen);
     }
   }
 
-  // --- AUDIO Y ALARMA FLUIDA ---
+  function hasPermissionForCurrentUser(permissionName) {
+    if(isAdmin) return true;
+    const user = (dbData.usuarios || []).find(u => String(u.user || '').toLowerCase() === String(currentUser || '').toLowerCase());
+    return !!(user && String(user.permisos || '').toLowerCase().includes(String(permissionName).toLowerCase()));
+  }
+
+  // --- AUDIO Y BOCINAS ---
   function loadAudioDevices() {
     if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
       navigator.mediaDevices.enumerateDevices().then(devices => {
@@ -703,159 +837,273 @@
       btn.innerHTML = isMuted ? '🔇 Sonido: SILENCIADO' : '🔊 Sonido: ACTIVADO';
       btn.style.background = isMuted ? '#ef4444' : '#475569';
     }
-    if (isMuted) stopContinuousBeep();
-    else if (!document.getElementById('panelTV').classList.contains('hidden')) renderTV();
+    
+    if (isMuted) {
+      stopContinuousBeep();
+    } else if (!document.getElementById('panelTV').classList.contains('hidden')) {
+      renderTV();
+    }
   }
 
-  function toggleFullscreenTV() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
-        alert(`Error al activar pantalla completa: ${err.message}`);
-      });
-    } else {
-      if (document.exitFullscreen) document.exitFullscreen();
+  function getAudioContext() {
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+    const selDev = document.getElementById('cfgAudioDevice');
+    if(selDev && selDev.value && typeof audioCtx.setSinkId === 'function') {
+      audioCtx.setSinkId(selDev.value).catch(()=>{});
     }
+    return audioCtx;
+  }
+
+  function buildAlarmBuffer(ctx) {
+    const speedMs = Math.max(100, parseFloat(dbData.soundSpeed) || 300);
+    const len = Math.max(1, Math.round(ctx.sampleRate * speedMs / 1000));
+    const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    const freq = Math.max(100, parseFloat(dbData.soundFreq) || 880);
+    const volume = Math.max(0, Math.min(1, (parseFloat(dbData.soundVol) || 50) / 100)) * 0.28;
+    const toneMs = Math.min(speedMs * 0.55, 150);
+    const toneSamples = Math.max(1, Math.round(ctx.sampleRate * toneMs / 1000));
+
+    for(let i=0;i<len;i++) {
+      if(i < toneSamples) {
+        const t = i / ctx.sampleRate;
+        const attack = Math.min(1, i / Math.max(1, ctx.sampleRate * 0.01));
+        const release = Math.max(0, 1 - i / toneSamples);
+        data[i] = Math.sin(2 * Math.PI * freq * t) * volume * attack * release;
+      } else {
+        data[i] = 0;
+      }
+    }
+    return buffer;
   }
 
   function playSingleBeep() {
     try {
-      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if(audioCtx.state === 'suspended') audioCtx.resume();
-
-      let vol = (parseFloat(dbData.soundVol) || 50) / 100;
-      let freq = parseFloat(dbData.soundFreq) || 880;
-      let speedMs = parseFloat(dbData.soundSpeed) || 300;
-
-      let selDev = document.getElementById('cfgAudioDevice');
-      if(selDev && selDev.value && audioCtx.setSinkId) audioCtx.setSinkId(selDev.value).catch(e => console.log(e));
-
-      let durationSec = Math.min(0.15, (speedMs / 1000) * 0.5);
-
-      let osc = audioCtx.createOscillator();
-      let gain = audioCtx.createGain();
-      
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(vol * 0.3, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + durationSec);
-
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      osc.start();
-      osc.stop(audioCtx.currentTime + durationSec);
-    } catch(e) { console.log(e); }
+      const ctx = getAudioContext();
+      const source = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      source.buffer = buildAlarmBuffer(ctx);
+      gain.gain.value = 1;
+      source.connect(gain);
+      gain.connect(ctx.destination);
+      source.start();
+    } catch(e) {
+      console.warn("Audio:", e);
+    }
   }
 
   function startContinuousBeep() {
-    if (continuousBeepInterval || isMuted) return;
-    let speedMs = parseFloat(dbData.soundSpeed) || 300;
-    continuousBeepInterval = setInterval(() => {
-      if (isMuted) { stopContinuousBeep(); return; }
-      playSingleBeep();
-    }, speedMs);
+    if(alarmSource || isMuted) return;
+    try {
+      const ctx = getAudioContext();
+      stopContinuousBeep();
+
+      alarmBuffer = buildAlarmBuffer(ctx);
+      alarmSource = ctx.createBufferSource();
+      alarmGain = ctx.createGain();
+      alarmSource.buffer = alarmBuffer;
+      alarmSource.loop = true;
+      alarmGain.gain.value = 1;
+      alarmSource.connect(alarmGain);
+      alarmGain.connect(ctx.destination);
+      alarmSource.start();
+    } catch(e) {
+      console.warn("No se pudo iniciar la alarma:", e);
+      alarmSource = null;
+      alarmGain = null;
+    }
   }
 
   function stopContinuousBeep() {
-    if (continuousBeepInterval) {
-      clearInterval(continuousBeepInterval);
-      continuousBeepInterval = null;
+    if(alarmStopTimer) {
+      clearTimeout(alarmStopTimer);
+      alarmStopTimer = null;
     }
+    if(alarmSource) {
+      try { alarmSource.stop(); } catch(e) {}
+      try { alarmSource.disconnect(); } catch(e) {}
+    }
+    alarmSource = null;
+    alarmGain = null;
+    alarmBuffer = null;
   }
 
   function triggerAlarmBeep(isTest = false) {
     if(isMuted && !isTest) return;
-    let count = 0;
-    let speedMs = parseFloat(dbData.soundSpeed) || 300;
-    let testInterval = setInterval(() => {
-      playSingleBeep();
-      count++;
-      if (count >= 3) clearInterval(testInterval);
-    }, speedMs);
+    if(isTest) {
+      stopContinuousBeep();
+      startContinuousBeep();
+      const speedMs = Math.max(100, parseFloat(dbData.soundSpeed) || 300);
+      alarmStopTimer = setTimeout(stopContinuousBeep, speedMs * 3.2);
+    }
   }
 
-  // --- SYNC Y DATOS ---
-  async function syncData() {
+  // --- OBTENER DATOS Y SYNC ---
+  async function syncData(force = false) {
+    if(syncInFlight && !force) return;
+    syncInFlight = true;
+
     try {
-      let res = await fetch(API_URL);
-      let data = await res.json();
-      
-      checarCambiosNotificaciones(data.registrosTiemposMuertos, data.registrosSetup);
-      
+      const res = await fetch(API_URL, { cache: "no-store" });
+      const data = await res.json();
+      if(data && data.error) throw new Error(data.error);
+
+      const previous = dbData;
+      const tvBefore = getTVFingerprint(dbData);
       dbData = { ...dbData, ...data };
+
       if(dbData.alarmMinutes) {
-        let el = document.getElementById('cfgAlarmMin'); if(el) el.value = dbData.alarmMinutes;
+        const el = document.getElementById('cfgAlarmMin');
+        if(el) el.value = dbData.alarmMinutes;
       }
-      if(dbData.soundVol) {
-        let elV = document.getElementById('cfgSoundVol');
-        let lblV = document.getElementById('lblSoundVol');
+      if(dbData.soundVol !== undefined) {
+        const elV = document.getElementById('cfgSoundVol');
+        const lblV = document.getElementById('lblSoundVol');
         if(elV) elV.value = dbData.soundVol;
         if(lblV) lblV.textContent = dbData.soundVol + '%';
       }
-      if(dbData.soundFreq) {
-        let elF = document.getElementById('cfgSoundFreq');
-        let lblF = document.getElementById('lblSoundFreq');
+      if(dbData.soundFreq !== undefined) {
+        const elF = document.getElementById('cfgSoundFreq');
+        const lblF = document.getElementById('lblSoundFreq');
         if(elF) elF.value = dbData.soundFreq;
         if(lblF) lblF.textContent = dbData.soundFreq + ' Hz';
       }
-      if(dbData.soundSpeed) {
-        let elS = document.getElementById('cfgSoundSpeed');
-        let lblS = document.getElementById('lblSoundSpeed');
+      if(dbData.soundSpeed !== undefined) {
+        const elS = document.getElementById('cfgSoundSpeed');
+        const lblS = document.getElementById('lblSoundSpeed');
         if(elS) elS.value = dbData.soundSpeed;
         if(lblS) lblS.textContent = dbData.soundSpeed + ' ms';
       }
 
       renderDataLists();
-      if(!document.getElementById('panelTV').classList.contains('hidden')) renderTV();
-      if(!document.getElementById('formTecnico').classList.contains('hidden') && !isModalTMOpen) renderVistaTecnico();
-    } catch(e) { console.error(e); }
+
+      const tvVisible = !document.getElementById('panelTV').classList.contains('hidden');
+      if(tvVisible) {
+        const tvAfter = getTVFingerprint(dbData);
+        if(tvAfter !== tvBefore) {
+          renderTV();
+        } else {
+          updateTVLiveState();
+        }
+      }
+
+      if(!document.getElementById('formTecnico').classList.contains('hidden')) {
+        renderVistaTecnico();
+      }
+
+      if(notificationPrimed) {
+        processRemoteNotifications(previous, dbData);
+      }
+
+    } catch(e) {
+      console.error("Error sincronizando:", e);
+    } finally {
+      syncInFlight = false;
+    }
+  }
+
+  function preserveSelectValue(select, oldValue) {
+    if(!select) return;
+    const candidate = String(oldValue == null ? "" : oldValue);
+    const exists = Array.from(select.options).some(o => o.value === candidate);
+    select.value = exists ? candidate : "";
+  }
+
+  function fillSelectPreserving(id, list) {
+    const s = document.getElementById(id);
+    if(!s) return;
+    const old = s.value;
+    s.innerHTML = '<option value="">Seleccione...</option>';
+    (list || []).forEach(i => {
+      const text = String(i);
+      s.insertAdjacentHTML('beforeend', `<option value="${escapeHtmlAttr(text)}">${escapeHtml(text)}</option>`);
+    });
+    preserveSelectValue(s, old);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[ch]));
+  }
+
+  function escapeHtmlAttr(value) { return escapeHtml(value); }
+
+  function getCatalogArray(cat) {
+    const keys = {
+      Naves: 'naves',
+      Marcas: 'marcas',
+      Operadores: 'operadores',
+      Items: 'items',
+      Tecnicos: 'tecnicos',
+      Turnos: 'turnos',
+      TiemposMuertos: 'tiemposMuertos'
+    };
+    return dbData[keys[cat] || String(cat).toLowerCase()] || [];
   }
 
   function renderDataLists() {
-    let maqs = (dbData.maquinas || []).map(m => typeof m === 'object' ? (m.maquina || 'Sin Nombre') : m);
-    let lM = document.getElementById('listMaquinas'); if(lM) { lM.innerHTML = ''; maqs.forEach(m => lM.innerHTML += `<option value="${m}">`); }
-    
-    let ops = document.getElementById('listOperadores'); if(ops) { ops.innerHTML=''; (dbData.operadores||[]).forEach(i => ops.innerHTML += `<option value="${i}">`); }
-    let itm = document.getElementById('listItems'); if(itm) { itm.innerHTML=''; (dbData.items||[]).forEach(i => itm.innerHTML += `<option value="${i}">`); }
-    let tec = document.getElementById('listTecnicos'); if(tec) { tec.innerHTML=''; (dbData.tecnicos||[]).forEach(i => tec.innerHTML += `<option value="${i}">`); }
-    
-    let fillS = (id, list) => { 
-      let s=document.getElementById(id); 
-      if(s){ 
-        let cur = s.value;
-        s.innerHTML='<option value="">Seleccione...</option>'; 
-        (list||[]).forEach(i=>s.innerHTML+=`<option value="${i}">${i}</option>`); 
-        if(cur) s.value = cur;
-      } 
+    const maqs = (dbData.maquinas || []).map(m => typeof m === 'object' ? (m.maquina || 'Sin Nombre') : m);
+    const lM = document.getElementById('listMaquinas');
+    if(lM) {
+      const oldInputs = ['opMaquina','solMaquina','regMaquina'].map(id => [id, document.getElementById(id)?.value || ""]);
+      lM.innerHTML = '';
+      maqs.forEach(m => lM.insertAdjacentHTML('beforeend', `<option value="${escapeHtmlAttr(m)}">`));
+      oldInputs.forEach(([id,v]) => { const el=document.getElementById(id); if(el) el.value=v; });
+    }
+
+    const fillDatalist = (id, list) => {
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.innerHTML = '';
+      (list || []).forEach(i => el.insertAdjacentHTML('beforeend', `<option value="${escapeHtmlAttr(i)}">`));
     };
-    
-    fillS('opTurno', dbData.turnos); 
-    fillS('solTurno', dbData.turnos); 
-    fillS('regTurno', dbData.turnos); 
-    fillS('solMarca', dbData.marcas); 
-    fillS('addMaqNave', dbData.naves);
-    fillS('tmSelectMotivo', dbData.tiemposMuertos);
+
+    fillDatalist('listOperadores', dbData.operadores);
+    fillDatalist('listItems', dbData.items);
+    fillDatalist('listTecnicos', dbData.tecnicos);
+
+    fillSelectPreserving('opTurno', dbData.turnos);
+    fillSelectPreserving('solTurno', dbData.turnos);
+    fillSelectPreserving('regTurno', dbData.turnos);
+    fillSelectPreserving('solMarca', dbData.marcas);
+    fillSelectPreserving('addMaqNave', dbData.naves);
+    fillSelectPreserving('tmSelectMotivo', dbData.tiemposMuertos);
 
     renderAdminLists();
     renderHistoriales();
+    updateNotificationButtons();
   }
 
-  async function init() { 
-    await syncData(); 
-    document.querySelectorAll('input[type="date"]').forEach(i => i.value = getTodayString()); 
+  async function init() {
+    await syncData(true);
+    document.querySelectorAll('input[type="date"]').forEach(i => i.value = getTodayString());
     loadAudioDevices();
-    actualizarBotonesNotif();
-    syncLoopInterval = setInterval(syncData, 5000);
+    updateNotificationButtons();
+
+    // Sincronización liviana cada 3 s; la TV usa además un reloj local de 1 s
+    // para recalcular duraciones/alarma sin reconstruir el DOM constantemente.
+    syncLoopInterval = setInterval(() => syncData(), SYNC_INTERVAL_MS);
   }
   document.addEventListener("DOMContentLoaded", init);
 
-  function postData(payload) {
-    fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    }).then(res => res.json())
-      .then(d => syncData())
-      .catch(e => console.error("Error enviando datos:", e));
+  async function postData(payload) {
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: {"Content-Type": "text/plain;charset=utf-8"},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(data && data.error) throw new Error(data.error);
+      await syncData(true);
+      return data;
+    } catch(e) {
+      console.error("Error posteando datos:", e);
+      alert("No se pudo guardar en Google Sheets. Revisa la conexión y vuelve a intentar.");
+      throw e;
+    }
   }
 
   function iniciarSesion() {
@@ -886,6 +1134,7 @@
       if(perms.includes('Maquinas')) { document.getElementById('btnTabSet').classList.remove('hidden'); initialTab = initialTab || 'setup'; }
       if(perms.includes('Tecnico')) { document.getElementById('btnTabTec').classList.remove('hidden'); initialTab = initialTab || 'tecnico'; }
       
+      primeNotificationSnapshot();
       if(initialTab) {
         switchTab(initialTab);
       } else {
@@ -900,6 +1149,7 @@
       document.getElementById('userDisp').textContent = `Rol: Admin Total`;
       document.getElementById('secLogin').classList.add('hidden'); document.getElementById('secApp').classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('hidden')); 
+      primeNotificationSnapshot();
       switchTab('adminHist');
     }
   }
@@ -908,16 +1158,26 @@
 
   function switchTab(t) {
     if (t !== 'tv') stopContinuousBeep();
-    if (tvInterval) clearInterval(tvInterval);
+    if (tvInterval) { clearInterval(tvInterval); tvInterval = null; }
+    if (tvLiveTimer) { clearInterval(tvLiveTimer); tvLiveTimer = null; }
 
     if(t === 'tv') {
-      document.getElementById('mainContainer').classList.add('hidden'); document.getElementById('panelTV').classList.remove('hidden');
-      document.body.style.background = "#020617"; document.getElementById('tvFilterFecha').value = getTodayString(); renderTV();
-      tvInterval = setInterval(() => { syncData(); }, 5000); return;
+      document.getElementById('mainContainer').classList.add('hidden');
+      document.getElementById('panelTV').classList.remove('hidden');
+      document.body.style.background = "#020617";
+      document.getElementById('tvFilterFecha').value = getTodayString();
+      lastTvFingerprint = "";
+      renderTV();
+
+      // El contenido se sincroniza desde Google Sheets; el tiempo visual y la alarma se actualizan localmente cada segundo.
+      tvLiveTimer = setInterval(() => updateTVLiveState(), TV_LIVE_INTERVAL_MS);
+      tvInterval = setInterval(() => syncData(), SYNC_INTERVAL_MS);
+      return;
     }
+
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'admin-active', 'tec-active'));
     ['formOperadores','formSolubles','formSetup','formTecnico','panelAdminHistorial','panelAdmin'].forEach(id => document.getElementById(id).classList.add('hidden'));
-    
+
     if(t==='op'){ document.getElementById('btnTabOp').classList.add('active'); document.getElementById('formOperadores').classList.remove('hidden'); }
     else if(t==='sol'){ document.getElementById('btnTabSol').classList.add('active'); document.getElementById('formSolubles').classList.remove('hidden'); }
     else if(t==='setup'){ document.getElementById('btnTabSet').classList.add('active'); document.getElementById('formSetup').classList.remove('hidden'); }
@@ -929,9 +1189,13 @@
 
   function cerrarTV() {
     stopContinuousBeep();
-    if(tvInterval) clearInterval(tvInterval);
-    document.getElementById('panelTV').classList.add('hidden'); document.getElementById('mainContainer').classList.remove('hidden');
+    if(tvInterval) { clearInterval(tvInterval); tvInterval = null; }
+    if(tvLiveTimer) { clearInterval(tvLiveTimer); tvLiveTimer = null; }
+    if(document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+    document.getElementById('panelTV').classList.add('hidden');
+    document.getElementById('mainContainer').classList.remove('hidden');
     document.body.style.background = "var(--bg)";
+    document.body.classList.remove('tv-mode');
   }
 
   // --- FORMULARIO OPERADORES ---
@@ -1055,13 +1319,14 @@
     document.getElementById('filtroFechaSol').value = getTodayString(); renderHistoriales();
   }
 
-  // --- FORMULARIO REGISTRO MÁQUINAS ---
+  // --- FORMULARIO REGISTRO MÁQUINAS (AJUSTE Y SETUP SIN PIEZAS) ---
   function toggleRegCampos() {
     let est = document.getElementById('regEstatus').value;
     let d = document.getElementById('regDinamico');
     let btn = document.getElementById('btnSaveReg');
     document.querySelectorAll('#regDinamico > div').forEach(el => el.classList.add('hidden'));
     
+    // Resetear atributos required
     ['regTurno','regItem','regTecnico','regOperador','regHInicio','regPzPlan','regPzReal'].forEach(id => {
       let el = document.getElementById(id); if(el) el.removeAttribute('required');
     });
@@ -1078,6 +1343,7 @@
       ['g-turno','g-item','g-horas','g-tiempo','g-operador','g-opCubre','g-piezas'].forEach(c => d.querySelector('.'+c).classList.remove('hidden'));
       ['regTurno','regItem','regOperador','regHInicio','regPzPlan','regPzReal'].forEach(id => document.getElementById(id).setAttribute('required', 'true'));
     } else if (est === 'Ajuste' || est === 'Set up') {
+      // Piezas NO se muestran en Ajuste ni Set up
       ['g-turno','g-item','g-tecnico','g-horas','g-tiempo'].forEach(c => d.querySelector('.'+c).classList.remove('hidden'));
       ['regTurno','regItem','regTecnico','regHInicio'].forEach(id => document.getElementById(id).setAttribute('required', 'true'));
     }
@@ -1086,8 +1352,9 @@
   function calcTiempoReg() {
     let i=document.getElementById('regHInicio').value, f=document.getElementById('regHFin').value;
     if(i && f) {
-      let m = calcMinutesBetween(document.getElementById('regFecha').value || getTodayString(), i, f);
-      document.getElementById('regTiempo').value = m + " mins";
+      let m = ((new Date("2000-01-01T"+f) - new Date("2000-01-01T"+i)) / 60000);
+      if(m < 0) m += 1440;
+      document.getElementById('regTiempo').value = Math.round(m) + " mins";
     } else if (i) {
       let mins = getPendingMinutes(document.getElementById('regFecha').value || getTodayString(), i);
       document.getElementById('regTiempo').value = mins + " mins (en curso)";
@@ -1126,6 +1393,7 @@
       hInicio: document.getElementById('regHInicio').value, hFin: document.getElementById('regHFin').value,
       tiempo: document.getElementById('regTiempo').value, operador: document.getElementById('regOperador').value,
       opCubre: document.getElementById('regOpCubre').value, 
+      // Limpiar piezas para Ajuste y Setup
       piezasPlan: est === 'Corriendo' ? document.getElementById('regPzPlan').value : "",
       piezasReal: est === 'Corriendo' ? document.getElementById('regPzReal').value : "",
       piezasDelta: est === 'Corriendo' ? document.getElementById('regPzDelta').value : "",
@@ -1142,6 +1410,7 @@
       if(!dbData.registrosSetup) dbData.registrosSetup = [];
       dbData.registrosSetup.push(pld);
     }
+
 
     document.getElementById('filtroFechaMaq').value = pld.fecha;
     renderHistoriales(); e.target.reset(); document.getElementById('regId').value = ''; 
@@ -1174,11 +1443,13 @@
 
   // --- RENDERING HISTORIALES ---
   function renderHistoriales() {
+    if(!currentUser && !isAdmin) return;
     let act = getActiveMaquinasLogs();
+    const activeUser = String(currentUser || '').toLowerCase();
     let fDateM = document.getElementById('filtroFechaMaq') ? document.getElementById('filtroFechaMaq').value : getTodayString();
     let fTimeM = document.getElementById('filtroHoraMaq') ? document.getElementById('filtroHoraMaq').value : "";
     
-    let filM = act.filter(r => normalizeDateStr(r.fecha) === fDateM && (isAdmin || getSupervisor(r).toLowerCase() === currentUser.toLowerCase()));
+    let filM = act.filter(r => normalizeDateStr(r.fecha) === fDateM && (isAdmin || getSupervisor(r).toLowerCase() === activeUser));
     
     if(fTimeM) {
       let filterTimeNormalized = formatTimeInput(fTimeM);
@@ -1213,9 +1484,7 @@
             tms.forEach(tm => {
               let isTmTerm = !!tm.hFin;
               let tmDur = isTmTerm ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
-              let hIniDisp = formatHora(tm.hInicio);
-              let hFinDisp = isTmTerm ? formatHora(tm.hFin) : 'Pendiente';
-              det += `<div class="tm-item"><span>• <b>${tm.tiempoMuerto}:</b> ${tmDur} mins ${isTmTerm?'':'(en curso)'} | <b>Ini:</b> ${hIniDisp} ${isTmTerm ? '| <b>Fin:</b> '+hFinDisp : ''} <small style="color:#64748b;">(${tm.usuario})</small>${tm.comentarios ? ' - <i>'+tm.comentarios+'</i>' : ''}</span></div>`;
+              det += `<div class="tm-item"><span>• <b>${tm.tiempoMuerto}:</b> ${tmDur} mins ${isTmTerm?'':'(en curso)'} <small style="color:#64748b;">(${tm.usuario})</small>${tm.comentarios ? ' - <i>'+tm.comentarios+'</i>' : ''}</span></div>`;
             });
             det += `</div>`;
           }
@@ -1236,7 +1505,7 @@
 
     // 2. Historial Operadores
     let fDateOp = document.getElementById('filtroFechaOp') ? document.getElementById('filtroFechaOp').value : getTodayString();
-    let filOp = (dbData.registrosOperadores||[]).filter(r => normalizeDateStr(r.fecha) === fDateOp && (isAdmin || getSupervisor(r).toLowerCase() === currentUser.toLowerCase()));
+    let filOp = (dbData.registrosOperadores||[]).filter(r => normalizeDateStr(r.fecha) === fDateOp && (isAdmin || getSupervisor(r).toLowerCase() === activeUser));
     filOp.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
 
     let htmlOp = (filOp.length > 0) ? filOp.map(r => `
@@ -1253,7 +1522,7 @@
 
     // 3. Historial Solubles
     let fDateSol = document.getElementById('filtroFechaSol') ? document.getElementById('filtroFechaSol').value : getTodayString();
-    let filSol = (dbData.registrosSolubles||[]).filter(r => normalizeDateStr(r.fecha) === fDateSol && (isAdmin || getSupervisor(r).toLowerCase() === currentUser.toLowerCase()));
+    let filSol = (dbData.registrosSolubles||[]).filter(r => normalizeDateStr(r.fecha) === fDateSol && (isAdmin || getSupervisor(r).toLowerCase() === activeUser));
     filSol.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
 
     let htmlSol = (filSol.length > 0) ? filSol.map(r => `
@@ -1273,6 +1542,7 @@
   function renderVistaTecnico() {
     let fDate = document.getElementById('filtroFechaTec') ? document.getElementById('filtroFechaTec').value : getTodayString();
     
+    // Set up y Ajuste
     let lista = (dbData.registrosSetup || []).filter(r => 
       normalizeDateStr(r.fecha) === fDate && (r.estatus === 'Set up' || r.estatus === 'Ajuste')
     );
@@ -1295,7 +1565,7 @@
         tmsHtml = `<div class="tm-box" style="margin-top:10px;"><b>⏱️ Tiempos Muertos Registrados:</b>`;
         tms.forEach(tm => {
           let isTmPending = !tm.hFin;
-          let minsLive = isTmPending ? getPendingMinutes(r.fecha, tm.hInicio) : (tm.duracion || calcMinutesBetween(r.fecha, tm.hInicio, tm.hFin));
+          let minsLive = isTmPending ? getPendingMinutes(r.fecha, tm.hInicio) : tm.duracion;
           
           tmsHtml += `
             <div class="tm-item">
@@ -1337,9 +1607,8 @@
     if(divCon) divCon.innerHTML = conTM.map(renderCardTec).join('') || '<p style="color:#94a3b8;">No hay registros con tiempos muertos.</p>';
   }
 
-  // --- MODAL Y REGISTRO DE TIEMPOS MUERTOS (SOLUCIÓN DE DESELECCIÓN Y DESAPARICIÓN) ---
+  // --- MODAL Y REGISTRO DE TIEMPOS MUERTOS (CON HORA INICIO Y FIN) ---
   function abrirModalTM(regId, tmId = null) {
-    isModalTMOpen = true;
     document.getElementById('tmRegId').value = regId;
     document.getElementById('tmEditId').value = tmId || '';
     
@@ -1350,7 +1619,7 @@
       if(tm) {
         document.getElementById('tmSelectMotivo').value = tm.tiempoMuerto;
         document.getElementById('tmHInicio').value = formatTimeInput(tm.hInicio);
-        document.getElementById('tmHFin').value = tm.hFin ? formatTimeInput(tm.hFin) : nowTime;
+        document.getElementById('tmHFin').value = formatTimeInput(tm.hFin);
         document.getElementById('tmComentarios').value = tm.comentarios || '';
       }
     } else {
@@ -1385,7 +1654,6 @@
   }
 
   function cerrarModalTM() {
-    isModalTMOpen = false;
     document.getElementById('modalTM').classList.add('hidden');
   }
 
@@ -1413,8 +1681,8 @@
       regId: regId,
       tiempoMuerto: motivo,
       hInicio: hInicio,
-      hFin: hFin || "",
-      duracion: String(duracionMins),
+      hFin: hFin,
+      duracion: duracionMins,
       comentarios: comentarios,
       usuario: currentUser,
       fechaRegistro: existingObj ? (existingObj.fechaRegistro || nowStr) : nowStr,
@@ -1429,394 +1697,676 @@
       dbData.registrosTiemposMuertos.push(pld);
     }
 
+
     cerrarModalTM();
     renderVistaTecnico();
     renderHistoriales();
+    if(!document.getElementById('panelTV').classList.contains('hidden')) renderTV();
     postData(pld);
   }
 
   function delTiempoMuerto(id) {
-    if(confirm("¿Eliminar este registro de tiempo muerto?")) {
-      dbData.registrosTiemposMuertos = (dbData.registrosTiemposMuertos||[]).filter(x => x.id !== id);
+    if(confirm("¿Eliminar este tiempo muerto?")) {
+      dbData.registrosTiemposMuertos = dbData.registrosTiemposMuertos.filter(x => x.id !== id);
       renderVistaTecnico();
       renderHistoriales();
+      if(!document.getElementById('panelTV').classList.contains('hidden')) renderTV();
       postData({ action: "DELETE_REGISTRO_TM", id: id });
     }
   }
 
-  // --- PIZARRA TV OPTIMIZADA EN TIEMPO REAL ---
-  function renderTV() {
-    let board = document.getElementById('tvBoard');
-    if(!board) return;
+  // --- HISTORIAL GENERAL ADMIN ---
+  function toggleHistSubfiltro() {
+    let t = document.getElementById('histFiltroTipo').value;
+    let div = document.getElementById('divHistSubfiltroMaq');
+    if(t === 'MAQUINAS' || t === 'TODOS') div.classList.remove('hidden');
+    else div.classList.add('hidden');
+  }
 
-    let fDate = document.getElementById('tvFilterFecha').value || getTodayString();
-    let fEstatus = document.getElementById('tvFilterEstatus').value;
-    let showTM = document.getElementById('chkTVShowTM').checked;
-    let limitMins = parseInt(dbData.alarmMinutes, 10) || 150;
+  function renderHistorialGeneralAdmin() {
+    if(!isAdmin) return;
 
-    let registros = (dbData.registrosSetup || []).filter(r => normalizeDateStr(r.fecha) === fDate);
-    if(fEstatus !== 'TODOS') registros = registros.filter(r => r.estatus === fEstatus);
+    const selUser = document.getElementById('histFiltroSup');
+    if(selUser) {
+      const previous = selUser.value || "TODOS";
+      const users = new Set();
 
-    let navesMap = {};
-    (dbData.naves || []).forEach(n => navesMap[n] = []);
-    navesMap['Sin Nave'] = [];
+      (dbData.usuarios || []).forEach(u => { if(u.user) users.add(u.user); });
+      (dbData.registrosSetup || []).forEach(r => { if(r.usuario) users.add(r.usuario); });
+      (dbData.registrosOperadores || []).forEach(r => { if(r.usuario) users.add(r.usuario); });
+      (dbData.registrosSolubles || []).forEach(r => { if(r.usuario) users.add(r.usuario); });
+      (dbData.registrosTiemposMuertos || []).forEach(r => { if(r.usuario) users.add(r.usuario); });
 
-    registros.forEach(r => {
-      let maqObj = (dbData.maquinas || []).find(m => typeof m === 'object' && m.maquina === r.maquina);
-      let naveName = maqObj ? (maqObj.nave || 'Sin Nave') : 'Sin Nave';
-      if(!navesMap[naveName]) navesMap[naveName] = [];
-      navesMap[naveName].push(r);
-    });
+      selUser.innerHTML = '<option value="TODOS">Todos los usuarios</option>';
+      Array.from(users).sort((a,b) => String(a).localeCompare(String(b))).forEach(u => {
+        selUser.insertAdjacentHTML('beforeend', `<option value="${escapeHtmlAttr(u)}">${escapeHtml(u)}</option>`);
+      });
+      preserveSelectValue(selUser, previous);
+    }
 
-    let anyAlarmed = false;
-    let htmlBoard = "";
+    const filterUser = selUser ? selUser.value : "TODOS";
+    const filterTipo = document.getElementById('histFiltroTipo') ? document.getElementById('histFiltroTipo').value : "TODOS";
+    const filterSubEst = document.getElementById('histFiltroSubEstatus') ? document.getElementById('histFiltroSubEstatus').value : "TODOS";
+    const filterFecha = document.getElementById('histFiltroFecha') ? document.getElementById('histFiltroFecha').value : "";
+    let html = "";
 
-    Object.keys(navesMap).forEach(nave => {
-      let items = navesMap[nave];
-      if(items.length === 0) return;
+    const sameUser = value => filterUser === "TODOS" || String(value || '').toLowerCase() === filterUser.toLowerCase();
 
-      htmlBoard += `<div class="tv-nave-col">
-        <div class="tv-nave-header">${nave}</div>
-        <div class="tv-section">`;
+    if(filterTipo === "TODOS" || filterTipo === "MAQUINAS") {
+      let reqs = getActiveMaquinasLogs();
+      if(filterFecha) reqs = reqs.filter(r => normalizeDateStr(r.fecha) === filterFecha);
+      if(filterUser !== "TODOS") reqs = reqs.filter(r => sameUser(getSupervisor(r)));
+      if(filterSubEst !== "TODOS") reqs = reqs.filter(r => r.estatus === filterSubEst);
 
-      items.forEach(r => {
-        let term = r.hFin ? true : false;
-        let mins = term ? calcMinutesBetween(r.fecha, r.hInicio, r.hFin) : getPendingMinutes(r.fecha, r.hInicio);
-        let isAlarmed = !term && (mins >= limitMins);
-        if(isAlarmed) anyAlarmed = true;
+      html += `<h3>🏭 Registros de Máquinas / Setup (${reqs.length})</h3>`;
+      if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
+      reqs.forEach(r => {
+        const dur = r.hFin ? (r.tiempo || '-') : (getPendingMinutes(r.fecha, r.hInicio) + ' mins (en curso)');
+        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${escapeHtml(r.maquina)}</b> (${escapeHtml(r.estatus)}) | Usuario: ${escapeHtml(getSupervisor(r))}<br><small>Item: ${escapeHtml(r.item||'-')} | Turno: ${escapeHtml(r.turno||'-')} | H.Ini: ${formatHora(r.hInicio)} | H.Fin: ${formatHora(r.hFin)} | Duración: ${escapeHtml(dur)}</small></div></div>`;
+      });
+    }
 
-        let cls = r.estatus==='Caida'?'tvc-caida': r.estatus==='Corriendo'?'tvc-corriendo': r.estatus==='Ajuste'?'tvc-ajuste':'tvc-setup';
-        if(term && r.estatus !== 'Caida') cls = 'tvc-term';
-        if(isAlarmed) cls += ' tvc-alarmed';
+    if(filterTipo === "TODOS" || filterTipo === "TIEMPOS_MUERTOS") {
+      let tms = dbData.registrosTiemposMuertos || [];
+      if(filterUser !== "TODOS") tms = tms.filter(x => sameUser(x.usuario));
+      if(filterFecha) {
+        tms = tms.filter(x => {
+          const parent = (dbData.registrosSetup||[]).find(r => r.id === x.regId);
+          return parent && normalizeDateStr(parent.fecha) === filterFecha;
+        });
+      }
 
-        let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
-        let tmsHtml = "";
-        if(showTM && tms.length > 0) {
-          tmsHtml = `<div class="tm-box" style="margin-top:5px; background:rgba(0,0,0,0.3); color:#fef08a; border-color:#854d0e;"><b>⏱️ Tiempos Muertos:</b>`;
-          tms.forEach(tm => {
-            let tmTerm = !!tm.hFin;
-            let tmDur = tmTerm ? (tm.duracion || calcMinutesBetween(r.fecha, tm.hInicio, tm.hFin)) : getPendingMinutes(r.fecha, tm.hInicio);
-            tmsHtml += `<div style="font-size:0.85rem; border-bottom:1px dashed #a16207; padding:2px 0;">
-              • <b>${tm.tiempoMuerto}:</b> ${tmDur} mins ${tmTerm?'':'(en curso)'}<br>
-              <small><b>Usuario:</b> ${tm.usuario} | <b>Ini:</b> ${formatHora(tm.hInicio)} ${tmTerm ? '| <b>Fin:</b> '+formatHora(tm.hFin) : ''}</small>
-            </div>`;
-          });
-          tmsHtml += `</div>`;
-        }
+      html += `<h3 style="margin-top:15px;">⏱️ Registros de Tiempos Muertos (${tms.length})</h3>`;
+      if(tms.length === 0) html += `<p style="color:#94a3b8;">Sin tiempos muertos capturados para este criterio.</p>`;
+      tms.forEach(tm => {
+        const parent = (dbData.registrosSetup||[]).find(r => r.id === tm.regId);
+        const maq = parent ? parent.maquina : 'Máquina Desconocida';
+        const fStr = parent ? normalizeDateStr(parent.fecha) : 'N/A';
+        const durDisplay = tm.hFin ? `${tm.duracion} mins` : `${getPendingMinutes(fStr, tm.hInicio)} mins (En proceso)`;
 
-        htmlBoard += `
-          <div class="tv-card ${cls}">
-            <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;">
-              <span>${r.maquina}</span>
-              <span>${r.estatus}</span>
+        html += `
+          <div class="item-row" style="border-left-color:#d97706;">
+            <div>
+              <b>[${fStr}] ${escapeHtml(maq)}</b> - Motivo: <span style="color:#b45309;">${escapeHtml(tm.tiempoMuerto)}</span><br>
+              <small><b>Usuario:</b> ${escapeHtml(tm.usuario||'-')} | <b>Hora Ini:</b> ${formatHora(tm.hInicio)} | <b>Hora Fin:</b> ${tm.hFin ? formatHora(tm.hFin) : 'Pendiente'}</small><br>
+              <small><b>Duración:</b> ${escapeHtml(durDisplay)} ${tm.comentarios ? '| <i>Obs: '+escapeHtml(tm.comentarios)+'</i>' : ''}</small>
             </div>
-            <div style="font-size:0.85rem; margin-top:4px;">
-              ${r.item ? `<b>Item:</b> ${r.item} | ` : ''} <b>Turno:</b> ${r.turno||'-'}<br>
-              ${r.tecnico ? `<b>Técnico:</b> ${r.tecnico} | ` : ''} <b>Sup:</b> ${getSupervisor(r)}<br>
-              <b>Ini:</b> ${formatHora(r.hInicio)} ${term ? '| <b>Fin:</b> '+formatHora(r.hFin) : ''}<br>
-              <b>Duración:</b> <span style="font-size:1rem; font-weight:bold;">${mins} mins</span> ${isAlarmed ? '⚠️ EXCEDIDO' : ''}
-            </div>
-            ${tmsHtml}
           </div>`;
       });
+    }
 
-      htmlBoard += `</div></div>`;
+    if(filterTipo === "TODOS" || filterTipo === "OPERADORES") {
+      let reqs = dbData.registrosOperadores || [];
+      if(filterFecha) reqs = reqs.filter(r => normalizeDateStr(r.fecha) === filterFecha);
+      if(filterUser !== "TODOS") reqs = reqs.filter(r => sameUser(getSupervisor(r)));
+
+      html += `<h3 style="margin-top:15px;">👷 Registros de Operadores (${reqs.length})</h3>`;
+      if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
+      reqs.forEach(r => {
+        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${escapeHtml(r.maquina)}</b> - Turno ${escapeHtml(r.turno)} | Usuario: ${escapeHtml(getSupervisor(r))}<br><small>Titular: ${escapeHtml(r.operador)} ${r.opCubre?'| Cubre: '+escapeHtml(r.opCubre):''}</small></div></div>`;
+      });
+    }
+
+    if(filterTipo === "TODOS" || filterTipo === "SOLUBLES") {
+      let reqs = dbData.registrosSolubles || [];
+      if(filterFecha) reqs = reqs.filter(r => normalizeDateStr(r.fecha) === filterFecha);
+      if(filterUser !== "TODOS") reqs = reqs.filter(r => sameUser(getSupervisor(r)));
+
+      html += `<h3 style="margin-top:15px;">🧪 Registros de Soluble (${reqs.length})</h3>`;
+      if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
+      reqs.forEach(r => {
+        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${escapeHtml(r.maquina)}</b> - ${escapeHtml(r.marca)} | Usuario: ${escapeHtml(getSupervisor(r))}<br><small>Brix: ${escapeHtml(r.brixAnt)}➔${escapeHtml(r.brixNue)} | pH: ${escapeHtml(r.phAnt)}➔${escapeHtml(r.phNue)} | Hora: ${escapeHtml(r.horaRegistro||'N/A')}</small></div></div>`;
+      });
+    }
+
+    const div = document.getElementById('adminHistSetup');
+    if(div) div.innerHTML = html;
+  }
+
+  function resetFiltrosHistorialGral() {
+    document.getElementById('histFiltroSup').value = "TODOS";
+    document.getElementById('histFiltroTipo').value = "TODOS";
+    document.getElementById('histFiltroSubEstatus').value = "TODOS";
+    document.getElementById('histFiltroFecha').value = "";
+    toggleHistSubfiltro();
+    renderHistorialGeneralAdmin();
+  }
+
+  // --- WHATSAPP COPIAR ---
+  function copiarWhatsApp(soloTiemposMuertos = false) {
+    let act = getActiveMaquinasLogs();
+    let fDate = document.getElementById('filtroFechaMaq').value;
+    
+    let rs = act.filter(r => normalizeDateStr(r.fecha) === fDate && (isAdmin || getSupervisor(r).toLowerCase() === activeUser));
+    
+    let fTimeM = document.getElementById('filtroHoraMaq') ? document.getElementById('filtroHoraMaq').value : "";
+    if(fTimeM) {
+      let filterTimeNormalized = formatTimeInput(fTimeM);
+      rs = rs.filter(r => {
+        if(!r.hInicio) return false;
+        let regTimeNormalized = formatTimeInput(r.hInicio);
+        return regTimeNormalized >= filterTimeNormalized;
+      });
+    }
+
+    let sts = [];
+    if(document.getElementById('chkCopyCaida').checked) sts.push('Caida');
+    if(document.getElementById('chkCopyCorr').checked) sts.push('Corriendo');
+    if(document.getElementById('chkCopyAjuste').checked) sts.push('Ajuste');
+    if(document.getElementById('chkCopySetup').checked) sts.push('Set up');
+
+    rs = rs.filter(r => sts.includes(r.estatus));
+    if(!rs.length) return alert("Sin registros con esos filtros.");
+
+    let incluirTM = document.getElementById('chkCopyTM').checked;
+    let txt = `📋 *REPORTE DE MÁQUINAS (${fDate})*\n👤 Supervisor: ${currentUser}\n\n`;
+
+    if(soloTiemposMuertos) {
+      txt = `⏱️ *REPORTE DE TIEMPOS MUERTOS (${fDate})*\n👤 Supervisor: ${currentUser}\n\n`;
+      let tmCont = 0;
+      rs.forEach(r => {
+        let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
+        if(tms.length > 0) {
+          tmCont++;
+          txt += `🏭 *Máquina:* ${r.maquina} (${r.estatus})\n`;
+          if(r.item) txt += `   *Ítem:* ${r.item}\n`;
+          txt += `   *Tiempos Muertos:*\n`;
+          tms.forEach(tm => {
+            let durTm = tm.hFin ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
+            txt += `     • ${tm.tiempoMuerto}: ${durTm} mins (${tm.usuario})`;
+            if(tm.comentarios) txt += ` - Obs: ${tm.comentarios}`;
+            txt += `\n`;
+          });
+          txt += `\n`;
+        }
+      });
+      if(tmCont === 0) return alert("No hay tiempos muertos registrados para el filtro seleccionado.");
+    } else {
+      sts.forEach(st => {
+        let sub = rs.filter(x => x.estatus === st);
+        if(sub.length > 0) {
+          let stName = st.toUpperCase();
+          let pendientes = sub.filter(x => !x.hFin && st !== 'Caida');
+          let terminados = sub.filter(x => x.hFin && st !== 'Caida');
+          let caidas = sub.filter(x => st === 'Caida');
+
+          if (pendientes.length > 0) {
+            txt += `⏳ *${stName} PENDIENTES (${pendientes.length})*\n-----------------------------------\n`;
+            pendientes.forEach((r, i) => {
+              let durLive = getPendingMinutes(r.fecha, r.hInicio) + " mins en curso";
+              txt += `${i+1}. *Máquina:* ${r.maquina}\n`;
+              if(r.item) txt += `   *Ítem:* ${r.item}\n`;
+              if(r.tecnico) txt += `   *Técnico:* ${r.tecnico}\n`;
+              if(r.operador) txt += `   *Operador:* ${r.operador}\n`;
+              txt += `   *Inicio:* ${formatHora(r.hInicio)} | *Fin:* En proceso...\n`;
+              txt += `   *Duración:* ${durLive}\n`;
+              if(r.comentarios) txt += `   *Obs:* ${r.comentarios}\n`;
+
+              if(incluirTM) {
+                let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
+                if(tms.length > 0) {
+                  txt += `   *Tiempos Muertos:*\n`;
+                  tms.forEach(tm => {
+                    let durTm = tm.hFin ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
+                    txt += `     • ${tm.tiempoMuerto}: ${durTm} mins`;
+                    if(tm.comentarios) txt += ` (Obs: ${tm.comentarios})`;
+                    txt += `\n`;
+                  });
+                }
+              }
+              txt += `\n`;
+            });
+          }
+
+          if (terminados.length > 0) {
+            txt += `✅ *${stName} TERMINADOS (${terminados.length})*\n-----------------------------------\n`;
+            terminados.forEach((r, i) => {
+              txt += `${i+1}. *Máquina:* ${r.maquina}\n`;
+              if(r.item) txt += `   *Ítem:* ${r.item}\n`;
+              if(r.tecnico) txt += `   *Técnico:* ${r.tecnico}\n`;
+              if(r.operador) txt += `   *Operador:* ${r.operador}\n`;
+              txt += `   *Inicio:* ${formatHora(r.hInicio)} | *Fin:* ${formatHora(r.hFin)}\n`;
+              txt += `   *Duración:* ${r.tiempo || '-'}\n`;
+              if(r.comentarios) txt += `   *Obs:* ${r.comentarios}\n`;
+
+              if(incluirTM) {
+                let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
+                if(tms.length > 0) {
+                  txt += `   *Tiempos Muertos:*\n`;
+                  tms.forEach(tm => {
+                    let durTm = tm.hFin ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
+                    txt += `     • ${tm.tiempoMuerto}: ${durTm} mins`;
+                    if(tm.comentarios) txt += ` (Obs: ${tm.comentarios})`;
+                    txt += `\n`;
+                  });
+                }
+              }
+              txt += `\n`;
+            });
+          }
+
+          if (caidas.length > 0) {
+            txt += `🛑 *CAÍDAS (${caidas.length})*\n-----------------------------------\n`;
+            caidas.forEach((r, i) => {
+              txt += `${i+1}. *Máquina:* ${r.maquina}\n`;
+              txt += `   *Turno:* ${r.turno || '-'}\n`;
+              if(r.comentarios) txt += `   *Obs:* ${r.comentarios}\n`;
+              txt += `\n`;
+            });
+          }
+        }
+      });
+    }
+
+    let ta = document.createElement("textarea"); 
+    ta.value = txt; 
+    document.body.appendChild(ta); 
+    ta.select(); 
+    document.execCommand('copy'); 
+    document.body.removeChild(ta);
+    alert("Copiado al portapapeles. ¡Listo para pegar en WhatsApp!");
+  }
+
+  // --- TV RENDERING ---
+  function getTVFingerprint(data = dbData) {
+    const regs = (data.registrosSetup || []).map(r => [
+      r.id,r.fecha,r.maquina,r.estatus,r.hInicio,r.hFin,r.tiempo,
+      r.usuario,r.tecnico,r.item,r.piezasPlan,r.piezasReal,r.piezasDelta
+    ].join('|')).join('||');
+    const tms = (data.registrosTiemposMuertos || []).map(t => [
+      t.id,t.regId,t.tiempoMuerto,t.hInicio,t.hFin,t.duracion,t.usuario,t.fechaActualizacion
+    ].join('|')).join('||');
+    const maq = (data.maquinas || []).map(m => typeof m==='object' ? `${m.maquina}|${m.nave}` : m).join('|');
+    return `${getTodayString()}::${regs}::${tms}::${maq}::${(data.naves||[]).join('|')}::${data.alarmMinutes}::${data.soundVol}::${data.soundFreq}::${data.soundSpeed}`;
+  }
+
+  function updateTVLiveState() {
+    const alarmLimitMin = parseInt(dbData.alarmMinutes, 10) || 150;
+    let hasAlarmTriggered = false;
+
+    document.querySelectorAll('.tv-card[data-reg-id]').forEach(card => {
+      const id = card.getAttribute('data-reg-id');
+      const r = (dbData.registrosSetup || []).find(x => String(x.id) === String(id));
+      if(!r) return;
+
+      const elapsed = getPendingMinutes(r.fecha, r.hInicio);
+      const elapsedEl = card.querySelector('[data-live-duration]');
+      const badgeEl = card.querySelector('[data-live-badge]');
+      const alarmed = !r.hFin && (r.estatus === 'Set up' || r.estatus === 'Ajuste') && elapsed >= alarmLimitMin;
+
+      if(elapsedEl) {
+        elapsedEl.textContent = r.hFin ? `⏱️ Duración: ${r.tiempo || calcMinutesBetween(r.fecha,r.hInicio,r.hFin) + ' mins'}` : `⏱️ Duración: ${elapsed} mins en curso`;
+      }
+      if(badgeEl) {
+        badgeEl.textContent = `${elapsed} min`;
+        badgeEl.style.background = alarmed ? '#ef4444' : '#0284c7';
+      }
+      card.classList.toggle('tvc-alarmed', alarmed);
+      if(alarmed) hasAlarmTriggered = true;
+
+      // Actualiza duraciones de Tiempos Muertos sin reconstruir las tarjetas.
+      card.querySelectorAll('[data-tm-id]').forEach(tmEl => {
+        const tmId = tmEl.getAttribute('data-tm-id');
+        const tm = (dbData.registrosTiemposMuertos || []).find(x => String(x.id) === String(tmId));
+        if(!tm) return;
+        const mins = tm.hFin ? (tm.duracion || calcMinutesBetween(r.fecha,tm.hInicio,tm.hFin)) : getPendingMinutes(r.fecha, tm.hInicio);
+        const live = tmEl.querySelector('[data-tm-duration]');
+        if(live) live.textContent = `${mins}m${tm.hFin ? '' : ' ⌛'}`;
+      });
     });
 
-    board.innerHTML = htmlBoard || '<p style="color:white; padding:20px;">No hay registros activos para mostrar.</p>';
+    if(hasAlarmTriggered && !isMuted) startContinuousBeep();
+    else stopContinuousBeep();
+  }
 
-    if(anyAlarmed && !isMuted) {
+  async function togglePantallaTV() {
+    try {
+      if(!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch(e) {
+      alert("El navegador no permitió pantalla completa. Puedes usar F11 en la PC de la TV.");
+    }
+  }
+
+  document.addEventListener('fullscreenchange', () => {
+    const btn = document.getElementById('btnFullscreenTV');
+    if(btn) btn.textContent = document.fullscreenElement ? '⛶ Salir de pantalla completa' : '⛶ Pantalla completa';
+    document.body.classList.toggle('tv-mode', !!document.fullscreenElement);
+  });
+
+  function renderTV() {
+    let board = document.getElementById('tvBoard');
+    let winY = window.scrollY;
+    let boardX = board ? board.scrollLeft : 0;
+    let sectionScrolls = {};
+    document.querySelectorAll('.tv-section').forEach((sec, idx) => {
+      sectionScrolls[idx] = sec.scrollTop;
+    });
+
+    let fDate = document.getElementById('tvFilterFecha').value;
+    let filterEst = document.getElementById('tvFilterEstatus').value;
+    let showTM = document.getElementById('chkTVShowTM').checked;
+
+    let act = getActiveMaquinasLogs().filter(r => normalizeDateStr(r.fecha) === fDate);
+    if(filterEst !== "TODOS") act = act.filter(r => r.estatus === filterEst);
+
+    let maqNaveMap = {};
+    (dbData.maquinas || []).forEach(m => {
+       if(typeof m === 'object') maqNaveMap[m.maquina] = m.nave || "Sin Nave";
+       else maqNaveMap[m] = "Sin Nave";
+    });
+
+    let navesData = {};
+    (dbData.naves || []).forEach(n => {
+      if(n && n.trim().toLowerCase() !== "sin nave") navesData[n] = [];
+    });
+
+    act.forEach(r => { 
+      let n = maqNaveMap[r.maquina] || "Sin Nave"; 
+      if(n && n.trim().toLowerCase() !== "sin nave") {
+        if(!navesData[n]) navesData[n] = []; 
+        navesData[n].push(r); 
+      }
+    });
+
+    let hasAlarmTriggered = false;
+    let alarmLimitMin = parseInt(dbData.alarmMinutes, 10) || 150;
+
+    let bHtml = "";
+    Object.keys(navesData).forEach(nave => {
+      let regs = navesData[nave];
+
+      let p = regs.filter(r => !r.hFin && r.estatus !== 'Caida');
+      let t = regs.filter(r => r.hFin && r.estatus !== 'Caida');
+      let c = regs.filter(r => r.estatus === 'Caida');
+
+      const htmlCard = (r, cls) => {
+        let elapsedMin = getPendingMinutes(r.fecha, r.hInicio);
+        let isAlarmed = false;
+
+        // Alarmas activas para Setup y Ajustes excedidos
+        if(!r.hFin && (r.estatus === 'Set up' || r.estatus === 'Ajuste') && elapsedMin >= alarmLimitMin) {
+          isAlarmed = true;
+          hasAlarmTriggered = true;
+        }
+
+        let cardClass = `${cls} ${isAlarmed ? 'tvc-alarmed' : ''}`;
+
+        let tmsHtml = '';
+        if(showTM) {
+          let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
+          if(tms.length > 0) {
+            tmsHtml = `<div style="background:rgba(0,0,0,0.3); padding:4px 6px; border-radius:4px; margin-top:5px; font-size:0.8rem; color:#fde047;">⏱️ <b>T. Muertos:</b>`;
+            tms.forEach(tm => {
+              let durTm = tm.hFin ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
+              tmsHtml += `<br>• ${tm.tiempoMuerto}: <b>${durTm}m</b> ${!tm.hFin ? '⌛' : ''} ${tm.comentarios ? '(<i>'+tm.comentarios+'</i>)' : ''}`;
+            });
+            tmsHtml += `</div>`;
+          }
+        }
+
+        return `
+          <div class="tv-card ${cardClass}" data-reg-id="${escapeHtmlAttr(r.id)}">
+            <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;">
+              <span>🏭 ${r.maquina} <span style="font-size:0.8rem; background:#475569; padding:2px 4px; border-radius:4px;">${r.estatus}</span></span>
+              <span style="font-size:0.85rem; color:#cbd5e1;">Sup: ${getSupervisor(r)}</span>
+            </div>
+            
+            ${r.item ? `<div style="color:#38bdf8; font-size:0.9rem; margin-top:2px;">📦 Item: <b>${r.item}</b></div>` : ''}
+            ${r.tecnico ? `<div style="color:#a7f3d0; font-size:0.85rem;">🔧 Tec: ${r.tecnico}</div>` : ''}
+            ${r.operador ? `<div style="color:#fde047; font-size:0.85rem;">👷 Op: ${r.operador} ${r.opCubre ? '(Cubre: '+r.opCubre+')' : ''}</div>` : ''}
+            
+            ${r.estatus === 'Corriendo' ? `
+              <div style="display:flex; gap:8px; font-size:0.8rem; background:rgba(0,0,0,0.25); padding:4px 6px; border-radius:4px; margin-top:4px;">
+                <span>Plan: <b>${r.piezasPlan||0}</b></span> |
+                <span>Real: <b>${r.piezasReal||0}</b></span> |
+                <span>Delta: <b style="color:${(r.piezasDelta||0)<0?'#f87171':'#4ade80'};">${r.piezasDelta||0}</b></span>
+              </div>
+            ` : ''}
+
+            <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-top:5px; border-top:1px dashed #475569; padding-top:4px;">
+              <span>Ini: ${formatHora(r.hInicio) || r.turno}</span> 
+              <span>${r.hFin ? 'Fin: '+formatHora(r.hFin) : '<i style="color:#fcd34d;">En proceso...</i>'}</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+              <span data-live-duration style="font-size:0.8rem; color:#cbd5e1;">⏱️ Duración: ${r.hFin ? (r.tiempo || elapsedMin + ' mins') : elapsedMin + ' mins en curso'}</span>
+              ${!r.hFin && r.estatus !== 'Caida' ? `<span data-live-badge style="font-size:0.75rem; background:${isAlarmed?'#ef4444':'#0284c7'}; color:white; padding:2px 6px; border-radius:10px; font-weight:bold;">${elapsedMin} min</span>` : ''}
+            </div>
+
+            ${tmsHtml}
+
+            ${r.comentarios ? `<div style="font-size:0.8rem; margin-top:4px; color:#cbd5e1;">💬 ${r.comentarios}</div>` : ''}
+          </div>`;
+      };
+
+      bHtml += `
+        <div class="tv-nave-col">
+          <div class="tv-nave-header">${nave}</div>
+          <div class="tv-section">
+            <div class="tv-section-title">⏳ Pendientes / En Proceso (${p.length})</div>
+            ${p.map(r => htmlCard(r, r.estatus==='Corriendo'?'tvc-corriendo':(r.estatus==='Ajuste'?'tvc-ajuste':'tvc-setup'))).join('') || '<small style="color:#94a3b8;">Ninguno</small>'}
+            
+            <div class="tv-section-title" style="margin-top:10px; color:#34d399;">✅ Terminados (${t.length})</div>
+            ${t.map(r => htmlCard(r, 'tvc-term')).join('') || '<small style="color:#94a3b8;">Ninguno</small>'}
+            
+            <div class="tv-section-title" style="margin-top:10px; color:#f87171;">🛑 Caídas (${c.length})</div>
+            ${c.map(r => htmlCard(r, 'tvc-caida')).join('') || '<small style="color:#94a3b8;">Ninguno</small>'}
+          </div>
+        </div>`;
+    });
+
+    let boardEl = document.getElementById('tvBoard');
+    if(boardEl) boardEl.innerHTML = bHtml || '<div style="color:white; padding:20px;">No hay registros para esta fecha.</div>';
+
+    window.scrollTo(0, winY);
+    if(boardEl) boardEl.scrollLeft = boardX;
+    document.querySelectorAll('.tv-section').forEach((sec, idx) => {
+      if(sectionScrolls[idx] !== undefined) sec.scrollTop = sectionScrolls[idx];
+    });
+
+    lastTvFingerprint = getTVFingerprint(dbData);
+    if (hasAlarmTriggered && !isMuted) {
       startContinuousBeep();
     } else {
       stopContinuousBeep();
     }
   }
 
-  // --- HISTORIAL GENERAL ADMIN ---
-  function renderHistorialGeneralAdmin() {
-    let div = document.getElementById('adminHistSetup'); if(!div) return;
-    let fUser = document.getElementById('histFiltroSup').value;
-    let fTipo = document.getElementById('histFiltroTipo').value;
-    let fSubEstatus = document.getElementById('histFiltroSubEstatus').value;
-    let fFecha = document.getElementById('histFiltroFecha').value;
-
-    let html = "";
-
-    // 1. MAQUINAS Y SETUP
-    if(fTipo === 'TODOS' || fTipo === 'MAQUINAS') {
-      let list = getActiveMaquinasLogs();
-      if(fUser && fUser !== 'TODOS') list = list.filter(r => getSupervisor(r).toLowerCase() === fUser.toLowerCase());
-      if(fFecha) list = list.filter(r => normalizeDateStr(r.fecha) === fFecha);
-      if(fSubEstatus && fSubEstatus !== 'TODOS') list = list.filter(r => r.estatus === fSubEstatus);
-
-      if(list.length > 0) {
-        html += `<h3 style="color:#0f172a;">🏭 Registro de Máquinas (${list.length})</h3>`;
-        list.forEach(r => {
-          html += `<div class="item-row">
-            <div>
-              <b>${r.maquina}</b> - ${r.estatus} (Turno ${r.turno})<br>
-              <small><b>Usuario:</b> ${getSupervisor(r)} | <b>Fecha:</b> ${r.fecha} | <b>Hora Ini:</b> ${formatHora(r.hInicio)} ${r.hFin?'| <b>Fin:</b> '+formatHora(r.hFin):''}</small>
-          </div>
-        </div>`;
-        });
-      }
-    }
-
-    // 2. TIEMPOS MUERTOS
-    if(fTipo === 'TODOS' || fTipo === 'TIEMPOS_MUERTOS') {
-      let listTM = dbData.registrosTiemposMuertos || [];
-      if(fUser && fUser !== 'TODOS') listTM = listTM.filter(r => (r.usuario||'').toLowerCase() === fUser.toLowerCase());
-      if(fFecha) listTM = listTM.filter(r => {
-        let reg = (dbData.registrosSetup||[]).find(s => s.id === r.regId);
-        return reg && normalizeDateStr(reg.fecha) === fFecha;
-      });
-
-      if(listTM.length > 0) {
-        html += `<h3 style="color:#b45309; margin-top:15px;">⏱️ Tiempos Muertos (${listTM.length})</h3>`;
-        listTM.forEach(r => {
-          let reg = (dbData.registrosSetup||[]).find(s => s.id === r.regId) || {};
-          html += `<div class="item-row" style="border-left-color:#b45309;">
-            <div>
-              <b>${reg.maquina||'Máquina'}</b> - Motivo: <b>${r.tiempoMuerto}</b><br>
-              <small><b>Duración:</b> ${r.duracion||'0'} mins | <b>Usuario:</b> ${r.usuario} | <b>Ini:</b> ${formatHora(r.hInicio)} ${r.hFin?'| <b>Fin:</b> '+formatHora(r.hFin):''}</small>
-            </div>
-          </div>`;
-        });
-      }
-    }
-
-    div.innerHTML = html || '<p style="color:#94a3b8;">No se encontraron registros con los filtros seleccionados.</p>';
+  // --- CONFIGURACIÓN DE ALARMA Y SONIDO ---
+  function guardarConfigAlarma() {
+    let val = parseInt(document.getElementById('cfgAlarmMin').value, 10);
+    if(isNaN(val) || val <= 0) return alert("Ingresa un número válido de minutos.");
+    dbData.alarmMinutes = val;
+    alert("Configuración de alarma guardada correctamente.");
+    postData({ action: "SAVE_ALARM_CONFIG", alarmMinutes: val });
   }
 
-  function toggleHistSubfiltro() {
-    let t = document.getElementById('histFiltroTipo').value;
-    let divSub = document.getElementById('divHistSubfiltroMaq');
-    if(divSub) {
-      if(t === 'MAQUINAS' || t === 'TODOS') divSub.classList.remove('hidden');
-      else divSub.classList.add('hidden');
-    }
+  function guardarConfigSonido() {
+    let vol = document.getElementById('cfgSoundVol').value;
+    let freq = document.getElementById('cfgSoundFreq').value;
+    let speed = document.getElementById('cfgSoundSpeed').value;
+    dbData.soundVol = vol;
+    dbData.soundFreq = freq;
+    dbData.soundSpeed = speed;
+    alert("Ajustes de sonido guardados con éxito.");
+    postData({ action: "SAVE_SOUND_CONFIG", soundVol: vol, soundFreq: freq, soundSpeed: speed });
   }
 
-  function resetFiltrosHistorialGral() {
-    document.getElementById('histFiltroSup').value = 'TODOS';
-    document.getElementById('histFiltroTipo').value = 'TODOS';
-    document.getElementById('histFiltroSubEstatus').value = 'TODOS';
-    document.getElementById('histFiltroFecha').value = '';
-    toggleHistSubfiltro();
-    renderHistorialGeneralAdmin();
-  }
-
-  // --- GESTIÓN DE CATÁLOGOS ADMIN (REPARADO PERMANENCIA Y EDICIÓN) ---
+  // --- ADMIN CATALOGOS Y USUARIOS ---
   function renderAdminLists() {
-    // 1. Lista de Usuarios
-    let divUsr = document.getElementById('listAdminUsuarios');
-    if(divUsr) {
-      let htmlUsr = (dbData.usuarios||[]).map(u => `
-        <div class="item-row">
-          <div><b>${u.user}</b> <small>(${u.permisos||'Sin permisos'})</small></div>
-          <div class="item-actions">
-            <button class="btn-edit" onclick="editUsuario('${u.user}')">✏️</button>
-            <button class="btn-danger" onclick="deleteUsuario('${u.user}')">🗑️</button>
-          </div>
-        </div>`).join('');
-      divUsr.innerHTML = htmlUsr || '<p style="color:#94a3b8;">No hay usuarios.</p>';
-    }
+    let fill = (cat, id) => {
+      let div = document.getElementById(id);
+      if(!div) return;
+      
+      let list = getCatalogArray(cat);
+      div.innerHTML = list.map(i => `<div class="item-row">
+        <span>${i}</span>
+        <div class="item-actions">
+          <button class="btn-edit" onclick="editCat('${cat}', '${i}')">✏️</button>
+          <button class="btn-danger" onclick="delCat('${cat}', '${i}')">🗑️</button>
+        </div>
+      </div>`).join('');
+    };
 
-    // Llenar selectores de filtro
-    let selUser = document.getElementById('histFiltroSup');
-    if(selUser) {
-      let curr = selUser.value;
-      let allUsers = new Set((dbData.usuarios||[]).map(u => u.user));
-      (dbData.registrosSetup||[]).forEach(r => { if(r.usuario) allUsers.add(r.usuario); });
-      selUser.innerHTML = '<option value="TODOS">Todos los Usuarios</option>';
-      allUsers.forEach(u => selUser.innerHTML += `<option value="${u}">${u}</option>`);
-      if(curr) selUser.value = curr;
-    }
+    fill('Naves', 'listAdminNaves'); 
+    fill('Marcas', 'listAdminMarcas'); 
+    fill('Operadores', 'listAdminOperadores'); 
+    fill('Items', 'listAdminItems'); 
+    fill('Tecnicos', 'listAdminTecnicos'); 
+    fill('Turnos', 'listAdminTurnos');
+    fill('TiemposMuertos', 'listAdminTiemposMuertos');
 
-    // Catálogos Generales
-    renderSimpleCatList('Naves', 'listAdminNaves');
-    renderSimpleCatList('TiemposMuertos', 'listAdminTiemposMuertos');
-    renderSimpleCatList('Marcas', 'listAdminMarcas');
-    renderSimpleCatList('Operadores', 'listAdminOperadores');
-    renderSimpleCatList('Items', 'listAdminItems');
-    renderSimpleCatList('Tecnicos', 'listAdminTecnicos');
-    renderSimpleCatList('Turnos', 'listAdminTurnos');
-
-    // Máquinas
-    let divMaq = document.getElementById('listAdminMaquinas');
-    if(divMaq) {
-      let htmlMaq = (dbData.maquinas||[]).map(m => {
-        let name = typeof m === 'object' ? m.maquina : m;
-        let nave = typeof m === 'object' ? (m.nave||'Sin Nave') : 'Sin Nave';
+    // MÁQUINAS
+    let divM = document.getElementById('listAdminMaquinas');
+    if(divM) {
+      divM.innerHTML = (dbData.maquinas || []).map(m => {
+        let maq = typeof m === 'object' ? m.maquina : m;
+        let nav = typeof m === 'object' ? (m.nave || 'Sin Nave') : 'Sin Nave';
         return `
           <div class="item-row">
-            <div><b>${name}</b> <small>(${nave})</small></div>
+            <span><b>${maq}</b> <small style="color:#64748b;">(Nave: ${nav})</small></span>
             <div class="item-actions">
-              <button class="btn-edit" onclick="editMaqConNave('${name}', '${nave}')">✏️</button>
-              <button class="btn-danger" onclick="delCat('Maquinas', '${name}')">🗑️</button>
+              <button class="btn-edit" onclick="startEditMaq('${maq}', '${nav}')">✏️</button>
+              <button class="btn-danger" onclick="delCat('Maquinas', '${maq}')">🗑️</button>
             </div>
           </div>`;
       }).join('');
-      divMaq.innerHTML = htmlMaq || '<p style="color:#94a3b8;">No hay máquinas.</p>';
+    }
+
+    // USUARIOS
+    let divU = document.getElementById('listAdminUsuarios');
+    if(divU) {
+      divU.innerHTML = (dbData.usuarios||[]).map(u => `
+        <div class="item-row">
+          <span><b>${u.user}</b> <small>(Accesos: ${u.permisos||'Ninguno'})</small></span>
+          <div class="item-actions">
+            <button class="btn-edit" onclick="startEditUsuario('${u.user}', '${u.pass}', '${u.permisos||''}')">✏️</button>
+            <button class="btn-danger" onclick="delUsuario('${u.user}')">🗑️</button>
+          </div>
+        </div>`).join('');
     }
   }
 
-  function renderSimpleCatList(catKey, divId) {
-    let div = document.getElementById(divId);
-    if(!div) return;
-    let listKey = catKey.charAt(0).toLowerCase() + catKey.slice(1);
-    let list = dbData[listKey] || dbData[catKey] || [];
-    let html = list.map(item => `
-      <div class="item-row">
-        <div><b>${item}</b></div>
-        <div class="item-actions">
-          <button class="btn-edit" onclick="editCat('${catKey}', '${item}')">✏️</button>
-          <button class="btn-danger" onclick="delCat('${catKey}', '${item}')">🗑️</button>
-        </div>
-      </div>`).join('');
-    div.innerHTML = html || `<p style="color:#94a3b8;">No hay elementos en ${catKey}.</p>`;
-  }
+  function addCat(cat, inId) {
+    const input = document.getElementById(inId);
+    const v = input ? input.value.trim() : '';
+    if(!v) return;
 
-  function addCat(catalogo, inputId) {
-    let input = document.getElementById(inputId);
-    if(!input) return;
-    let val = input.value.trim();
-    if(!val) return alert("Ingresa un valor válido.");
-    
-    let pld = { action: "MANAGE_CATALOGO", catalogo: catalogo, op: "ADD", val1: val };
-    
-    let key = catalogo.charAt(0).toLowerCase() + catalogo.slice(1);
-    if(!dbData[key]) dbData[key] = [];
-    dbData[key].push(val);
-    
-    input.value = "";
-    renderDataLists();
-    postData(pld);
-  }
-
-  function editCat(catalogo, oldVal) {
-    let newVal = prompt(`Editar ${catalogo}:`, oldVal);
-    if(!newVal || newVal.trim() === oldVal) return;
-    newVal = newVal.trim();
-
-    let pld = { action: "MANAGE_CATALOGO", catalogo: catalogo, op: "EDIT", val1: oldVal, newVal1: newVal };
-
-    let key = catalogo.charAt(0).toLowerCase() + catalogo.slice(1);
-    if(dbData[key]) {
-      let idx = dbData[key].indexOf(oldVal);
-      if(idx !== -1) dbData[key][idx] = newVal;
-    }
-
-    renderDataLists();
-    postData(pld);
-  }
-
-  function delCat(catalogo, val) {
-    if(!confirm(`¿Eliminar "${val}" de ${catalogo}?`)) return;
-
-    let pld = { action: "MANAGE_CATALOGO", catalogo: catalogo, op: "DELETE", val1: val };
-
-    let key = catalogo.charAt(0).toLowerCase() + catalogo.slice(1);
-    if(dbData[key]) {
-      dbData[key] = dbData[key].filter(x => String(x).trim() !== String(val).trim());
-    }
-
-    renderDataLists();
-    postData(pld);
-  }
-
-  function saveMaqConNave() {
-    let orig = document.getElementById('editMaqOrig').value;
-    let name = document.getElementById('addMaq').value.trim();
-    let nave = document.getElementById('addMaqNave').value;
-
-    if(!name) return alert("Escribe el nombre de la máquina.");
-
-    let pld = {
-      action: "MANAGE_CATALOGO",
-      catalogo: "Maquinas",
-      op: orig ? "EDIT" : "ADD",
-      val1: orig || name,
-      newVal1: name,
-      val2: nave || "Sin Nave"
+    const keyMap = {
+      Naves:'naves', Marcas:'marcas', Operadores:'operadores',
+      Items:'items', Tecnicos:'tecnicos', Turnos:'turnos',
+      TiemposMuertos:'tiemposMuertos'
     };
+    const k = keyMap[cat] || String(cat).toLowerCase();
+    if(!dbData[k]) dbData[k] = [];
+    if(!dbData[k].some(x => String(x).trim().toLowerCase() === v.toLowerCase())) dbData[k].push(v);
 
-    if(orig) {
-      let idx = dbData.maquinas.findIndex(m => (typeof m === 'object' ? m.maquina : m) === orig);
-      if(idx !== -1) dbData.maquinas[idx] = { maquina: name, nave: nave };
-    } else {
-      if(!dbData.maquinas) dbData.maquinas = [];
-      dbData.maquinas.push({ maquina: name, nave: nave });
-    }
-
-    cancelEditMaq();
     renderDataLists();
-    postData(pld);
+    input.value = '';
+    postData({ action: "MANAGE_CATALOGO", op: "ADD", catalogo: cat, val1: v });
   }
-
-  function editMaqConNave(name, nave) {
-    document.getElementById('editMaqOrig').value = name;
-    document.getElementById('addMaq').value = name;
+  
+  function startEditMaq(maq, nave) {
+    document.getElementById('editMaqOrig').value = maq;
+    document.getElementById('addMaq').value = maq;
     document.getElementById('addMaqNave').value = nave;
-    document.getElementById('btnSaveMaq').textContent = "Guardar Cambio";
+    document.getElementById('btnSaveMaq').textContent = 'Guardar Cambios';
     document.getElementById('btnCancelMaq').classList.remove('hidden');
+    window.scrollTo({top: document.getElementById('btnSaveMaq').offsetTop - 100, behavior: 'smooth'});
   }
 
   function cancelEditMaq() {
     document.getElementById('editMaqOrig').value = '';
     document.getElementById('addMaq').value = '';
     document.getElementById('addMaqNave').value = '';
-    document.getElementById('btnSaveMaq').textContent = "Agregar Nueva";
+    document.getElementById('btnSaveMaq').textContent = 'Agregar Nueva';
     document.getElementById('btnCancelMaq').classList.add('hidden');
   }
 
-  function saveUsuario() {
-    let orig = document.getElementById('editUsrOrig').value;
-    let user = document.getElementById('addUsrName').value.trim();
-    let pass = document.getElementById('addUsrPass').value.trim();
-
-    let perms = [];
-    if(document.getElementById('chkPermOp').checked) perms.push('Operadores');
-    if(document.getElementById('chkPermMaq').checked) perms.push('Maquinas');
-    if(document.getElementById('chkPermSol').checked) perms.push('Solubles');
-    if(document.getElementById('chkPermTec').checked) perms.push('Tecnico');
-
-    if(!user || !pass) return alert("Ingresa usuario y contraseña.");
-
-    let pld = {
-      action: orig ? "EDIT_USER" : "ADD_USER",
-      origUser: orig,
-      user: user,
-      newUser: user,
-      pass: pass,
-      permisos: perms.join(',')
-    };
-
-    if(orig) {
-      let idx = dbData.usuarios.findIndex(u => u.user === orig);
-      if(idx !== -1) dbData.usuarios[idx] = { user: user, pass: pass, permisos: perms.join(',') };
+  function saveMaqConNave() {
+    let orig = document.getElementById('editMaqOrig').value;
+    let maq = document.getElementById('addMaq').value.trim();
+    let nav = document.getElementById('addMaqNave').value.trim();
+    if(!maq || !nav) return alert("Indica la máquina y selecciona una nave.");
+    
+    if (orig) {
+      let item = dbData.maquinas.find(x => (typeof x === 'object' ? x.maquina : x) === orig);
+      if (item && typeof item === 'object') { 
+        item.maquina = maq; 
+        item.nave = nav; 
+      } else { 
+        let idx = dbData.maquinas.indexOf(item); 
+        dbData.maquinas[idx] = { maquina: maq, nave: nav }; 
+      }
+      postData({ action: "MANAGE_CATALOGO", op: "EDIT", catalogo: "Maquinas", val1: orig, newVal1: maq, val2: nav });
     } else {
-      if(!dbData.usuarios) dbData.usuarios = [];
-      dbData.usuarios.push({ user: user, pass: pass, permisos: perms.join(',') });
+      if(!dbData.maquinas) dbData.maquinas = [];
+      dbData.maquinas.push({ maquina: maq, nave: nav });
+      postData({ action: "MANAGE_CATALOGO", op: "ADD", catalogo: "Maquinas", val1: maq, val2: nav });
     }
-
-    cancelEditUsr();
-    renderDataLists();
-    postData(pld);
+    
+    renderDataLists(); 
+    cancelEditMaq();
   }
 
-  function editUsuario(usr) {
-    let u = (dbData.usuarios||[]).find(x => x.user === usr); if(!u) return;
-    document.getElementById('editUsrOrig').value = u.user;
-    document.getElementById('addUsrName').value = u.user;
-    document.getElementById('addUsrPass').value = u.pass;
-    let p = u.permisos || "";
-    document.getElementById('chkPermOp').checked = p.includes('Operadores');
-    document.getElementById('chkPermMaq').checked = p.includes('Maquinas');
-    document.getElementById('chkPermSol').checked = p.includes('Solubles');
-    document.getElementById('chkPermTec').checked = p.includes('Tecnico');
-    document.getElementById('btnSaveUsr').textContent = "Guardar Cambio";
+  function editCat(cat, oldVal) {
+    let newVal = prompt(`Editar ${cat}:`, oldVal);
+    if(!newVal || newVal.trim() === "" || newVal.trim() === oldVal) return;
+    newVal = newVal.trim();
+
+    const keyMap = {
+      Naves:'naves', Marcas:'marcas', Operadores:'operadores',
+      Items:'items', Tecnicos:'tecnicos', Turnos:'turnos',
+      TiemposMuertos:'tiemposMuertos'
+    };
+    const k = keyMap[cat] || String(cat).toLowerCase();
+    if(dbData[k]) {
+      const idx = dbData[k].findIndex(x => String(x) === String(oldVal));
+      if(idx !== -1) dbData[k][idx] = newVal;
+    }
+
+    renderDataLists();
+    postData({ action: "MANAGE_CATALOGO", op: "EDIT", catalogo: cat, val1: oldVal, newVal1: newVal });
+  }
+
+  function delCat(cat, val) {
+    if(!confirm(`¿Eliminar ${val}?`)) return;
+
+    const keyMap = {
+      Naves:'naves', Marcas:'marcas', Operadores:'operadores',
+      Items:'items', Tecnicos:'tecnicos', Turnos:'turnos',
+      TiemposMuertos:'tiemposMuertos'
+    };
+    const k = keyMap[cat] || String(cat).toLowerCase();
+
+    if(k === 'maquinas') {
+      dbData.maquinas = (dbData.maquinas || []).filter(x => (typeof x === 'object' ? x.maquina : x) !== val);
+    } else if(dbData[k]) {
+      dbData[k] = dbData[k].filter(x => String(x) !== String(val));
+    }
+
+    renderDataLists();
+    postData({ action: "MANAGE_CATALOGO", op: "DELETE", catalogo: cat, val1: val });
+  }
+
+  // USUARIOS Y PERMISOS
+  function startEditUsuario(u, p, perms) {
+    document.getElementById('editUsrOrig').value = u;
+    document.getElementById('addUsrName').value = u;
+    document.getElementById('addUsrPass').value = p;
+    
+    document.getElementById('chkPermOp').checked = perms.includes('Operadores');
+    document.getElementById('chkPermMaq').checked = perms.includes('Maquinas');
+    document.getElementById('chkPermSol').checked = perms.includes('Solubles');
+    document.getElementById('chkPermTec').checked = perms.includes('Tecnico');
+    
+    document.getElementById('btnSaveUsr').textContent = 'Guardar Cambios';
     document.getElementById('btnCancelUsr').classList.remove('hidden');
+    window.scrollTo({top: document.getElementById('btnSaveUsr').offsetTop - 100, behavior: 'smooth'});
   }
 
   function cancelEditUsr() {
@@ -1827,69 +2377,44 @@
     document.getElementById('chkPermMaq').checked = false;
     document.getElementById('chkPermSol').checked = false;
     document.getElementById('chkPermTec').checked = false;
-    document.getElementById('btnSaveUsr').textContent = "Agregar Nuevo";
-    document.getElementById('btnCancelUsr').classList.remove('hidden');
+    document.getElementById('btnSaveUsr').textContent = 'Agregar Nuevo';
+    document.getElementById('btnCancelUsr').classList.add('hidden');
   }
 
-  function deleteUsuario(usr) {
-    if(confirm(`¿Eliminar usuario "${usr}"?`)) {
-      dbData.usuarios = (dbData.usuarios||[]).filter(x => x.user !== usr);
-      renderDataLists();
-      postData({ action: "DELETE_USER", user: usr });
+  function saveUsuario() {
+    let orig = document.getElementById('editUsrOrig').value;
+    let u = document.getElementById('addUsrName').value.trim();
+    let p = document.getElementById('addUsrPass').value.trim();
+    
+    if(!u || !p) return alert("Ingresa usuario y contraseña.");
+
+    let permsArr = [];
+    if(document.getElementById('chkPermOp').checked) permsArr.push('Operadores');
+    if(document.getElementById('chkPermMaq').checked) permsArr.push('Maquinas');
+    if(document.getElementById('chkPermSol').checked) permsArr.push('Solubles');
+    if(document.getElementById('chkPermTec').checked) permsArr.push('Tecnico');
+    let permsStr = permsArr.join(', ');
+
+    if(orig) {
+      let item = dbData.usuarios.find(x => x.user === orig);
+      if(item) { item.user = u; item.pass = p; item.permisos = permsStr; }
+      postData({ action: "MANAGE_USUARIO", op: "EDIT", val1: orig, newVal1: u, val2: p, val3: permsStr });
+    } else {
+      if(!dbData.usuarios) dbData.usuarios = [];
+      dbData.usuarios.push({ user: u, pass: p, permisos: permsStr });
+      postData({ action: "MANAGE_USUARIO", op: "ADD", val1: u, val2: p, val3: permsStr });
     }
+
+    renderDataLists();
+    cancelEditUsr();
   }
 
-  function guardarConfigAlarma() {
-    let min = document.getElementById('cfgAlarmMin').value;
-    dbData.alarmMinutes = min;
-    postData({ action: "SAVE_ALARM_CONFIG", alarmMinutes: min });
-    alert("Límite de alarma guardado.");
-  }
-
-  function guardarConfigSonido() {
-    let vol = document.getElementById('cfgSoundVol').value;
-    let freq = document.getElementById('cfgSoundFreq').value;
-    let speed = document.getElementById('cfgSoundSpeed').value;
-
-    dbData.soundVol = vol;
-    dbData.soundFreq = freq;
-    dbData.soundSpeed = speed;
-
-    postData({ action: "SAVE_SOUND_CONFIG", soundVol: vol, soundFreq: freq, soundSpeed: speed });
-    alert("Ajustes de sonido guardados.");
-  }
-
-  function copiarWhatsApp(soloTM) {
-    let act = getActiveMaquinasLogs();
-    let fDateM = document.getElementById('filtroFechaMaq').value || getTodayString();
-    let filM = act.filter(r => normalizeDateStr(r.fecha) === fDateM && (isAdmin || getSupervisor(r).toLowerCase() === currentUser.toLowerCase()));
-
-    let msg = `*REPORTE DE PLANTA (${fDateM})*\n\n`;
-
-    filM.forEach(r => {
-      let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
-      if(soloTM && tms.length === 0) return;
-
-      if(!soloTM) {
-        msg += `*${r.maquina}* - ${r.estatus}\n`;
-        msg += `• Turno: ${r.turno} | Sup: ${getSupervisor(r)}\n`;
-        if(r.hInicio) msg += `• Hora: ${formatHora(r.hInicio)} a ${r.hFin ? formatHora(r.hFin) : 'Pendiente'}\n`;
-      } else {
-        msg += `*${r.maquina}*:\n`;
-      }
-
-      if(tms.length > 0) {
-        msg += `  ⏱️ *Tiempos Muertos:*\n`;
-        tms.forEach(tm => {
-          let tmTerm = !!tm.hFin;
-          let dur = tmTerm ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
-          msg += `  - ${tm.tiempoMuerto}: ${dur} min (${formatHora(tm.hInicio)}${tmTerm?' - '+formatHora(tm.hFin):''}) [${tm.usuario}]\n`;
-        });
-      }
-      msg += `\n`;
-    });
-
-    navigator.clipboard.writeText(msg).then(() => alert("Reporte copiado al portapapeles."));
+  function delUsuario(u) {
+    if(confirm(`¿Eliminar al usuario ${u}?`)) {
+      dbData.usuarios = dbData.usuarios.filter(x => x.user !== u);
+      renderDataLists();
+      postData({ action: "DELETE_USER", user: u });
+    }
   }
 </script>
 </body>
