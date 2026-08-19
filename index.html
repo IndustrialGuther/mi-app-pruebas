@@ -685,11 +685,10 @@
       oneSignalReadyPromise = new Promise(resolve => {
         window.OneSignalDeferred.push(async function(OneSignal) {
           try {
-            
             await OneSignal.init({
               appId: dbData.oneSignalAppId,
-              serviceWorkerPath: "mi-app-pruebas/OneSignalSDKWorker.js",
-              serviceWorkerParam: { scope: "/mi-app-pruebas/" },
+              serviceWorkerPath: "OneSignalSDKWorker.js",
+              serviceWorkerParam: { scope: "/" },
               persistNotification: true,
               notificationClickHandlerMatch: "origin",
               notificationClickHandlerAction: "focus"
