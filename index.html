@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Control de Planta1</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0284c7">
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <style>
     :root { --primary: #0284c7; --admin: #0f172a; --setup: #059669; --tec: #d97706; --bg: #f8fafc; --card: #ffffff; }
     body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1e293b; }
@@ -367,6 +370,15 @@
           <button type="button" class="btn-admin" onclick="guardarConfigSonido()">💾 Guardar Ajustes Sonido</button>
           <button type="button" class="btn-secondary" onclick="triggerAlarmBeep(true)">🔊 Probar Sonido Alarma</button>
         </div>
+
+        <div style="margin-top:12px; padding:10px; background:#ede9fe; border-radius:8px;">
+          <b>🔔 Push Web</b>
+          <p style="margin:6px 0; font-size:0.85rem; color:#475569;">
+            OneSignal se usa para notificaciones aun con la página cerrada. Configura <code>ONESIGNAL_APP_ID</code> y
+            <code>ONESIGNAL_API_KEY</code> en Propiedades del proyecto de Apps Script.
+          </p>
+          <button type="button" class="btn-admin" onclick="probarPushOneSignal()">📲 Probar notificación push</button>
+        </div>
       </div>
       <hr>
 
@@ -506,9 +518,12 @@
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbwP9vawpPvqX03Z1k6UwGJhc1d1415mk6uUqDdpeqfwU75m966DraunLGTnKGormEF5/exec";
   let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], tiemposMuertos:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], registrosTiemposMuertos:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300 };
-  let currentUser = null, isAdmin = false;
-  const SYNC_INTERVAL_MS = 3000;
+  let currentUser = null, isAdmin = false, adminAuthToken = '';
+  const SYNC_INTERVAL_MS = 1000;
   const TV_LIVE_INTERVAL_MS = 1000;
+  let oneSignalInstance = null;
+  let oneSignalReadyPromise = null;
+  let oneSignalInitialized = false;
   let tvInterval = null, tvLiveTimer = null, syncLoopInterval = null;
   let isMuted = false;
   let audioCtx = null;
@@ -517,7 +532,6 @@
   let alarmBuffer = null;
   let alarmStopTimer = null;
   let syncInFlight = false;
-  let notificationPrimed = false;
   let lastTvFingerprint = "";
   let pendingRenderAfterSync = false;
 
@@ -634,7 +648,10 @@
     return list.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
   }
 
-  // --- NOTIFICACIONES ---
+  // --- NOTIFICACIONES PUSH (OneSignal) ---
+  // Las notificaciones se envían desde Google Apps Script mediante OneSignal.
+  // Esto permite recibirlas con la página cerrada cuando el navegador/sistema lo permita.
+
   function notifyKey(kind) {
     return `planta_notify_${kind}_${(currentUser || 'anon').toLowerCase()}`;
   }
@@ -651,169 +668,161 @@
   function updateNotificationButtons() {
     const bTM = document.getElementById('btnNotifyTM');
     const bSetup = document.getElementById('btnNotifySetup');
-    if(bTM) bTM.textContent = getNotifyEnabled('tm') ? '🔕 Desactivar Notificaciones de Tiempos Muertos' : '🔔 Activar Notificaciones de Tiempos Muertos';
-    if(bSetup) bSetup.textContent = getNotifyEnabled('setup') ? '🔕 Desactivar Notificaciones de Setups' : '🔔 Activar Notificaciones de Setups';
+    if(bTM) bTM.textContent = getNotifyEnabled('tm')
+      ? '🔕 Desactivar Notificaciones de Tiempos Muertos'
+      : '🔔 Activar Notificaciones de Tiempos Muertos';
+    if(bSetup) bSetup.textContent = getNotifyEnabled('setup')
+      ? '🔕 Desactivar Notificaciones de Setups'
+      : '🔔 Activar Notificaciones de Setups';
+  }
+
+  async function getOneSignal() {
+    if(oneSignalInstance) return oneSignalInstance;
+    if(!dbData.oneSignalAppId) return null;
+
+    if(!oneSignalReadyPromise) {
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      oneSignalReadyPromise = new Promise(resolve => {
+        window.OneSignalDeferred.push(async function(OneSignal) {
+          try {
+            await OneSignal.init({
+              appId: dbData.oneSignalAppId,
+              serviceWorkerPath: "OneSignalSDKWorker.js",
+              serviceWorkerParam: { scope: "/" },
+              persistNotification: true,
+              notificationClickHandlerMatch: "origin",
+              notificationClickHandlerAction: "focus"
+            });
+            oneSignalInstance = OneSignal;
+            oneSignalInitialized = true;
+            resolve(OneSignal);
+          } catch(err) {
+            console.error("No se pudo inicializar OneSignal:", err);
+            resolve(null);
+          }
+        });
+      });
+    }
+    return oneSignalReadyPromise;
+  }
+
+  async function linkOneSignalUser() {
+    const OneSignal = await getOneSignal();
+    if(!OneSignal || !currentUser) return;
+
+    try {
+      await OneSignal.login(String(currentUser));
+      if(OneSignal.User && OneSignal.User.addTags) {
+        await OneSignal.User.addTags({
+          notify_user: String(currentUser),
+          tech_name: String(currentUser),
+          notify_tm: getNotifyEnabled('tm') ? "1" : "0",
+          notify_setup: getNotifyEnabled('setup') ? "1" : "0"
+        });
+      }
+
+      // Recupera preferencias persistidas en OneSignal si localStorage está vacío.
+      if(OneSignal.User && OneSignal.User.getTags) {
+        const tags = OneSignal.User.getTags() || {};
+        ['tm','setup'].forEach(kind => {
+          const key = kind === 'tm' ? 'notify_tm' : 'notify_setup';
+          if(localStorage.getItem(notifyKey(kind)) === null && tags[key] !== undefined) {
+            setNotifyEnabled(kind, String(tags[key]) === "1");
+          }
+        });
+      }
+      updateNotificationButtons();
+    } catch(err) {
+      console.warn("No se pudo asociar el dispositivo al usuario:", err);
+    }
   }
 
   async function toggleNotificaciones(kind) {
-    if(!("Notification" in window)) {
-      alert("Este navegador no soporta notificaciones de sistema.");
+    if(!currentUser) {
+      alert("Primero inicia sesión.");
       return;
     }
+
+    const OneSignal = await getOneSignal();
+    if(!OneSignal) {
+      alert("Las notificaciones push todavía no están configuradas. El administrador debe configurar ONESIGNAL_APP_ID y ONESIGNAL_API_KEY.");
+      return;
+    }
+
+    if(!OneSignal.Notifications || !OneSignal.Notifications.isPushSupported()) {
+      alert("Este navegador/dispositivo no soporta Web Push.");
+      return;
+    }
+
     const enabled = getNotifyEnabled(kind);
-    if(enabled) {
-      setNotifyEnabled(kind, false);
-      return;
-    }
 
-    let permission = Notification.permission;
-    if(permission !== "granted") {
-      try { permission = await Notification.requestPermission(); } catch(e) { permission = "denied"; }
-    }
+    try {
+      await OneSignal.login(String(currentUser));
 
-    if(permission === "granted") {
-      setNotifyEnabled(kind, true);
-      primeNotificationSnapshot();
-      dispararNotificacion(
-        "✅ Notificaciones activadas",
-        kind === 'tm' ? "Recibirás avisos de tiempos muertos en este dispositivo." : "Recibirás avisos de Set up/Ajuste en este dispositivo."
-      );
-    } else {
-      alert("El navegador no concedió permiso para las notificaciones. Actívalo en la configuración del navegador.");
-    }
-  }
+      if(enabled) {
+        // Desactiva solamente esta categoría.
+        if(OneSignal.User && OneSignal.User.addTag) {
+          await OneSignal.User.addTag(kind === 'tm' ? 'notify_tm' : 'notify_setup', '0');
+        }
+        setNotifyEnabled(kind, false);
+        return;
+      }
 
-  // Compatibilidad con el botón/llamadas antiguas.
-  function solicitarNotificaciones(kind) {
-    toggleNotificaciones(kind || 'tm');
-  }
+      if(!OneSignal.Notifications.permission) {
+        await OneSignal.Notifications.requestPermission();
+      }
 
-  function dispararNotificacion(titulo, cuerpo) {
-    if ("Notification" in window && Notification.permission === "granted") {
-      try {
-        new Notification(titulo, {
-          body: cuerpo,
-          icon: "https://cdn-icons-png.flaticon.com/512/1827/1827349.png",
-          tag: `planta-${Date.now()}`
+      if(OneSignal.Notifications.permission !== true) {
+        alert("El navegador no concedió permiso para las notificaciones. Revísalo en la configuración de notificaciones del navegador/dispositivo.");
+        return;
+      }
+
+      if(OneSignal.User && OneSignal.User.PushSubscription) {
+        await OneSignal.User.PushSubscription.optIn();
+      }
+
+      const tagKey = kind === 'tm' ? 'notify_tm' : 'notify_setup';
+      if(OneSignal.User && OneSignal.User.addTags) {
+        await OneSignal.User.addTags({
+          [tagKey]: "1",
+          notify_user: String(currentUser),
+          tech_name: String(currentUser)
         });
+      }
+
+      setNotifyEnabled(kind, true);
+
+      // Prueba local visual; el push real lo enviará Apps Script.
+      try {
+        new Notification("✅ Notificaciones activadas", {
+          body: kind === 'tm'
+            ? "Recibirás avisos de tiempos muertos."
+            : "Recibirás avisos de Set up/Ajuste.",
+          tag: `planta-local-${kind}-${Date.now()}`
+        });
+      } catch(_) {}
+
+    } catch(err) {
+      console.error("Error activando/desactivando notificaciones:", err);
+      alert("No fue posible actualizar las notificaciones: " + (err.message || err));
+    }
+
+    updateNotificationButtons();
+  }
+
+  function solicitarNotificaciones(kind) {
+    return toggleNotificaciones(kind || 'tm');
+  }
+
+  // Se conserva como compatibilidad interna; el push real ya no depende de esta función.
+  function dispararNotificacion(titulo, cuerpo) {
+    if("Notification" in window && Notification.permission === "granted") {
+      try {
+        new Notification(titulo, {body: cuerpo, tag: `planta-${Date.now()}`});
       } catch(e) {
         console.warn("No se pudo crear la notificación:", e);
       }
     }
-  }
-
-  function notificationSignature(obj, type) {
-    if(type === 'tm') {
-      return [
-        obj.id, obj.regId, obj.tiempoMuerto, obj.hInicio, obj.hFin,
-        obj.duracion, obj.usuario, obj.fechaActualizacion, obj.timestamp
-      ].map(v => v == null ? "" : v).join("|");
-    }
-    return [
-      obj.id, obj.estatus, obj.maquina, obj.tecnico, obj.item,
-      obj.hInicio, obj.hFin, obj.usuario, obj.fechaActualizacion, obj.timestamp
-    ].map(v => v == null ? "" : v).join("|");
-  }
-
-  function getStoredSeen(kind) {
-    try {
-      return JSON.parse(localStorage.getItem(notifyKey(kind) + "_seen") || "{}");
-    } catch(e) { return {}; }
-  }
-
-  function saveStoredSeen(kind, seen) {
-    try {
-      localStorage.setItem(notifyKey(kind) + "_seen", JSON.stringify(seen));
-    } catch(e) {}
-  }
-
-  function primeNotificationSnapshot() {
-    notificationPrimed = true;
-    ['tm','setup'].forEach(kind => {
-      const seen = {};
-      const arr = kind === 'tm'
-        ? (dbData.registrosTiemposMuertos || [])
-        : (dbData.registrosSetup || []).filter(r => r.estatus === 'Set up' || r.estatus === 'Ajuste');
-      arr.forEach(x => { if(x.id) seen[x.id] = notificationSignature(x, kind); });
-      saveStoredSeen(kind, seen);
-    });
-    updateNotificationButtons();
-  }
-
-  function processRemoteNotifications(previous, current) {
-    if(!notificationPrimed || !currentUser) return;
-
-    // Tiempo muerto -> usuarios con acceso a "Maquinas".
-    if(getNotifyEnabled('tm') && hasPermissionForCurrentUser('Maquinas')) {
-      const oldMap = new Map((previous.registrosTiemposMuertos || []).map(x => [x.id, x]));
-      const seen = getStoredSeen('tm');
-      (current.registrosTiemposMuertos || []).forEach(tm => {
-        if(!tm.id || String(tm.usuario || '').toLowerCase() === String(currentUser).toLowerCase()) return;
-        const parent = (current.registrosSetup || []).find(r => r.id === tm.regId);
-        if(!parent) return;
-
-        const sig = notificationSignature(tm, 'tm');
-        const old = oldMap.get(tm.id);
-        const isNew = !old;
-        const becameFinal = old && !old.hFin && !!tm.hFin;
-        if((isNew || becameFinal) && seen[tm.id] !== sig) {
-          const status = tm.hFin ? "TERMINADO" : "PENDIENTE";
-          const body = tm.hFin
-            ? `Máquina: ${parent.maquina}
-Usuario: ${tm.usuario}
-Tiempo muerto: ${tm.tiempoMuerto}
-Inicio: ${formatHora(tm.hInicio)}
-Final: ${formatHora(tm.hFin)}`
-            : `Máquina: ${parent.maquina}
-Usuario: ${tm.usuario}
-Tiempo muerto: ${tm.tiempoMuerto}
-Inicio: ${formatHora(tm.hInicio)}`;
-          dispararNotificacion(`⏱️ Tiempo Muerto ${status}`, body);
-        }
-        seen[tm.id] = sig;
-      });
-      saveStoredSeen('tm', seen);
-    }
-
-    // Setup/Ajuste -> técnicos con acceso y, preferentemente, solo al técnico asignado.
-    if(getNotifyEnabled('setup') && hasPermissionForCurrentUser('Tecnico')) {
-      const oldMap = new Map((previous.registrosSetup || []).map(x => [x.id, x]));
-      const seen = getStoredSeen('setup');
-      (current.registrosSetup || []).filter(r => r.estatus === 'Set up' || r.estatus === 'Ajuste').forEach(r => {
-        if(!r.id) return;
-        if(r.tecnico && String(r.tecnico).trim() && String(r.tecnico).toLowerCase() !== String(currentUser).toLowerCase()) return;
-        if(String(r.usuario || '').toLowerCase() === String(currentUser).toLowerCase()) return;
-
-        const sig = notificationSignature(r, 'setup');
-        const old = oldMap.get(r.id);
-        const isNew = !old;
-        const becameFinal = old && !old.hFin && !!r.hFin;
-        if((isNew || becameFinal) && seen[r.id] !== sig) {
-          const status = r.hFin ? "TERMINADO" : "PENDIENTE";
-          const body = r.hFin
-            ? `${r.estatus}
-Máquina: ${r.maquina}
-Técnico: ${r.tecnico || currentUser}
-Ítem: ${r.item || '-'}
-Inicio: ${formatHora(r.hInicio)}
-Final: ${formatHora(r.hFin)}`
-            : `${r.estatus}
-Máquina: ${r.maquina}
-Técnico: ${r.tecnico || currentUser}
-Ítem: ${r.item || '-'}
-Inicio: ${formatHora(r.hInicio)}`;
-          dispararNotificacion(`⚙️ ${r.estatus} ${status}`, body);
-        }
-        seen[r.id] = sig;
-      });
-      saveStoredSeen('setup', seen);
-    }
-  }
-
-  function hasPermissionForCurrentUser(permissionName) {
-    if(isAdmin) return true;
-    const user = (dbData.usuarios || []).find(u => String(u.user || '').toLowerCase() === String(currentUser || '').toLowerCase());
-    return !!(user && String(user.permisos || '').toLowerCase().includes(String(permissionName).toLowerCase()));
   }
 
   // --- AUDIO Y BOCINAS ---
@@ -940,17 +949,46 @@ Inicio: ${formatHora(r.hInicio)}`;
   }
 
   // --- OBTENER DATOS Y SYNC ---
+  async function syncVersion() {
+    const url = `${API_URL}?mode=version&_ts=${Date.now()}`;
+    const res = await fetch(url, {cache:"no-store"});
+    const data = await res.json();
+    if(data && data.error) throw new Error(data.error);
+    return data;
+  }
+
+  async function loadFullData() {
+    const url = `${API_URL}?_ts=${Date.now()}`;
+    const res = await fetch(url, {cache:"no-store"});
+    const data = await res.json();
+    if(data && data.error) throw new Error(data.error);
+    return data;
+  }
+
   async function syncData(force = false) {
     if(syncInFlight && !force) return;
     syncInFlight = true;
 
     try {
-      const res = await fetch(API_URL, { cache: "no-store" });
-      const data = await res.json();
-      if(data && data.error) throw new Error(data.error);
+      let data;
+
+      if(force || !dbData.dataVersion) {
+        data = await loadFullData();
+      } else {
+        const versionData = await syncVersion();
+        if(String(versionData.dataVersion) === String(dbData.dataVersion)) {
+          if(!document.getElementById('panelTV').classList.contains('hidden')) {
+            updateTVLiveState();
+          }
+          return;
+        }
+        data = await loadFullData();
+      }
 
       const previous = dbData;
       const tvBefore = getTVFingerprint(dbData);
+      const previousUser = currentUser;
+
       dbData = { ...dbData, ...data };
 
       if(dbData.alarmMinutes) {
@@ -978,22 +1016,20 @@ Inicio: ${formatHora(r.hInicio)}`;
 
       renderDataLists();
 
+      if(currentUser && currentUser === previousUser) {
+        // Mantiene el vínculo del dispositivo si la hoja se actualizó.
+        linkOneSignalUser();
+      }
+
       const tvVisible = !document.getElementById('panelTV').classList.contains('hidden');
       if(tvVisible) {
         const tvAfter = getTVFingerprint(dbData);
-        if(tvAfter !== tvBefore) {
-          renderTV();
-        } else {
-          updateTVLiveState();
-        }
+        if(tvAfter !== tvBefore) renderTV();
+        else updateTVLiveState();
       }
 
       if(!document.getElementById('formTecnico').classList.contains('hidden')) {
         renderVistaTecnico();
-      }
-
-      if(notificationPrimed) {
-        processRemoteNotifications(previous, dbData);
       }
 
     } catch(e) {
@@ -1082,25 +1118,40 @@ Inicio: ${formatHora(r.hInicio)}`;
     loadAudioDevices();
     updateNotificationButtons();
 
-    // Sincronización liviana cada 3 s; la TV usa además un reloj local de 1 s
-    // para recalcular duraciones/alarma sin reconstruir el DOM constantemente.
+    // La web se sincroniza con una consulta de versión cada segundo.
+    // Solo descarga toda la hoja cuando la versión cambió.
     syncLoopInterval = setInterval(() => syncData(), SYNC_INTERVAL_MS);
   }
   document.addEventListener("DOMContentLoaded", init);
 
   async function postData(payload) {
+    const outgoing = {...payload};
+    outgoing.actingUser = currentUser || '';
+    if(isAdmin && adminAuthToken) outgoing.adminToken = adminAuthToken;
+
     try {
-      const res = await fetch(API_URL, {
+      const res = await fetch(`${API_URL}?_ts=${Date.now()}`, {
         method: "POST",
         headers: {"Content-Type": "text/plain;charset=utf-8"},
-        body: JSON.stringify(payload)
+        body: JSON.stringify(outgoing),
+        cache: "no-store"
       });
+
       const data = await res.json();
       if(data && data.error) throw new Error(data.error);
-      await syncData(true);
+
+      if(data && data.dataVersion !== undefined) {
+        dbData.dataVersion = data.dataVersion;
+      }
+
+      // El registro ya se mostró de forma optimista en el navegador.
+      // No esperamos una descarga completa de todas las hojas.
       return data;
     } catch(e) {
       console.error("Error posteando datos:", e);
+
+      // Ante un fallo, obliga a recuperar el estado real del servidor.
+      await syncData(true);
       alert("No se pudo guardar en Google Sheets. Revisa la conexión y vuelve a intentar.");
       throw e;
     }
@@ -1110,51 +1161,81 @@ Inicio: ${formatHora(r.hInicio)}`;
     let u = document.getElementById('loginUser').value.trim();
     let p = document.getElementById('loginPass').value.trim();
     let val = (dbData.usuarios||[]).find(x => (x.user||'').toLowerCase() === u.toLowerCase() && x.pass === p);
-    
+
     if(val) {
-      currentUser = val.user; 
+      currentUser = val.user;
       isAdmin = false;
-      let perms = val.permisos || "";
-      
+      adminAuthToken = '';
+      let perms = val.permisos || '';
+
       document.getElementById('userDisp').textContent = `Usuario: ${currentUser}`;
-      document.getElementById('secLogin').classList.add('hidden'); 
+      document.getElementById('secLogin').classList.add('hidden');
       document.getElementById('secApp').classList.remove('hidden');
-      
-      document.getElementById('btnTabOp').classList.add('hidden'); 
-      document.getElementById('btnTabSol').classList.add('hidden'); 
+
+      document.getElementById('btnTabOp').classList.add('hidden');
+      document.getElementById('btnTabSol').classList.add('hidden');
       document.getElementById('btnTabSet').classList.add('hidden');
       document.getElementById('btnTabTec').classList.add('hidden');
-      document.getElementById('btnTabAdmin').classList.add('hidden'); 
+      document.getElementById('btnTabAdmin').classList.add('hidden');
       document.getElementById('btnTabAdminHist').classList.add('hidden');
       document.getElementById('btnTabTV').classList.add('hidden');
-      
+
       let initialTab = null;
       if(perms.includes('Operadores')) { document.getElementById('btnTabOp').classList.remove('hidden'); initialTab = initialTab || 'op'; }
       if(perms.includes('Solubles')) { document.getElementById('btnTabSol').classList.remove('hidden'); initialTab = initialTab || 'sol'; }
       if(perms.includes('Maquinas')) { document.getElementById('btnTabSet').classList.remove('hidden'); initialTab = initialTab || 'setup'; }
       if(perms.includes('Tecnico')) { document.getElementById('btnTabTec').classList.remove('hidden'); initialTab = initialTab || 'tecnico'; }
-      
-      primeNotificationSnapshot();
+
+      updateNotificationButtons();
+      linkOneSignalUser();
+
       if(initialTab) {
         switchTab(initialTab);
       } else {
         alert("Tu usuario no tiene ningún acceso asignado. Contacta al administrador.");
       }
-    } else alert("Usuario o contraseña incorrectos");
-  }
-
-  function accesoAdminDirecto() {
-    if(prompt("Clave Administrador:") === "1234") {
-      currentUser = "Admin"; isAdmin = true;
-      document.getElementById('userDisp').textContent = `Rol: Admin Total`;
-      document.getElementById('secLogin').classList.add('hidden'); document.getElementById('secApp').classList.remove('hidden');
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('hidden')); 
-      primeNotificationSnapshot();
-      switchTab('adminHist');
+    } else {
+      alert("Usuario o contraseña incorrectos");
     }
   }
 
-  function cerrarSesion() { location.reload(); }
+  async function accesoAdminDirecto() {
+    const password = prompt("Clave Administrador:");
+    if(password === null) return;
+
+    try {
+      const data = await fetch(`${API_URL}?_ts=${Date.now()}`, {
+        method: "POST",
+        headers: {"Content-Type": "text/plain;charset=utf-8"},
+        body: JSON.stringify({action:"AUTH_ADMIN", password: password}),
+        cache: "no-store"
+      }).then(r => r.json());
+
+      if(data.error) throw new Error(data.error);
+
+      adminAuthToken = data.adminToken || '';
+      currentUser = "Admin";
+      isAdmin = true;
+      document.getElementById('userDisp').textContent = `Rol: Admin Total`;
+      document.getElementById('secLogin').classList.add('hidden');
+      document.getElementById('secApp').classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('hidden'));
+
+      updateNotificationButtons();
+      linkOneSignalUser();
+      switchTab('adminHist');
+    } catch(err) {
+      alert(err.message || "No fue posible validar la clave de administrador.");
+    }
+  }
+
+  async function cerrarSesion() {
+    try {
+      const OneSignal = await getOneSignal();
+      if(OneSignal && OneSignal.logout) await OneSignal.logout();
+    } catch(_) {}
+    location.reload();
+  }
 
   function switchTab(t) {
     if (t !== 'tv') stopContinuousBeep();
@@ -1214,7 +1295,7 @@ Inicio: ${formatHora(r.hInicio)}`;
       operador: document.getElementById('opTitular').value,
       opCubre: document.getElementById('opCubre').value,
       comentarios: document.getElementById('opComentarios').value,
-      usuario: currentUser,
+      usuario: existingObj ? (existingObj.usuario || currentUser) : currentUser,
       fechaRegistro: existingObj ? (existingObj.fechaRegistro || nowStr) : nowStr,
       fechaActualizacion: nowStr
     };
@@ -1275,7 +1356,7 @@ Inicio: ${formatHora(r.hInicio)}`;
       phNue: document.getElementById('solPhNue').value,
       marca: document.getElementById('solMarca').value,
       comentarios: document.getElementById('solComentarios').value,
-      usuario: currentUser,
+      usuario: existingObj ? (existingObj.usuario || currentUser) : currentUser,
       horaRegistro: existingObj ? (existingObj.horaRegistro || nowTime) : nowTime,
       fechaRegistro: existingObj ? (existingObj.fechaRegistro || nowStr) : nowStr,
       fechaActualizacion: nowStr
@@ -1539,6 +1620,12 @@ Inicio: ${formatHora(r.hInicio)}`;
   }
 
   // --- SECCIÓN TÉCNICOS ---
+  function canEditTiempoMuerto(tm) {
+    if(!tm) return false;
+    if(isAdmin) return true;
+    return String(tm.usuario || '').trim().toLowerCase() === String(currentUser || '').trim().toLowerCase();
+  }
+
   function renderVistaTecnico() {
     let fDate = document.getElementById('filtroFechaTec') ? document.getElementById('filtroFechaTec').value : getTodayString();
     
@@ -1616,6 +1703,10 @@ Inicio: ${formatHora(r.hInicio)}`;
 
     if(tmId) {
       let tm = (dbData.registrosTiemposMuertos||[]).find(x => x.id === tmId);
+      if(!canEditTiempoMuerto(tm)) {
+        alert("Solo el usuario que registró este tiempo muerto puede editarlo. El administrador también tiene permiso.");
+        return;
+      }
       if(tm) {
         document.getElementById('tmSelectMotivo').value = tm.tiempoMuerto;
         document.getElementById('tmHInicio').value = formatTimeInput(tm.hInicio);
@@ -1675,16 +1766,21 @@ Inicio: ${formatHora(r.hInicio)}`;
     let nowStr = getNowMxString();
     let existingObj = tmId ? (dbData.registrosTiemposMuertos||[]).find(x => x.id === tmId) : null;
 
+    if(tmId && !canEditTiempoMuerto(existingObj)) {
+      alert("Solo el usuario que registró este tiempo muerto puede editarlo. El administrador también tiene permiso.");
+      return;
+    }
+
     let pld = {
       action: tmId ? "EDIT_REGISTRO_TM" : "ADD_REGISTRO_TM",
       id: tmId || ("TM_" + new Date().getTime()),
-      regId: regId,
+      regId: existingObj ? existingObj.regId : regId,
       tiempoMuerto: motivo,
       hInicio: hInicio,
       hFin: hFin,
       duracion: duracionMins,
       comentarios: comentarios,
-      usuario: currentUser,
+      usuario: existingObj ? existingObj.usuario : currentUser,
       fechaRegistro: existingObj ? (existingObj.fechaRegistro || nowStr) : nowStr,
       fechaActualizacion: nowStr
     };
@@ -1706,6 +1802,14 @@ Inicio: ${formatHora(r.hInicio)}`;
   }
 
   function delTiempoMuerto(id) {
+    const tm = (dbData.registrosTiemposMuertos||[]).find(x => x.id === id);
+    if(!tm) return;
+
+    if(!canEditTiempoMuerto(tm)) {
+      alert("Solo el usuario que registró este tiempo muerto puede borrarlo. El administrador también tiene permiso.");
+      return;
+    }
+
     if(confirm("¿Eliminar este tiempo muerto?")) {
       dbData.registrosTiemposMuertos = dbData.registrosTiemposMuertos.filter(x => x.id !== id);
       renderVistaTecnico();
@@ -2194,6 +2298,19 @@ Inicio: ${formatHora(r.hInicio)}`;
     dbData.soundSpeed = speed;
     alert("Ajustes de sonido guardados con éxito.");
     postData({ action: "SAVE_SOUND_CONFIG", soundVol: vol, soundFreq: freq, soundSpeed: speed });
+  }
+
+  async function probarPushOneSignal() {
+    if(!isAdmin || !adminAuthToken) return alert("Acceso administrativo requerido.");
+    try {
+      const OneSignal = await getOneSignal();
+      if(!OneSignal) return alert("OneSignal no está configurado en esta web.");
+      await linkOneSignalUser();
+      const result = await postData({action:"TEST_ONESIGNAL"});
+      if(result && !result.error) alert("Solicitud de prueba enviada.");
+    } catch(err) {
+      alert("No se pudo enviar la prueba: " + (err.message || err));
+    }
   }
 
   // --- ADMIN CATALOGOS Y USUARIOS ---
