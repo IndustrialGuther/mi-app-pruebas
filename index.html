@@ -687,7 +687,7 @@
           try {
             await OneSignal.init({
               appId: dbData.oneSignalAppId,
-              serviceWorkerPath: "OneSignalSDKWorker.js",
+              serviceWorkerPath: "/mi-app-pruebas/OneSignalSDKWorker.js",
               serviceWorkerParam: { scope: "/mi-app-pruebas/" },
               persistNotification: true,
               notificationClickHandlerMatch: "origin",
