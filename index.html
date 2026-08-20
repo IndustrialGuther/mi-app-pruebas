@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,6 @@
   <title>Control de Planta1</title>
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#0284c7">
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <style>
     :root { --primary: #0284c7; --admin: #0f172a; --setup: #059669; --tec: #d97706; --bg: #f8fafc; --card: #ffffff; }
     body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1e293b; }
@@ -29,7 +28,6 @@
     .btn-ws { background: #25d366; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
     .btn-danger { background: #ef4444; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
     .btn-edit { background: #f59e0b; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
-    .btn-notify { background: #8b5cf6; color: white; font-size: 0.85rem; padding: 8px 12px; margin-bottom: 10px; }
     
     .tabs { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
     .tab-btn { background: #e2e8f0; color: #475569; padding: 10px 5px; border-radius: 6px; flex: 1; min-width: 90px; border: none; font-weight: bold; font-size: 0.85rem; text-align: center; }
@@ -195,10 +193,7 @@
 
     <!-- REGISTRO DE MAQUINAS (SETUP / AJUSTE / CAIDA / CORRIENDO) -->
     <div id="formSetup" class="card hidden">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 class="setup-title">Registro de Máquinas</h2>
-        <button type="button" id="btnNotifyTM" class="btn-notify" onclick="toggleNotificaciones('tm')">🔔 Activar Notificaciones de Tiempos Muertos</button>
-      </div>
+      <h2 class="setup-title">Registro de Máquinas</h2>
       <form onsubmit="guardarSetup(event)">
         <input type="hidden" id="regId">
         <label>Fecha del Registro</label>
@@ -270,10 +265,7 @@
 
     <!-- PESTAÑA TÉCNICO -->
     <div id="formTecnico" class="card hidden">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-        <h2 class="tec-title" style="margin:0;">🔧 Módulo para Técnicos</h2>
-        <button type="button" id="btnNotifySetup" class="btn-notify" onclick="toggleNotificaciones('setup')">🔔 Activar Notificaciones de Setups</button>
-      </div>
+      <h2 class="tec-title" style="margin:0; margin-bottom: 15px;">🔧 Módulo para Técnicos</h2>
 
       <div class="filter-box" style="background:#fef3c7;">
         <label style="color:#b45309;">🔍 Filtrar por Fecha:</label>
@@ -369,15 +361,6 @@
         <div style="display:flex; gap:10px; margin-top:12px;">
           <button type="button" class="btn-admin" onclick="guardarConfigSonido()">💾 Guardar Ajustes Sonido</button>
           <button type="button" class="btn-secondary" onclick="triggerAlarmBeep(true)">🔊 Probar Sonido Alarma</button>
-        </div>
-
-        <div style="margin-top:12px; padding:10px; background:#ede9fe; border-radius:8px;">
-          <b>🔔 Push Web</b>
-          <p style="margin:6px 0; font-size:0.85rem; color:#475569;">
-            OneSignal se usa para notificaciones aun con la página cerrada. Configura <code>ONESIGNAL_APP_ID</code> y
-            <code>ONESIGNAL_API_KEY</code> en Propiedades del proyecto de Apps Script.
-          </p>
-          <button type="button" class="btn-admin" onclick="probarPushOneSignal()">📲 Probar notificación push</button>
         </div>
       </div>
       <hr>
@@ -521,9 +504,6 @@
   let currentUser = null, isAdmin = false, adminAuthToken = '';
   const SYNC_INTERVAL_MS = 1000;
   const TV_LIVE_INTERVAL_MS = 1000;
-  let oneSignalInstance = null;
-  let oneSignalReadyPromise = null;
-  let oneSignalInitialized = false;
   let tvInterval = null, tvLiveTimer = null, syncLoopInterval = null;
   let isMuted = false;
   let audioCtx = null;
@@ -646,183 +626,6 @@
   function getActiveMaquinasLogs() {
     let list = (dbData.registrosSetup || []);
     return list.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
-  }
-
-  // --- NOTIFICACIONES PUSH (OneSignal) ---
-  // Las notificaciones se envían desde Google Apps Script mediante OneSignal.
-  // Esto permite recibirlas con la página cerrada cuando el navegador/sistema lo permita.
-
-  function notifyKey(kind) {
-    return `planta_notify_${kind}_${(currentUser || 'anon').toLowerCase()}`;
-  }
-
-  function getNotifyEnabled(kind) {
-    return localStorage.getItem(notifyKey(kind)) === "1";
-  }
-
-  function setNotifyEnabled(kind, enabled) {
-    localStorage.setItem(notifyKey(kind), enabled ? "1" : "0");
-    updateNotificationButtons();
-  }
-
-  function updateNotificationButtons() {
-    const bTM = document.getElementById('btnNotifyTM');
-    const bSetup = document.getElementById('btnNotifySetup');
-    if(bTM) bTM.textContent = getNotifyEnabled('tm')
-      ? '🔕 Desactivar Notificaciones de Tiempos Muertos'
-      : '🔔 Activar Notificaciones de Tiempos Muertos';
-    if(bSetup) bSetup.textContent = getNotifyEnabled('setup')
-      ? '🔕 Desactivar Notificaciones de Setups'
-      : '🔔 Activar Notificaciones de Setups';
-  }
-
-  async function getOneSignal() {
-    if(oneSignalInstance) return oneSignalInstance;
-    if(!dbData.oneSignalAppId) return null;
-
-    if(!oneSignalReadyPromise) {
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      oneSignalReadyPromise = new Promise(resolve => {
-        window.OneSignalDeferred.push(async function(OneSignal) {
-          try {
-            await OneSignal.init({
-              appId: dbData.oneSignalAppId,
-              serviceWorkerPath: "/mi-app-pruebas/OneSignalSDKWorker.js",
-              serviceWorkerParam: { scope: "/mi-app-pruebas/" },
-              persistNotification: true,
-              notificationClickHandlerMatch: "origin",
-              notificationClickHandlerAction: "focus"
-            });
-            oneSignalInstance = OneSignal;
-            oneSignalInitialized = true;
-            resolve(OneSignal);
-          } catch(err) {
-            console.error("No se pudo inicializar OneSignal:", err);
-            resolve(null);
-          }
-        });
-      });
-    }
-    return oneSignalReadyPromise;
-  }
-
-  async function linkOneSignalUser() {
-    const OneSignal = await getOneSignal();
-    if(!OneSignal || !currentUser) return;
-
-    try {
-      await OneSignal.login(String(currentUser));
-      if(OneSignal.User && OneSignal.User.addTags) {
-        await OneSignal.User.addTags({
-          notify_user: String(currentUser),
-          tech_name: String(currentUser),
-          notify_tm: getNotifyEnabled('tm') ? "1" : "0",
-          notify_setup: getNotifyEnabled('setup') ? "1" : "0"
-        });
-      }
-
-      // Recupera preferencias persistidas en OneSignal si localStorage está vacío.
-      if(OneSignal.User && OneSignal.User.getTags) {
-        const tags = OneSignal.User.getTags() || {};
-        ['tm','setup'].forEach(kind => {
-          const key = kind === 'tm' ? 'notify_tm' : 'notify_setup';
-          if(localStorage.getItem(notifyKey(kind)) === null && tags[key] !== undefined) {
-            setNotifyEnabled(kind, String(tags[key]) === "1");
-          }
-        });
-      }
-      updateNotificationButtons();
-    } catch(err) {
-      console.warn("No se pudo asociar el dispositivo al usuario:", err);
-    }
-  }
-
-  async function toggleNotificaciones(kind) {
-    if(!currentUser) {
-      alert("Primero inicia sesión.");
-      return;
-    }
-
-    const OneSignal = await getOneSignal();
-    if(!OneSignal) {
-      alert("Las notificaciones push todavía no están configuradas. El administrador debe configurar ONESIGNAL_APP_ID y ONESIGNAL_API_KEY.");
-      return;
-    }
-
-    if(!OneSignal.Notifications || !OneSignal.Notifications.isPushSupported()) {
-      alert("Este navegador/dispositivo no soporta Web Push.");
-      return;
-    }
-
-    const enabled = getNotifyEnabled(kind);
-
-    try {
-      await OneSignal.login(String(currentUser));
-
-      if(enabled) {
-        // Desactiva solamente esta categoría.
-        if(OneSignal.User && OneSignal.User.addTag) {
-          await OneSignal.User.addTag(kind === 'tm' ? 'notify_tm' : 'notify_setup', '0');
-        }
-        setNotifyEnabled(kind, false);
-        return;
-      }
-
-      if(!OneSignal.Notifications.permission) {
-        await OneSignal.Notifications.requestPermission();
-      }
-
-      if(OneSignal.Notifications.permission !== true) {
-        alert("El navegador no concedió permiso para las notificaciones. Revísalo en la configuración de notificaciones del navegador/dispositivo.");
-        return;
-      }
-
-      if(OneSignal.User && OneSignal.User.PushSubscription) {
-        await OneSignal.User.PushSubscription.optIn();
-      }
-
-      const tagKey = kind === 'tm' ? 'notify_tm' : 'notify_setup';
-      if(OneSignal.User && OneSignal.User.addTags) {
-        await OneSignal.User.addTags({
-          [tagKey]: "1",
-          notify_user: String(currentUser),
-          tech_name: String(currentUser)
-        });
-      }
-
-      setNotifyEnabled(kind, true);
-
-      // Prueba local visual; el push real lo enviará Apps Script.
-      try {
-        new Notification("✅ Notificaciones activadas", {
-          body: kind === 'tm'
-            ? "Recibirás avisos de tiempos muertos."
-            : "Recibirás avisos de Set up/Ajuste.",
-          tag: `planta-local-${kind}-${Date.now()}`
-        });
-      } catch(_) {}
-
-    } catch(err) {
-      console.error("Error activando/desactivando notificaciones:", err);
-      alert("No fue posible actualizar las notificaciones: " + (err.message || err));
-    }
-
-    updateNotificationButtons();
-  }
-
-  function solicitarNotificaciones(kind) {
-    return toggleNotificaciones(kind || 'tm');
-  }
-
-  // Se conserva como compatibilidad interna; el push real ya no depende de esta función.
-  function dispararNotificacion(titulo, cuerpo) {
-    if("Notification" in window && Notification.permission === "granted") {
-      try {
-        new Notification(titulo, {body: cuerpo, tag: `planta-${Date.now()}`});
-      } catch(e) {
-        console.warn("No se pudo crear la notificación:", e);
-      }
-    }
   }
 
   // --- AUDIO Y BOCINAS ---
@@ -1016,11 +819,6 @@
 
       renderDataLists();
 
-      if(currentUser && currentUser === previousUser) {
-        // Mantiene el vínculo del dispositivo si la hoja se actualizó.
-        linkOneSignalUser();
-      }
-
       const tvVisible = !document.getElementById('panelTV').classList.contains('hidden');
       if(tvVisible) {
         const tvAfter = getTVFingerprint(dbData);
@@ -1109,14 +907,12 @@
 
     renderAdminLists();
     renderHistoriales();
-    updateNotificationButtons();
   }
 
   async function init() {
     await syncData(true);
     document.querySelectorAll('input[type="date"]').forEach(i => i.value = getTodayString());
     loadAudioDevices();
-    updateNotificationButtons();
 
     // La web se sincroniza con una consulta de versión cada segundo.
     // Solo descarga toda la hoja cuando la versión cambió.
@@ -1186,9 +982,6 @@
       if(perms.includes('Maquinas')) { document.getElementById('btnTabSet').classList.remove('hidden'); initialTab = initialTab || 'setup'; }
       if(perms.includes('Tecnico')) { document.getElementById('btnTabTec').classList.remove('hidden'); initialTab = initialTab || 'tecnico'; }
 
-      updateNotificationButtons();
-      linkOneSignalUser();
-
       if(initialTab) {
         switchTab(initialTab);
       } else {
@@ -1221,19 +1014,13 @@
       document.getElementById('secApp').classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('hidden'));
 
-      updateNotificationButtons();
-      linkOneSignalUser();
       switchTab('adminHist');
     } catch(err) {
       alert(err.message || "No fue posible validar la clave de administrador.");
     }
   }
 
-  async function cerrarSesion() {
-    try {
-      const OneSignal = await getOneSignal();
-      if(OneSignal && OneSignal.logout) await OneSignal.logout();
-    } catch(_) {}
+  function cerrarSesion() {
     location.reload();
   }
 
@@ -2298,19 +2085,6 @@
     dbData.soundSpeed = speed;
     alert("Ajustes de sonido guardados con éxito.");
     postData({ action: "SAVE_SOUND_CONFIG", soundVol: vol, soundFreq: freq, soundSpeed: speed });
-  }
-
-  async function probarPushOneSignal() {
-    if(!isAdmin || !adminAuthToken) return alert("Acceso administrativo requerido.");
-    try {
-      const OneSignal = await getOneSignal();
-      if(!OneSignal) return alert("OneSignal no está configurado en esta web.");
-      await linkOneSignalUser();
-      const result = await postData({action:"TEST_ONESIGNAL"});
-      if(result && !result.error) alert("Solicitud de prueba enviada.");
-    } catch(err) {
-      alert("No se pudo enviar la prueba: " + (err.message || err));
-    }
   }
 
   // --- ADMIN CATALOGOS Y USUARIOS ---
