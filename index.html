@@ -134,7 +134,7 @@
       <form onsubmit="guardarOperador(event)">
         <input type="hidden" id="editOpId">
         <label>Máquina</label>
-        <input list="listMaquinas" id="opMaquina" required placeholder="Escribe o selecciona máquina...">
+        <select id="opMaquina" required><option value="">Seleccione máquina...</option></select>
         <label>Fecha del Registro</label>
         <input type="date" id="opFecha" required>
         <label>Turno</label>
@@ -165,7 +165,7 @@
       <form onsubmit="guardarSoluble(event)">
         <input type="hidden" id="editSolId">
         <label>Máquina</label>
-        <input list="listMaquinas" id="solMaquina" required placeholder="Selecciona máquina...">
+        <select id="solMaquina" required><option value="">Seleccione máquina...</option></select>
         <label>Fecha del Registro</label>
         <input type="date" id="solFecha" required>
         <label>Turno</label>
@@ -202,7 +202,7 @@
       <h2 class="ace-title">🛢️ Registro de Aceites</h2>
 
       <label>Fecha del Registro</label>
-      <input type="date" id="aceFecha" required>
+      <input type="date" id="aceFecha" required onchange="renderDepositosAceite()">
       <label>Máquina</label>
       <select id="aceMaquina" onchange="renderDepositosAceite()"><option value="">Seleccione máquina...</option></select>
 
@@ -228,7 +228,7 @@
         <label>Fecha del Registro</label>
         <input type="date" id="regFecha" required>
         <label>Máquina</label>
-        <input list="listMaquinas" id="regMaquina" required placeholder="Búsqueda de máquina...">
+        <select id="regMaquina" required><option value="">Seleccione máquina...</option></select>
         <label>Estatus</label>
         <select id="regEstatus" required onchange="toggleRegCampos()">
           <option value="">Seleccione...</option>
@@ -344,6 +344,7 @@
             <option value="TIEMPOS_MUERTOS">Tiempos Muertos</option>
             <option value="OPERADORES">Operadores</option>
             <option value="SOLUBLES">Solubles</option>
+            <option value="ACEITES">Aceites (Depósitos)</option>
           </select>
         </div>
         <div id="divHistSubfiltroMaq" style="flex:1; min-width:150px;">
@@ -354,6 +355,12 @@
             <option value="Caida">Caída</option>
             <option value="Ajuste">Ajuste</option>
             <option value="Corriendo">Corriendo</option>
+          </select>
+        </div>
+        <div id="divHistSubfiltroDeposito" style="flex:1; min-width:150px;">
+          <label>Máquina / Depósito de Aceite</label>
+          <select id="histFiltroSubDeposito" onchange="renderHistorialGeneralAdmin()">
+            <option value="TODOS">Todas las máquinas / depósitos</option>
           </select>
         </div>
         <div style="flex:1; min-width:150px;">
@@ -555,7 +562,6 @@
   <div id="tvBoard" class="tv-board"></div>
 </div>
 
-<datalist id="listMaquinas"></datalist>
 <datalist id="listOperadores"></datalist>
 <datalist id="listItems"></datalist>
 <datalist id="listTecnicos"></datalist>
@@ -945,13 +951,12 @@
 
   function renderDataLists() {
     const maqs = (dbData.maquinas || []).map(m => typeof m === 'object' ? (m.maquina || 'Sin Nombre') : m);
-    const lM = document.getElementById('listMaquinas');
-    if(lM) {
-      const oldInputs = ['opMaquina','solMaquina','regMaquina'].map(id => [id, document.getElementById(id)?.value || ""]);
-      lM.innerHTML = '';
-      maqs.forEach(m => lM.insertAdjacentHTML('beforeend', `<option value="${escapeHtmlAttr(m)}">`));
-      oldInputs.forEach(([id,v]) => { const el=document.getElementById(id); if(el) el.value=v; });
-    }
+
+    // Selectores de máquina restringidos al catálogo: solo se puede elegir una máquina
+    // ya registrada, no escribir un nombre libre (evita registros con máquinas inexistentes).
+    fillSelectPreserving('opMaquina', maqs);
+    fillSelectPreserving('solMaquina', maqs);
+    fillSelectPreserving('regMaquina', maqs);
 
     const fillDatalist = (id, list) => {
       const el = document.getElementById(id);
@@ -1287,8 +1292,9 @@
     return String(r.usuario || '').trim().toLowerCase() === String(currentUser || '').trim().toLowerCase();
   }
 
-  function renderDepositosAceite() {
+  function renderDepositosAceite(editingDeposito = null) {
     const maquina = document.getElementById('aceMaquina').value;
+    const fecha = document.getElementById('aceFecha').value || getTodayString();
     const cont = document.getElementById('aceDepositosContainer');
     if(!cont) return;
     if(!maquina) { cont.innerHTML = ''; return; }
@@ -1299,7 +1305,31 @@
       return;
     }
 
-    cont.innerHTML = deps.map(d => `
+    // Un depósito que ya tiene un registro guardado para la fecha seleccionada
+    // se oculta del formulario de captura (evita duplicados). Solo reaparece si
+    // se borra su registro, se edita (desde el historial) o se cambia de fecha.
+    const yaRegistrados = [];
+    const pendientes = [];
+    deps.forEach(d => {
+      const existe = (dbData.registrosAceites || []).some(r =>
+        r.maquina === maquina && r.deposito === d.deposito && normalizeDateStr(r.fecha) === normalizeDateStr(fecha)
+      );
+      if(existe && d.deposito !== editingDeposito) yaRegistrados.push(d.deposito);
+      else pendientes.push(d);
+    });
+
+    let html = '';
+    if(yaRegistrados.length) {
+      html += `<p style="color:#6d28d9; background:#ede9fe; padding:8px 10px; border-radius:6px; font-size:0.85rem;">✅ Ya registrados para esta fecha: <b>${yaRegistrados.map(escapeHtml).join(', ')}</b>. Para modificarlos, edítalos o bórralos desde el historial de abajo.</p>`;
+    }
+
+    if(!pendientes.length) {
+      html += '<p style="color:#94a3b8;">Todos los depósitos de esta máquina ya fueron registrados para esta fecha.</p>';
+      cont.innerHTML = html;
+      return;
+    }
+
+    html += pendientes.map(d => `
       <div class="card" data-deposito-block data-maquina="${escapeHtmlAttr(d.maquina)}" data-deposito="${escapeHtmlAttr(d.deposito)}" data-edit-id="" style="border-left:4px solid var(--ace); margin-bottom:10px; padding:12px;">
         <h3 style="margin:0 0 8px 0; font-size:1rem; color:var(--ace);">🛢️ ${escapeHtml(d.deposito)}</h3>
         <div style="display:flex; gap:5px;">
@@ -1313,6 +1343,13 @@
           <button type="button" class="btn-secondary hidden ace-btn-cancel" style="width:120px;" onclick="cancelarEdicionAceite(this)">Cancelar</button>
         </div>
       </div>`).join('');
+
+    cont.innerHTML = html;
+
+    if(editingDeposito) {
+      const target = Array.from(cont.querySelectorAll('[data-deposito-block]')).find(b => b.dataset.deposito === editingDeposito);
+      if(target) target.querySelector('.ace-btn-cancel').classList.remove('hidden');
+    }
   }
 
   function guardarAceiteDeposito(btnEl) {
@@ -1358,28 +1395,19 @@
       dbData.registrosAceites.push(pld);
     }
 
-    // Restablece el bloque de este depósito para poder capturar otro registro.
-    block.dataset.editId = '';
-    cantAntEl.value = '';
-    cantNueEl.value = '';
-    comentariosEl.value = '';
-    block.querySelector('.ace-btn-save').textContent = 'Guardar Registro';
-    block.querySelector('.ace-btn-cancel').classList.add('hidden');
-
+    // El depósito recién guardado ya no debe seguir apareciendo en el formulario de
+    // captura para esta fecha (evita duplicados). Se vuelve a mostrar únicamente si
+    // se borra el registro, se edita desde el historial, o se cambia de fecha/máquina.
     document.getElementById('filtroFechaAce').value = fecha;
+    renderDepositosAceite();
     renderHistoriales();
     postData(pld);
   }
 
   function cancelarEdicionAceite(btnEl) {
-    const block = btnEl.closest('[data-deposito-block]');
-    if(!block) return;
-    block.dataset.editId = '';
-    block.querySelector('.ace-cant-ant').value = '';
-    block.querySelector('.ace-cant-nue').value = '';
-    block.querySelector('.ace-comentarios').value = '';
-    block.querySelector('.ace-btn-save').textContent = 'Guardar Registro';
-    block.querySelector('.ace-btn-cancel').classList.add('hidden');
+    // Cancelar una edición simplemente reconstruye la lista de depósitos: el que se
+    // estaba editando vuelve a quedar oculto (ya tiene un registro guardado).
+    renderDepositosAceite();
   }
 
   function editAceReg(id) {
@@ -1392,7 +1420,7 @@
     switchTab('aceites');
     document.getElementById('aceFecha').value = normalizeDateStr(r.fecha);
     document.getElementById('aceMaquina').value = r.maquina;
-    renderDepositosAceite();
+    renderDepositosAceite(r.deposito);
 
     const blocks = document.querySelectorAll('[data-deposito-block]');
     let target = null;
@@ -1417,6 +1445,7 @@
     }
     if(confirm('¿Eliminar este registro de aceite?')) {
       dbData.registrosAceites = dbData.registrosAceites.filter(x => x.id !== id);
+      renderDepositosAceite();
       renderHistoriales();
       postData({ action: 'DELETE_REGISTRO_ACE', id: id });
     }
@@ -1668,12 +1697,13 @@
     }).join('') : '<p style="color:#94a3b8;">Sin registros de aceites para esta fecha.</p>';
     let divAce = document.getElementById('historialAce'); if(divAce) divAce.innerHTML = htmlAce;
 
-    // 5. Reg. Máquinas: vista de solo lectura para que los supervisores vean lo de sus compañeros.
+    // 5. Reg. Máquinas: vista de solo lectura para que los supervisores vean lo de sus compañeros
+    // (nunca lo propio, ya que eso ya se ve en el historial de arriba).
     let filtroCompEl = document.getElementById('filtroFechaCompMaq');
     if(filtroCompEl) {
       if(!filtroCompEl.value) filtroCompEl.value = getTodayString();
       let fDateComp = filtroCompEl.value;
-      let filComp = act.filter(r => normalizeDateStr(r.fecha) === fDateComp);
+      let filComp = act.filter(r => normalizeDateStr(r.fecha) === fDateComp && getSupervisor(r).toLowerCase() !== activeUser);
       filComp.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
 
       let htmlComp = (filComp.length > 0) ? filComp.map(r => {
@@ -1899,6 +1929,10 @@
     let div = document.getElementById('divHistSubfiltroMaq');
     if(t === 'MAQUINAS' || t === 'TODOS') div.classList.remove('hidden');
     else div.classList.add('hidden');
+
+    let divDep = document.getElementById('divHistSubfiltroDeposito');
+    if(t === 'ACEITES' || t === 'TODOS') divDep.classList.remove('hidden');
+    else divDep.classList.add('hidden');
   }
 
   function renderHistorialGeneralAdmin() {
@@ -1914,12 +1948,28 @@
       (dbData.registrosOperadores || []).forEach(r => { if(r.usuario) users.add(r.usuario); });
       (dbData.registrosSolubles || []).forEach(r => { if(r.usuario) users.add(r.usuario); });
       (dbData.registrosTiemposMuertos || []).forEach(r => { if(r.usuario) users.add(r.usuario); });
+      (dbData.registrosAceites || []).forEach(r => { if(r.usuario) users.add(r.usuario); });
 
       selUser.innerHTML = '<option value="TODOS">Todos los usuarios</option>';
       Array.from(users).sort((a,b) => String(a).localeCompare(String(b))).forEach(u => {
         selUser.insertAdjacentHTML('beforeend', `<option value="${escapeHtmlAttr(u)}">${escapeHtml(u)}</option>`);
       });
       preserveSelectValue(selUser, previous);
+    }
+
+    const selDep = document.getElementById('histFiltroSubDeposito');
+    if(selDep) {
+      const prevDep = selDep.value || "TODOS";
+      const deps = (dbData.depositosAceite || []).slice().sort((a,b) =>
+        String(a.maquina||"").localeCompare(String(b.maquina||""), undefined, {numeric:true, sensitivity:'base'}) ||
+        String(a.deposito||"").localeCompare(String(b.deposito||""))
+      );
+      selDep.innerHTML = '<option value="TODOS">Todas las máquinas / depósitos</option>';
+      deps.forEach(d => {
+        const val = `${d.maquina}|||${d.deposito}`;
+        selDep.insertAdjacentHTML('beforeend', `<option value="${escapeHtmlAttr(val)}">${escapeHtml(d.maquina)} — ${escapeHtml(d.deposito)}</option>`);
+      });
+      preserveSelectValue(selDep, prevDep);
     }
 
     const filterUser = selUser ? selUser.value : "TODOS";
@@ -1997,6 +2047,30 @@
       });
     }
 
+    if(filterTipo === "TODOS" || filterTipo === "ACEITES") {
+      let reqs = dbData.registrosAceites || [];
+      if(filterFecha) reqs = reqs.filter(r => normalizeDateStr(r.fecha) === filterFecha);
+      if(filterUser !== "TODOS") reqs = reqs.filter(r => sameUser(getSupervisor(r)));
+
+      const filterDep = document.getElementById('histFiltroSubDeposito') ? document.getElementById('histFiltroSubDeposito').value : "TODOS";
+      if(filterDep !== "TODOS") {
+        const [fMaq, fDep] = filterDep.split('|||');
+        reqs = reqs.filter(r => r.maquina === fMaq && r.deposito === fDep);
+      }
+
+      const maquinasRellenadas = Array.from(new Set(reqs.map(r => r.maquina))).sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric:true, sensitivity:'base'}));
+
+      html += `<h3 style="margin-top:15px;">🛢️ Registros de Aceites (${reqs.length})</h3>`;
+      if(maquinasRellenadas.length > 0) {
+        html += `<p style="color:#6d28d9;"><b>Máquinas con depósitos rellenados en este filtro:</b> ${maquinasRellenadas.map(escapeHtml).join(', ')}</p>`;
+      }
+      if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
+      reqs.forEach(r => {
+        const badge = r.incompleto ? '<span class="badge-incompleto">⚠️ Incompleto</span> ' : '';
+        html += `<div class="item-row" style="border-left-color:#7c3aed;"><div>${badge}<b>[${normalizeDateStr(r.fecha)}] ${escapeHtml(r.maquina)}</b> - ${escapeHtml(r.deposito)} | Usuario: ${escapeHtml(getSupervisor(r))}<br><small>Cantidad: ${escapeHtml(r.cantAnt||'-')} ml ➔ ${r.cantNue ? escapeHtml(r.cantNue)+' ml' : 'Pendiente'} ${r.comentarios ? '| Obs: '+escapeHtml(r.comentarios) : ''}</small></div></div>`;
+      });
+    }
+
     const div = document.getElementById('adminHistSetup');
     if(div) div.innerHTML = html;
   }
@@ -2005,6 +2079,7 @@
     document.getElementById('histFiltroSup').value = "TODOS";
     document.getElementById('histFiltroTipo').value = "TODOS";
     document.getElementById('histFiltroSubEstatus').value = "TODOS";
+    document.getElementById('histFiltroSubDeposito').value = "TODOS";
     document.getElementById('histFiltroFecha').value = "";
     toggleHistSubfiltro();
     renderHistorialGeneralAdmin();
