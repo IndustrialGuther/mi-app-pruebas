@@ -102,7 +102,7 @@
     <input type="text" id="loginUser" placeholder="Ingresa tu usuario">
     <label>Contraseña</label>
     <input type="password" id="loginPass" placeholder="••••••••">
-    <button class="btn-full" onclick="iniciarSesion()">Ingresar</button>
+    <button class="btn-full" id="btnIngresar" onclick="iniciarSesion()">Ingresar</button>
     <button class="btn-full btn-admin" onclick="accesoAdminDirecto()">Acceso Administrador</button>
   </div>
 
@@ -502,6 +502,7 @@
   const API_URL = "https://script.google.com/macros/s/AKfycbwP9vawpPvqX03Z1k6UwGJhc1d1415mk6uUqDdpeqfwU75m966DraunLGTnKGormEF5/exec";
   let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], tiemposMuertos:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], registrosTiemposMuertos:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300 };
   let currentUser = null, isAdmin = false, adminAuthToken = '';
+  let dataReady = false, initialLoadPromise = null; // FIX: bandera para saber si ya llego la primera carga completa de datos (usuarios, etc.)
   const SYNC_INTERVAL_MS = 1000;
   const TV_LIVE_INTERVAL_MS = 1000;
   let tvInterval = null, tvLiveTimer = null, syncLoopInterval = null;
@@ -910,7 +911,11 @@
   }
 
   async function init() {
-    await syncData(true);
+    // FIX: guardamos la promesa de la primera carga para que el login pueda esperarla
+    // sin afectar en nada la velocidad del ciclo de sincronizacion en tiempo real.
+    initialLoadPromise = syncData(true);
+    await initialLoadPromise;
+    dataReady = true;
     document.querySelectorAll('input[type="date"]').forEach(i => i.value = getTodayString());
     loadAudioDevices();
 
@@ -953,7 +958,24 @@
     }
   }
 
-  function iniciarSesion() {
+  async function iniciarSesion() {
+    // FIX: si el usuario intenta entrar antes de que termine la primera carga
+    // de datos (usuarios, permisos, etc.), esperamos aqui en vez de rechazar
+    // la contraseña por error. No afecta el ciclo de sincronizacion en tiempo real,
+    // solo retrasa unos instantes el primer intento de login si hace falta.
+    if(!dataReady) {
+      const btnLogin = document.getElementById('btnIngresar');
+      const prevText = btnLogin ? btnLogin.textContent : '';
+      if(btnLogin) { btnLogin.disabled = true; btnLogin.textContent = 'Cargando datos...'; }
+      try {
+        await (initialLoadPromise || syncData(true));
+      } catch(e) {
+        console.error('Error esperando la carga inicial de datos:', e);
+      }
+      dataReady = true;
+      if(btnLogin) { btnLogin.disabled = false; btnLogin.textContent = prevText || 'Ingresar'; }
+    }
+
     let u = document.getElementById('loginUser').value.trim();
     let p = document.getElementById('loginPass').value.trim();
     let val = (dbData.usuarios||[]).find(x => (x.user||'').toLowerCase() === u.toLowerCase() && x.pass === p);
@@ -1727,6 +1749,7 @@
   function copiarWhatsApp(soloTiemposMuertos = false) {
     let act = getActiveMaquinasLogs();
     let fDate = document.getElementById('filtroFechaMaq').value;
+    const activeUser = String(currentUser || '').toLowerCase(); // FIX: variable local necesaria para que el filtro funcione tambien como usuario (antes solo funcionaba como admin)
     
     let rs = act.filter(r => normalizeDateStr(r.fecha) === fDate && (isAdmin || getSupervisor(r).toLowerCase() === activeUser));
     
