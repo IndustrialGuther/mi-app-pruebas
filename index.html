@@ -7,7 +7,7 @@
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#0284c7">
   <style>
-    :root { --primary: #0284c7; --admin: #0f172a; --setup: #059669; --tec: #d97706; --bg: #f8fafc; --card: #ffffff; }
+    :root { --primary: #0284c7; --admin: #0f172a; --setup: #059669; --tec: #d97706; --ace: #7c3aed; --bg: #f8fafc; --card: #ffffff; }
     body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1e293b; }
     .container { max-width: 850px; margin: 0 auto; }
     .tv-container { max-width: 98vw; margin: 0 auto; padding: 10px; }
@@ -15,6 +15,7 @@
     h2, h3 { margin-top: 0; color: var(--primary); }
     h2.setup-title { color: var(--setup); }
     h2.tec-title { color: var(--tec); }
+    h2.ace-title { color: var(--ace); }
     label { display: block; margin-top: 10px; font-weight: 600; font-size: 0.85rem; }
     select, input, textarea { width: 100%; padding: 10px; margin-top: 4px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 0.95rem; }
     
@@ -24,6 +25,7 @@
     .btn-admin { background: var(--admin); }
     .btn-setup { background: var(--setup); }
     .btn-tec { background: var(--tec); }
+    .btn-ace { background: var(--ace); }
     .btn-secondary { background: #64748b; color: white; }
     .btn-ws { background: #25d366; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
     .btn-danger { background: #ef4444; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
@@ -34,6 +36,8 @@
     .tab-btn.active { background: var(--primary); color: white; }
     .tab-btn.admin-active { background: var(--admin); color: white; }
     .tab-btn.tec-active { background: var(--tec); color: white; }
+    .tab-btn.ace-active { background: var(--ace); color: white; }
+    .badge-incompleto { background: #f59e0b; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; display: inline-block; }
     .hidden { display: none !important; }
 
     .item-row { display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; padding: 10px 12px; border-radius: 6px; margin-top: 8px; font-size: 0.9rem; border-left: 4px solid var(--primary); }
@@ -116,6 +120,7 @@
     <div class="tabs">
       <button type="button" id="btnTabOp" class="tab-btn hidden" onclick="switchTab('op')">Operadores</button>
       <button type="button" id="btnTabSol" class="tab-btn hidden" onclick="switchTab('sol')">Solubles</button>
+      <button type="button" id="btnTabAce" class="tab-btn hidden" onclick="switchTab('aceites')">🛢️ Aceites</button>
       <button type="button" id="btnTabSet" class="tab-btn hidden" onclick="switchTab('setup')">⚙️ Reg. Máquinas</button>
       <button type="button" id="btnTabTec" class="tab-btn hidden" onclick="switchTab('tecnico')">🔧 Técnico</button>
       <button type="button" id="btnTabAdminHist" class="tab-btn hidden" onclick="switchTab('adminHist')">📊 Historial Gral</button>
@@ -167,12 +172,13 @@
         <select id="solTurno" required></select>
         <div style="display:flex; gap:5px; margin-top:5px;">
           <div style="flex:1;"><label>Brix Ant</label><input type="number" step="0.1" id="solBrixAnt" required></div>
-          <div style="flex:1;"><label>Brix Nuevo</label><input type="number" step="0.1" id="solBrixNue" required></div>
+          <div style="flex:1;"><label>Brix Nuevo (Opcional)</label><input type="number" step="0.1" id="solBrixNue"></div>
         </div>
         <div style="display:flex; gap:5px; margin-top:5px;">
           <div style="flex:1;"><label>pH Ant</label><input type="number" step="0.1" id="solPhAnt" required></div>
-          <div style="flex:1;"><label>pH Nuevo</label><input type="number" step="0.1" id="solPhNue" required></div>
+          <div style="flex:1;"><label>pH Nuevo (Opcional)</label><input type="number" step="0.1" id="solPhNue"></div>
         </div>
+        <small style="color:#b45309;">* Si dejas Brix Nuevo o pH Nuevo en blanco, el registro se guardará marcado como <b>Incompleto</b> para que lo completes después.</small>
         <label>Marca Soluble</label>
         <select id="solMarca" required></select>
         <label>Comentarios (Opcional)</label>
@@ -189,6 +195,29 @@
       </div>
 
       <div id="historialSol"></div>
+    </div>
+
+    <!-- REGISTRO DE ACEITES -->
+    <div id="formAceites" class="card hidden">
+      <h2 class="ace-title">🛢️ Registro de Aceites</h2>
+
+      <label>Fecha del Registro</label>
+      <input type="date" id="aceFecha" required>
+      <label>Máquina</label>
+      <select id="aceMaquina" onchange="renderDepositosAceite()"><option value="">Seleccione máquina...</option></select>
+
+      <div id="aceDepositosContainer" style="margin-top:15px;"></div>
+
+      <div class="filter-box" style="background:#ede9fe;">
+        <label style="color:#6d28d9;">🔍 Filtro de Aceites por Fecha:</label>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="date" id="filtroFechaAce" onchange="renderHistoriales()">
+          <button type="button" class="btn-secondary" onclick="resetFiltrosAce()">Restablecer</button>
+        </div>
+        <small style="color:#6d28d9;">* Los registros de esta sección son visibles para todos los usuarios con acceso a Aceites, pero solo el usuario que registró cada uno (o el administrador) puede editarlo o borrarlo.</small>
+      </div>
+
+      <div id="historialAce"></div>
     </div>
 
     <!-- REGISTRO DE MAQUINAS (SETUP / AJUSTE / CAIDA / CORRIENDO) -->
@@ -261,6 +290,21 @@
       </div>
 
       <div id="historialSetup">Cargando...</div>
+
+      <div class="filter-box" style="background:#ede9fe; margin-top:20px;">
+        <details id="detCompMaq">
+          <summary style="cursor:pointer; font-weight:bold; color:#6d28d9;">👥 Ver registros de compañeros (Supervisores)</summary>
+          <div style="margin-top:10px;">
+            <label style="color:#6d28d9;">Filtrar por fecha:</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="date" id="filtroFechaCompMaq" onchange="renderHistoriales()">
+              <button type="button" class="btn-secondary" onclick="document.getElementById('filtroFechaCompMaq').value=getTodayString(); renderHistoriales();">Hoy</button>
+            </div>
+            <small style="color:#6d28d9;">* Vista de solo lectura: aquí puedes ver lo registrado por otros supervisores, sin poder editar ni borrar.</small>
+            <div id="historialCompMaq" style="margin-top:10px;"></div>
+          </div>
+        </details>
+      </div>
     </div>
 
     <!-- PESTAÑA TÉCNICO -->
@@ -385,6 +429,9 @@
             <input type="checkbox" id="chkPermSol" style="width:auto; margin:0;"> Reg. Solubles
           </label>
           <label style="margin-top:0; font-weight:normal; display:flex; align-items:center; gap:4px;">
+            <input type="checkbox" id="chkPermAce" style="width:auto; margin:0;"> Reg. Aceites
+          </label>
+          <label style="margin-top:0; font-weight:normal; display:flex; align-items:center; gap:4px;">
             <input type="checkbox" id="chkPermTec" style="width:auto; margin:0;"> Técnico
           </label>
         </div>
@@ -412,6 +459,21 @@
         </div>
       </div>
       <div id="listAdminMaquinas"></div><hr>
+
+      <!-- DEPOSITOS DE ACEITE -->
+      <h3>🛢️ Depósitos de Aceite (por Máquina)</h3>
+      <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <input type="hidden" id="editDepOrigMaq">
+          <input type="hidden" id="editDepOrigNombre">
+          <select id="addDepMaquina" style="flex:1; min-width:150px;"><option value="">Seleccione máquina...</option></select>
+          <input type="text" id="addDepNombre" placeholder="Ej: Depósito Hidráulico" style="flex:1; min-width:150px;">
+          <button class="btn-admin" id="btnSaveDep" onclick="saveDepositoAceite()" style="width:140px;">Agregar</button>
+          <button class="btn-secondary hidden" id="btnCancelDep" onclick="cancelEditDep()" style="width:100px;">Cancelar</button>
+        </div>
+        <small style="color:#64748b;">Agrega tantos depósitos como necesite cada máquina (ej. Depósito 1, Depósito 2, Depósito Hidráulico...). Al editar, solo se puede cambiar el nombre; para reasignarlo a otra máquina, bórralo y agrégalo de nuevo.</small>
+      </div>
+      <div id="listAdminDepositos"></div><hr>
       
       <!-- TIEMPOS MUERTOS -->
       <h3>⏱️ Tiempos Muertos Predefinidos</h3>
@@ -500,7 +562,7 @@
 
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbwP9vawpPvqX03Z1k6UwGJhc1d1415mk6uUqDdpeqfwU75m966DraunLGTnKGormEF5/exec";
-  let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], tiemposMuertos:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], registrosTiemposMuertos:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300 };
+  let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], tiemposMuertos:[], depositosAceite:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], registrosTiemposMuertos:[], registrosAceites:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300 };
   let currentUser = null, isAdmin = false, adminAuthToken = '';
   let dataReady = false, initialLoadPromise = null; // FIX: bandera para saber si ya llego la primera carga completa de datos (usuarios, etc.)
   const SYNC_INTERVAL_MS = 1000;
@@ -865,6 +927,9 @@
 
   function escapeHtmlAttr(value) { return escapeHtml(value); }
 
+  // Escapa comillas simples para insertar valores dentro de atributos onclick="...('valor')".
+  function jsQ(value) { return String(value ?? "").replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
   function getCatalogArray(cat) {
     const keys = {
       Naves: 'naves',
@@ -905,6 +970,8 @@
     fillSelectPreserving('solMarca', dbData.marcas);
     fillSelectPreserving('addMaqNave', dbData.naves);
     fillSelectPreserving('tmSelectMotivo', dbData.tiemposMuertos);
+    fillSelectPreserving('aceMaquina', maqs);
+    fillSelectPreserving('addDepMaquina', maqs);
 
     renderAdminLists();
     renderHistoriales();
@@ -992,6 +1059,7 @@
 
       document.getElementById('btnTabOp').classList.add('hidden');
       document.getElementById('btnTabSol').classList.add('hidden');
+      document.getElementById('btnTabAce').classList.add('hidden');
       document.getElementById('btnTabSet').classList.add('hidden');
       document.getElementById('btnTabTec').classList.add('hidden');
       document.getElementById('btnTabAdmin').classList.add('hidden');
@@ -1001,6 +1069,7 @@
       let initialTab = null;
       if(perms.includes('Operadores')) { document.getElementById('btnTabOp').classList.remove('hidden'); initialTab = initialTab || 'op'; }
       if(perms.includes('Solubles')) { document.getElementById('btnTabSol').classList.remove('hidden'); initialTab = initialTab || 'sol'; }
+      if(perms.includes('Aceites')) { document.getElementById('btnTabAce').classList.remove('hidden'); initialTab = initialTab || 'aceites'; }
       if(perms.includes('Maquinas')) { document.getElementById('btnTabSet').classList.remove('hidden'); initialTab = initialTab || 'setup'; }
       if(perms.includes('Tecnico')) { document.getElementById('btnTabTec').classList.remove('hidden'); initialTab = initialTab || 'tecnico'; }
 
@@ -1065,11 +1134,12 @@
       return;
     }
 
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'admin-active', 'tec-active'));
-    ['formOperadores','formSolubles','formSetup','formTecnico','panelAdminHistorial','panelAdmin'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'admin-active', 'tec-active', 'ace-active'));
+    ['formOperadores','formSolubles','formAceites','formSetup','formTecnico','panelAdminHistorial','panelAdmin'].forEach(id => document.getElementById(id).classList.add('hidden'));
 
     if(t==='op'){ document.getElementById('btnTabOp').classList.add('active'); document.getElementById('formOperadores').classList.remove('hidden'); }
     else if(t==='sol'){ document.getElementById('btnTabSol').classList.add('active'); document.getElementById('formSolubles').classList.remove('hidden'); }
+    else if(t==='aceites'){ document.getElementById('btnTabAce').classList.add('ace-active'); document.getElementById('formAceites').classList.remove('hidden'); }
     else if(t==='setup'){ document.getElementById('btnTabSet').classList.add('active'); document.getElementById('formSetup').classList.remove('hidden'); }
     else if(t==='tecnico'){ document.getElementById('btnTabTec').classList.add('tec-active'); document.getElementById('formTecnico').classList.remove('hidden'); renderVistaTecnico(); }
     else if(t==='adminHist'){ document.getElementById('btnTabAdminHist').classList.add('admin-active'); document.getElementById('panelAdminHistorial').classList.remove('hidden'); renderHistorialGeneralAdmin(); }
@@ -1165,6 +1235,7 @@
       phNue: document.getElementById('solPhNue').value,
       marca: document.getElementById('solMarca').value,
       comentarios: document.getElementById('solComentarios').value,
+      incompleto: (!document.getElementById('solBrixNue').value || !document.getElementById('solPhNue').value) ? 'SI' : '',
       usuario: existingObj ? (existingObj.usuario || currentUser) : currentUser,
       horaRegistro: existingObj ? (existingObj.horaRegistro || nowTime) : nowTime,
       fechaRegistro: existingObj ? (existingObj.fechaRegistro || nowStr) : nowStr,
@@ -1207,6 +1278,152 @@
 
   function resetFiltrosSol() {
     document.getElementById('filtroFechaSol').value = getTodayString(); renderHistoriales();
+  }
+
+  // --- FORMULARIO ACEITES ---
+  function canEditAceite(r) {
+    if(!r) return false;
+    if(isAdmin) return true;
+    return String(r.usuario || '').trim().toLowerCase() === String(currentUser || '').trim().toLowerCase();
+  }
+
+  function renderDepositosAceite() {
+    const maquina = document.getElementById('aceMaquina').value;
+    const cont = document.getElementById('aceDepositosContainer');
+    if(!cont) return;
+    if(!maquina) { cont.innerHTML = ''; return; }
+
+    const deps = (dbData.depositosAceite || []).filter(d => d.maquina === maquina);
+    if(!deps.length) {
+      cont.innerHTML = '<p style="color:#94a3b8;">No hay depósitos configurados para esta máquina. Agrégalos en la sección de Catálogos (Admin).</p>';
+      return;
+    }
+
+    cont.innerHTML = deps.map(d => `
+      <div class="card" data-deposito-block data-maquina="${escapeHtmlAttr(d.maquina)}" data-deposito="${escapeHtmlAttr(d.deposito)}" data-edit-id="" style="border-left:4px solid var(--ace); margin-bottom:10px; padding:12px;">
+        <h3 style="margin:0 0 8px 0; font-size:1rem; color:var(--ace);">🛢️ ${escapeHtml(d.deposito)}</h3>
+        <div style="display:flex; gap:5px;">
+          <div style="flex:1;"><label>Cantidad Anterior (ml)</label><input type="number" step="1" class="ace-cant-ant"></div>
+          <div style="flex:1;"><label>Cantidad Nueva (ml) (Opcional)</label><input type="number" step="1" class="ace-cant-nue"></div>
+        </div>
+        <label>Comentarios (Opcional)</label>
+        <textarea class="ace-comentarios" rows="2" placeholder="Opcional"></textarea>
+        <div style="display:flex; gap:10px; margin-top:8px;">
+          <button type="button" class="btn-full btn-ace ace-btn-save" style="margin-top:0;" onclick="guardarAceiteDeposito(this)">Guardar Registro</button>
+          <button type="button" class="btn-secondary hidden ace-btn-cancel" style="width:120px;" onclick="cancelarEdicionAceite(this)">Cancelar</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function guardarAceiteDeposito(btnEl) {
+    const block = btnEl.closest('[data-deposito-block]');
+    if(!block) return;
+
+    const maquina = block.dataset.maquina;
+    const deposito = block.dataset.deposito;
+    const editId = block.dataset.editId || '';
+    const cantAntEl = block.querySelector('.ace-cant-ant');
+    const cantNueEl = block.querySelector('.ace-cant-nue');
+    const comentariosEl = block.querySelector('.ace-comentarios');
+    const fecha = document.getElementById('aceFecha').value || getTodayString();
+
+    if(cantAntEl.value === '' || cantAntEl.value === null) {
+      alert('Ingresa la cantidad anterior (ml) de "' + deposito + '".');
+      return;
+    }
+
+    let nowStr = getNowMxString();
+    let existingObj = editId ? (dbData.registrosAceites||[]).find(x => x.id === editId) : null;
+
+    let pld = {
+      action: editId ? 'EDIT_REGISTRO_ACE' : 'ADD_REGISTRO_ACE',
+      id: editId || ('ACE_' + new Date().getTime()),
+      fecha: fecha,
+      maquina: maquina,
+      deposito: deposito,
+      cantAnt: cantAntEl.value,
+      cantNue: cantNueEl.value,
+      incompleto: (cantNueEl.value === '' || cantNueEl.value === null) ? 'SI' : '',
+      comentarios: comentariosEl.value,
+      usuario: existingObj ? (existingObj.usuario || currentUser) : currentUser,
+      fechaRegistro: existingObj ? (existingObj.fechaRegistro || nowStr) : nowStr,
+      fechaActualizacion: nowStr
+    };
+
+    if(editId) {
+      let idx = dbData.registrosAceites.findIndex(x => x.id === editId);
+      if(idx !== -1) dbData.registrosAceites[idx] = { ...dbData.registrosAceites[idx], ...pld };
+    } else {
+      if(!dbData.registrosAceites) dbData.registrosAceites = [];
+      dbData.registrosAceites.push(pld);
+    }
+
+    // Restablece el bloque de este depósito para poder capturar otro registro.
+    block.dataset.editId = '';
+    cantAntEl.value = '';
+    cantNueEl.value = '';
+    comentariosEl.value = '';
+    block.querySelector('.ace-btn-save').textContent = 'Guardar Registro';
+    block.querySelector('.ace-btn-cancel').classList.add('hidden');
+
+    document.getElementById('filtroFechaAce').value = fecha;
+    renderHistoriales();
+    postData(pld);
+  }
+
+  function cancelarEdicionAceite(btnEl) {
+    const block = btnEl.closest('[data-deposito-block]');
+    if(!block) return;
+    block.dataset.editId = '';
+    block.querySelector('.ace-cant-ant').value = '';
+    block.querySelector('.ace-cant-nue').value = '';
+    block.querySelector('.ace-comentarios').value = '';
+    block.querySelector('.ace-btn-save').textContent = 'Guardar Registro';
+    block.querySelector('.ace-btn-cancel').classList.add('hidden');
+  }
+
+  function editAceReg(id) {
+    const r = (dbData.registrosAceites||[]).find(x => x.id === id);
+    if(!r) return;
+    if(!canEditAceite(r)) {
+      alert('Solo el usuario que registró este depósito de aceite puede editarlo. El administrador también tiene permiso.');
+      return;
+    }
+    switchTab('aceites');
+    document.getElementById('aceFecha').value = normalizeDateStr(r.fecha);
+    document.getElementById('aceMaquina').value = r.maquina;
+    renderDepositosAceite();
+
+    const blocks = document.querySelectorAll('[data-deposito-block]');
+    let target = null;
+    blocks.forEach(b => { if(b.dataset.deposito === r.deposito) target = b; });
+    if(target) {
+      target.dataset.editId = r.id;
+      target.querySelector('.ace-cant-ant').value = r.cantAnt || '';
+      target.querySelector('.ace-cant-nue').value = r.cantNue || '';
+      target.querySelector('.ace-comentarios').value = r.comentarios || '';
+      target.querySelector('.ace-btn-save').textContent = 'Guardar Cambios';
+      target.querySelector('.ace-btn-cancel').classList.remove('hidden');
+      target.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  }
+
+  function delAceReg(id) {
+    const r = (dbData.registrosAceites||[]).find(x => x.id === id);
+    if(!r) return;
+    if(!canEditAceite(r)) {
+      alert('Solo el usuario que registró este depósito de aceite puede borrarlo. El administrador también tiene permiso.');
+      return;
+    }
+    if(confirm('¿Eliminar este registro de aceite?')) {
+      dbData.registrosAceites = dbData.registrosAceites.filter(x => x.id !== id);
+      renderHistoriales();
+      postData({ action: 'DELETE_REGISTRO_ACE', id: id });
+    }
+  }
+
+  function resetFiltrosAce() {
+    document.getElementById('filtroFechaAce').value = getTodayString(); renderHistoriales();
   }
 
   // --- FORMULARIO REGISTRO MÁQUINAS (AJUSTE Y SETUP SIN PIEZAS) ---
@@ -1418,14 +1635,62 @@
     let htmlSol = (filSol.length > 0) ? filSol.map(r => `
       <div class="item-row">
         <div>
-          <b>${r.maquina}</b> - ${r.marca||'Sin marca'} (Turno ${r.turno})<br>
-          <small><b>Brix:</b> ${r.brixAnt} ➔ ${r.brixNue} | <b>pH:</b> ${r.phAnt} ➔ ${r.phNue} | <b>Supervisor:</b> ${getSupervisor(r)}</small><br>
+          ${r.incompleto ? '<span class="badge-incompleto">⚠️ Incompleto</span> ' : ''}<b>${r.maquina}</b> - ${r.marca||'Sin marca'} (Turno ${r.turno})<br>
+          <small><b>Brix:</b> ${r.brixAnt} ➔ ${r.brixNue || '<i>Pendiente</i>'} | <b>pH:</b> ${r.phAnt} ➔ ${r.phNue || '<i>Pendiente</i>'} | <b>Supervisor:</b> ${getSupervisor(r)}</small><br>
           <small style="color:#0284c7; font-weight:bold;">🕒 Capturado a las: ${r.horaRegistro || r.fechaRegistro || 'N/A'}</small>
           ${r.comentarios ? `<br><small style="color:#64748b;"><i>${r.comentarios}</i></small>` : ''}
         </div>
         <div class="item-actions"><button class="btn-edit" onclick="editSolReg('${r.id}')">✏️</button><button class="btn-danger" onclick="delSolReg('${r.id}')">🗑️</button></div>
       </div>`).join('') : '<p style="color:#94a3b8;">Sin registros de soluble.</p>';
     let divSol = document.getElementById('historialSol'); if(divSol) divSol.innerHTML = htmlSol;
+
+    // 4. Historial Aceites: visible para TODOS los usuarios con acceso a esta sección;
+    // solo el dueño del registro (o el admin) puede editarlo/borrarlo (igual que Técnico).
+    let fDateAce = document.getElementById('filtroFechaAce') ? document.getElementById('filtroFechaAce').value : getTodayString();
+    let filAce = (dbData.registrosAceites||[]).filter(r => normalizeDateStr(r.fecha) === fDateAce);
+    filAce.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}) || String(a.deposito||"").localeCompare(String(b.deposito||"")));
+
+    let htmlAce = (filAce.length > 0) ? filAce.map(r => {
+      const puedeEditar = canEditAceite(r);
+      const badge = r.incompleto ? '<span class="badge-incompleto">⚠️ Incompleto</span> ' : '';
+      return `
+      <div class="item-row" style="border-left-color:#7c3aed;">
+        <div>
+          ${badge}<b>${escapeHtml(r.maquina)}</b> - ${escapeHtml(r.deposito)}<br>
+          <small><b>Cantidad:</b> ${escapeHtml(r.cantAnt||'-')} ml ➔ ${r.cantNue ? escapeHtml(r.cantNue)+' ml' : '<i>Pendiente</i>'} | <b>Registrado por:</b> ${escapeHtml(getSupervisor(r))}</small><br>
+          <small style="color:#64748b;">📅 <b>Reg:</b> ${escapeHtml(r.fechaRegistro||'N/A')} ${r.fechaActualizacion?'| ✏️ <b>Act:</b> '+escapeHtml(r.fechaActualizacion):''}</small>
+          ${r.comentarios ? `<br><small style="color:#64748b;"><i>${escapeHtml(r.comentarios)}</i></small>` : ''}
+        </div>
+        <div class="item-actions">
+          ${puedeEditar ? `<button class="btn-edit" onclick="editAceReg('${jsQ(r.id)}')">✏️</button><button class="btn-danger" onclick="delAceReg('${jsQ(r.id)}')">🗑️</button>` : ''}
+        </div>
+      </div>`;
+    }).join('') : '<p style="color:#94a3b8;">Sin registros de aceites para esta fecha.</p>';
+    let divAce = document.getElementById('historialAce'); if(divAce) divAce.innerHTML = htmlAce;
+
+    // 5. Reg. Máquinas: vista de solo lectura para que los supervisores vean lo de sus compañeros.
+    let filtroCompEl = document.getElementById('filtroFechaCompMaq');
+    if(filtroCompEl) {
+      if(!filtroCompEl.value) filtroCompEl.value = getTodayString();
+      let fDateComp = filtroCompEl.value;
+      let filComp = act.filter(r => normalizeDateStr(r.fecha) === fDateComp);
+      filComp.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
+
+      let htmlComp = (filComp.length > 0) ? filComp.map(r => {
+        let term = r.hFin ? true : false;
+        let dur = term ? (r.tiempo || '-') : (getPendingMinutes(r.fecha, r.hInicio) + ' mins (en curso)');
+        return `<div class="item-row">
+          <div>
+            <b>${escapeHtml(r.maquina)}</b> - ${escapeHtml(r.estatus)} ${term ? '✅' : '⏳'} | <b>Supervisor:</b> ${escapeHtml(getSupervisor(r))}<br>
+            <small>${r.item ? 'Item: '+escapeHtml(r.item)+' | ' : ''}Turno: ${escapeHtml(r.turno||'-')} | Ini: ${formatHora(r.hInicio)} ${term ? '| Fin: '+formatHora(r.hFin) : ''} | Duración: ${escapeHtml(String(dur))}</small>
+            ${r.comentarios ? `<br><small style="color:#64748b;"><i>${escapeHtml(r.comentarios)}</i></small>` : ''}
+          </div>
+        </div>`;
+      }).join('') : '<p style="color:#94a3b8;">Sin registros de compañeros para esta fecha.</p>';
+
+      let divComp = document.getElementById('historialCompMaq');
+      if(divComp) divComp.innerHTML = htmlComp;
+    }
   }
 
   // --- SECCIÓN TÉCNICOS ---
@@ -2151,6 +2416,30 @@
       }).join('');
     }
 
+    // DEPOSITOS DE ACEITE
+    let divDep = document.getElementById('listAdminDepositos');
+    if(divDep) {
+      const deps = dbData.depositosAceite || [];
+      if(!deps.length) {
+        divDep.innerHTML = '<p style="color:#94a3b8;">Sin depósitos configurados.</p>';
+      } else {
+        const grouped = {};
+        deps.forEach(d => { (grouped[d.maquina] = grouped[d.maquina] || []).push(d.deposito); });
+        divDep.innerHTML = Object.keys(grouped).sort((a,b) => a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'})).map(maq => `
+          <div style="margin-top:8px;">
+            <b>${escapeHtml(maq)}</b>
+            ${grouped[maq].map(dep => `
+              <div class="item-row">
+                <span>${escapeHtml(dep)}</span>
+                <div class="item-actions">
+                  <button class="btn-edit" onclick="startEditDep('${jsQ(maq)}', '${jsQ(dep)}')">✏️</button>
+                  <button class="btn-danger" onclick="delDeposito('${jsQ(maq)}', '${jsQ(dep)}')">🗑️</button>
+                </div>
+              </div>`).join('')}
+          </div>`).join('');
+      }
+    }
+
     // USUARIOS
     let divU = document.getElementById('listAdminUsuarios');
     if(divU) {
@@ -2227,6 +2516,59 @@
     cancelEditMaq();
   }
 
+  // DEPOSITOS DE ACEITE (catálogo por máquina)
+  function startEditDep(maq, dep) {
+    document.getElementById('editDepOrigMaq').value = maq;
+    document.getElementById('editDepOrigNombre').value = dep;
+    document.getElementById('addDepMaquina').value = maq;
+    document.getElementById('addDepMaquina').disabled = true;
+    document.getElementById('addDepNombre').value = dep;
+    document.getElementById('btnSaveDep').textContent = 'Guardar Cambios';
+    document.getElementById('btnCancelDep').classList.remove('hidden');
+    window.scrollTo({top: document.getElementById('btnSaveDep').offsetTop - 100, behavior: 'smooth'});
+  }
+
+  function cancelEditDep() {
+    document.getElementById('editDepOrigMaq').value = '';
+    document.getElementById('editDepOrigNombre').value = '';
+    document.getElementById('addDepMaquina').value = '';
+    document.getElementById('addDepMaquina').disabled = false;
+    document.getElementById('addDepNombre').value = '';
+    document.getElementById('btnSaveDep').textContent = 'Agregar';
+    document.getElementById('btnCancelDep').classList.add('hidden');
+  }
+
+  function saveDepositoAceite() {
+    let origMaq = document.getElementById('editDepOrigMaq').value;
+    let origNombre = document.getElementById('editDepOrigNombre').value;
+    let maq = document.getElementById('addDepMaquina').value;
+    let nombre = document.getElementById('addDepNombre').value.trim();
+    if(!maq || !nombre) return alert("Selecciona la máquina y escribe el nombre del depósito.");
+
+    if(!dbData.depositosAceite) dbData.depositosAceite = [];
+
+    if(origMaq && origNombre) {
+      // Al editar, la máquina no se reasigna (el select queda bloqueado); solo cambia el nombre.
+      maq = origMaq;
+      let item = dbData.depositosAceite.find(x => x.maquina === origMaq && x.deposito === origNombre);
+      if(item) { item.deposito = nombre; }
+      postData({ action: "MANAGE_CATALOGO", op: "EDIT", catalogo: "DepositosAceite", val1: origMaq, val2: origNombre, newVal1: nombre });
+    } else {
+      dbData.depositosAceite.push({ maquina: maq, deposito: nombre });
+      postData({ action: "MANAGE_CATALOGO", op: "ADD", catalogo: "DepositosAceite", val1: maq, val2: nombre });
+    }
+
+    renderAdminLists();
+    cancelEditDep();
+  }
+
+  function delDeposito(maq, dep) {
+    if(!confirm(`¿Eliminar el depósito "${dep}" de la máquina ${maq}?`)) return;
+    dbData.depositosAceite = (dbData.depositosAceite||[]).filter(x => !(x.maquina === maq && x.deposito === dep));
+    renderAdminLists();
+    postData({ action: "MANAGE_CATALOGO", op: "DELETE", catalogo: "DepositosAceite", val1: maq, val2: dep });
+  }
+
   function editCat(cat, oldVal) {
     let newVal = prompt(`Editar ${cat}:`, oldVal);
     if(!newVal || newVal.trim() === "" || newVal.trim() === oldVal) return;
@@ -2276,6 +2618,7 @@
     document.getElementById('chkPermOp').checked = perms.includes('Operadores');
     document.getElementById('chkPermMaq').checked = perms.includes('Maquinas');
     document.getElementById('chkPermSol').checked = perms.includes('Solubles');
+    document.getElementById('chkPermAce').checked = perms.includes('Aceites');
     document.getElementById('chkPermTec').checked = perms.includes('Tecnico');
     
     document.getElementById('btnSaveUsr').textContent = 'Guardar Cambios';
@@ -2290,6 +2633,7 @@
     document.getElementById('chkPermOp').checked = false;
     document.getElementById('chkPermMaq').checked = false;
     document.getElementById('chkPermSol').checked = false;
+    document.getElementById('chkPermAce').checked = false;
     document.getElementById('chkPermTec').checked = false;
     document.getElementById('btnSaveUsr').textContent = 'Agregar Nuevo';
     document.getElementById('btnCancelUsr').classList.add('hidden');
@@ -2306,6 +2650,7 @@
     if(document.getElementById('chkPermOp').checked) permsArr.push('Operadores');
     if(document.getElementById('chkPermMaq').checked) permsArr.push('Maquinas');
     if(document.getElementById('chkPermSol').checked) permsArr.push('Solubles');
+    if(document.getElementById('chkPermAce').checked) permsArr.push('Aceites');
     if(document.getElementById('chkPermTec').checked) permsArr.push('Tecnico');
     let permsStr = permsArr.join(', ');
 
