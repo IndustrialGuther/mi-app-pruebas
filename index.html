@@ -192,6 +192,7 @@
           <input type="date" id="filtroFechaSol" onchange="renderHistoriales()">
           <button type="button" class="btn-secondary" onclick="resetFiltrosSol()">Restablecer</button>
         </div>
+        <small style="color:#0369a1;">* Los registros de esta sección son visibles para todos los usuarios con acceso a Solubles, pero solo el usuario que registró cada uno (o el administrador) puede editarlo o borrarlo.</small>
       </div>
 
       <div id="historialSol"></div>
@@ -1259,8 +1260,18 @@
     document.getElementById('solFecha').value = getTodayString(); postData(pld);
   }
 
+  function canEditSoluble(r) {
+    if(!r) return false;
+    if(isAdmin) return true;
+    return String(r.usuario || '').trim().toLowerCase() === String(currentUser || '').trim().toLowerCase();
+  }
+
   function editSolReg(id) {
     let r = (dbData.registrosSolubles||[]).find(x => x.id === id); if(!r) return;
+    if(!canEditSoluble(r)) {
+      alert('Solo el usuario que registró este soluble puede editarlo. El administrador también tiene permiso.');
+      return;
+    }
     document.getElementById('editSolId').value = r.id;
     document.getElementById('solMaquina').value = r.maquina;
     document.getElementById('solFecha').value = normalizeDateStr(r.fecha);
@@ -1275,6 +1286,11 @@
   }
 
   function delSolReg(id) {
+    let r = (dbData.registrosSolubles||[]).find(x => x.id === id); if(!r) return;
+    if(!canEditSoluble(r)) {
+      alert('Solo el usuario que registró este soluble puede borrarlo. El administrador también tiene permiso.');
+      return;
+    }
     if(confirm("¿Eliminar registro de soluble?")) {
       dbData.registrosSolubles = dbData.registrosSolubles.filter(x => x.id !== id);
       renderHistoriales(); postData({ action: "DELETE_REGISTRO_SOL", id: id });
@@ -1656,21 +1672,32 @@
       </div>`).join('') : '<p style="color:#94a3b8;">Sin registros de operadores.</p>';
     let divOp = document.getElementById('historialOp'); if(divOp) divOp.innerHTML = htmlOp;
 
-    // 3. Historial Solubles
+    // 3. Historial Solubles: visible para TODOS los usuarios con acceso a esta sección
+    // (igual que Aceites); solo el dueño del registro (o el admin) puede editarlo/borrarlo.
+    // Los incompletos se muestran primero para facilitar completarlos.
     let fDateSol = document.getElementById('filtroFechaSol') ? document.getElementById('filtroFechaSol').value : getTodayString();
-    let filSol = (dbData.registrosSolubles||[]).filter(r => normalizeDateStr(r.fecha) === fDateSol && (isAdmin || getSupervisor(r).toLowerCase() === activeUser));
-    filSol.sort((a, b) => (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'}));
+    let filSol = (dbData.registrosSolubles||[]).filter(r => normalizeDateStr(r.fecha) === fDateSol);
+    filSol.sort((a, b) => {
+      const incompDiff = (b.incompleto ? 1 : 0) - (a.incompleto ? 1 : 0);
+      if (incompDiff !== 0) return incompDiff;
+      return (a.maquina||"").localeCompare(b.maquina||"", undefined, {numeric: true, sensitivity: 'base'});
+    });
 
-    let htmlSol = (filSol.length > 0) ? filSol.map(r => `
+    let htmlSol = (filSol.length > 0) ? filSol.map(r => {
+      const puedeEditarSol = canEditSoluble(r);
+      return `
       <div class="item-row">
         <div>
           ${r.incompleto ? '<span class="badge-incompleto">⚠️ Incompleto</span> ' : ''}<b>${r.maquina}</b> - ${r.marca||'Sin marca'} (Turno ${r.turno})<br>
-          <small><b>Brix:</b> ${r.brixAnt} ➔ ${r.brixNue || '<i>Pendiente</i>'} | <b>pH:</b> ${r.phAnt} ➔ ${r.phNue || '<i>Pendiente</i>'} | <b>Supervisor:</b> ${getSupervisor(r)}</small><br>
+          <small><b>Brix:</b> ${r.brixAnt} ➔ ${r.brixNue || '<i>Pendiente</i>'} | <b>pH:</b> ${r.phAnt} ➔ ${r.phNue || '<i>Pendiente</i>'} | <b>Registrado por:</b> ${getSupervisor(r)}</small><br>
           <small style="color:#0284c7; font-weight:bold;">🕒 Capturado a las: ${r.horaRegistro || r.fechaRegistro || 'N/A'}</small>
           ${r.comentarios ? `<br><small style="color:#64748b;"><i>${r.comentarios}</i></small>` : ''}
         </div>
-        <div class="item-actions"><button class="btn-edit" onclick="editSolReg('${r.id}')">✏️</button><button class="btn-danger" onclick="delSolReg('${r.id}')">🗑️</button></div>
-      </div>`).join('') : '<p style="color:#94a3b8;">Sin registros de soluble.</p>';
+        <div class="item-actions">
+          ${puedeEditarSol ? `<button class="btn-edit" onclick="editSolReg('${r.id}')">✏️</button><button class="btn-danger" onclick="delSolReg('${r.id}')">🗑️</button>` : ''}
+        </div>
+      </div>`;
+    }).join('') : '<p style="color:#94a3b8;">Sin registros de soluble.</p>';
     let divSol = document.getElementById('historialSol'); if(divSol) divSol.innerHTML = htmlSol;
 
     // 4. Historial Aceites: visible para TODOS los usuarios con acceso a esta sección;
@@ -2154,6 +2181,7 @@
               if(r.operador) txt += `   *Operador:* ${r.operador}\n`;
               txt += `   *Inicio:* ${formatHora(r.hInicio)} | *Fin:* En proceso...\n`;
               txt += `   *Duración:* ${durLive}\n`;
+              if(st === 'Corriendo') txt += `   *Piezas Plan:* ${r.piezasPlan||0} | *Real:* ${r.piezasReal||0} | *Delta:* ${r.piezasDelta||0}\n`;
               if(r.comentarios) txt += `   *Obs:* ${r.comentarios}\n`;
 
               if(incluirTM) {
@@ -2181,6 +2209,7 @@
               if(r.operador) txt += `   *Operador:* ${r.operador}\n`;
               txt += `   *Inicio:* ${formatHora(r.hInicio)} | *Fin:* ${formatHora(r.hFin)}\n`;
               txt += `   *Duración:* ${r.tiempo || '-'}\n`;
+              if(st === 'Corriendo') txt += `   *Piezas Plan:* ${r.piezasPlan||0} | *Real:* ${r.piezasReal||0} | *Delta:* ${r.piezasDelta||0}\n`;
               if(r.comentarios) txt += `   *Obs:* ${r.comentarios}\n`;
 
               if(incluirTM) {
