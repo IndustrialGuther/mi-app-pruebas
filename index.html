@@ -536,6 +536,22 @@
   </div>
 </div>
 
+<!-- MODAL LOGIN ADMINISTRADOR (contraseña oculta con opción de mostrar/ocultar) -->
+<div id="modalAdminAuth" class="modal-overlay hidden">
+  <div class="modal-content">
+    <h3 style="color:var(--admin); margin-top:0;">🔒 Acceso Administrador</h3>
+    <label>Clave Administrador</label>
+    <div style="position:relative;">
+      <input type="password" id="adminAuthPass" placeholder="••••••••" autocomplete="off" style="padding-right:44px;" onkeydown="if(event.key==='Enter'){event.preventDefault(); confirmarAdminAuth();}">
+      <button type="button" id="btnToggleAdminPass" onclick="toggleAdminPassVisibility()" title="Mostrar/Ocultar contraseña" style="position:absolute; right:4px; top:4px; background:transparent; color:#64748b; padding:6px 8px; box-shadow:none;">👁️</button>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:15px;">
+      <button type="button" class="btn-admin" style="flex:1;" onclick="confirmarAdminAuth()">Ingresar</button>
+      <button type="button" class="btn-secondary" style="flex:1;" onclick="cerrarModalAdminAuth()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- PIZARRA TV -->
 <div id="panelTV" class="tv-container hidden">
   <div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; color:white; padding:10px 20px; border-radius:8px; margin-bottom:10px; border:1px solid #334155; flex-wrap:wrap; gap:10px;">
@@ -1090,8 +1106,43 @@
   }
 
   async function accesoAdminDirecto() {
-    const password = prompt("Clave Administrador:");
-    if(password === null) return;
+    abrirModalAdminAuth();
+  }
+
+  // Abre el modal de acceso admin en lugar del prompt() nativo (que mostraba
+  // la clave en texto plano). El campo queda oculto con puntos por defecto.
+  function abrirModalAdminAuth() {
+    const input = document.getElementById('adminAuthPass');
+    input.value = '';
+    input.type = 'password';
+    const btnToggle = document.getElementById('btnToggleAdminPass');
+    if(btnToggle) btnToggle.textContent = '👁️';
+    document.getElementById('modalAdminAuth').classList.remove('hidden');
+    setTimeout(() => input.focus(), 50);
+  }
+
+  function cerrarModalAdminAuth() {
+    document.getElementById('modalAdminAuth').classList.add('hidden');
+    document.getElementById('adminAuthPass').value = '';
+  }
+
+  // Alterna entre ocultar (puntos) y mostrar la clave de administrador en texto.
+  function toggleAdminPassVisibility() {
+    const input = document.getElementById('adminAuthPass');
+    const btnToggle = document.getElementById('btnToggleAdminPass');
+    if(input.type === 'password') {
+      input.type = 'text';
+      if(btnToggle) btnToggle.textContent = '🙈';
+    } else {
+      input.type = 'password';
+      if(btnToggle) btnToggle.textContent = '👁️';
+    }
+    input.focus();
+  }
+
+  async function confirmarAdminAuth() {
+    const password = document.getElementById('adminAuthPass').value;
+    if(!password) { alert("Ingresa la clave de administrador."); return; }
 
     try {
       const data = await fetch(`${API_URL}?_ts=${Date.now()}`, {
@@ -1106,6 +1157,7 @@
       adminAuthToken = data.adminToken || '';
       currentUser = "Admin";
       isAdmin = true;
+      cerrarModalAdminAuth();
       document.getElementById('userDisp').textContent = `Rol: Admin Total`;
       document.getElementById('secLogin').classList.add('hidden');
       document.getElementById('secApp').classList.remove('hidden');
@@ -2342,17 +2394,29 @@
        else maqNaveMap[m] = "Sin Nave";
     });
 
-    let navesData = {};
-    (dbData.naves || []).forEach(n => {
-      if(n && n.trim().toLowerCase() !== "sin nave") navesData[n] = [];
-    });
-
+    // Agrupamos primero los registros del día/turno por nave (Caídas, Corriendo,
+    // Set up y Ajuste cuentan como "nave con máquinas registradas").
+    let navesConDatos = {};
     act.forEach(r => { 
       let n = maqNaveMap[r.maquina] || "Sin Nave"; 
       if(n && n.trim().toLowerCase() !== "sin nave") {
-        if(!navesData[n]) navesData[n] = []; 
-        navesData[n].push(r); 
+        if(!navesConDatos[n]) navesConDatos[n] = []; 
+        navesConDatos[n].push(r); 
       }
+    });
+
+    // Solo mostramos las naves que tuvieron al menos una máquina registrada ese
+    // día/turno; mantenemos el orden del catálogo de Naves para las que sí aplican.
+    let navesData = {};
+    (dbData.naves || []).forEach(n => {
+      if(n && n.trim().toLowerCase() !== "sin nave" && navesConDatos[n]) {
+        navesData[n] = navesConDatos[n];
+      }
+    });
+    // Por si alguna máquina tiene asignada una nave que ya no está en el catálogo
+    // de Naves, la mostramos igual para no perder información en el monitor.
+    Object.keys(navesConDatos).forEach(n => {
+      if(!navesData[n]) navesData[n] = navesConDatos[n];
     });
 
     let hasAlarmTriggered = false;
