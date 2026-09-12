@@ -56,8 +56,8 @@
     .chk-group input { width: auto; margin: 0; }
 
     /* Estilos Tiempos Muertos */
-    .tm-box { background: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; padding: 8px; margin-top: 8px; font-size: 0.85rem; color: #92400e; }
-    .tm-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #fde68a; padding: 6px 0; }
+    .tm-box { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 6px; padding: 8px; margin-top: 8px; font-size: 0.85rem; color: #3730a3; }
+    .tm-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #c7d2fe; padding: 6px 0; }
     .tm-item:last-child { border-bottom: none; }
 
     /* Modal / Form Flotante */
@@ -97,19 +97,21 @@
 
     /* --- CRÍTICOS: amarillo parpadeante, distinto del rojo de alarma por límite --- */
     @keyframes blink-yellow-tv {
-      0%, 100% { border-color: #eab308; box-shadow: 0 0 12px #eab308; }
-      50% { border-color: #334155; box-shadow: none; }
+      0%, 100% { border-color: #eab308; box-shadow: 0 0 18px 4px #facc15; }
+      50% { border-color: #78350f; box-shadow: 0 0 4px rgba(250,204,21,0.2); }
     }
-    .tvc-critico { animation: blink-yellow-tv 1s linear infinite !important; border-width: 4px !important; will-change: border-color, box-shadow; }
+    .tvc-critico { animation: blink-yellow-tv 0.8s linear infinite !important; border-width: 5px !important; background: linear-gradient(135deg, #fde047 0%, #fef9c3 100%) !important; color: #1e1b04 !important; will-change: border-color, box-shadow; }
+    .tvc-critico * { color: #1e1b04 !important; }
+    .tvc-critico span[style*="background:#475569"] { background:#78350f !important; color:#fef08a !important; }
     /* Si además superó el límite de tiempo, se conserva el parpadeo amarillo (no cambia a rojo)
        pero se agrega un ícono/aviso adicional de "límite superado" (ver .crit-limit-tag). */
-    .tvc-critico.tvc-alarmed { animation: blink-yellow-tv 1s linear infinite !important; }
+    .tvc-critico.tvc-alarmed { animation: blink-yellow-tv 0.8s linear infinite !important; }
 
     @keyframes blink-yellow-soft {
-      0%, 100% { box-shadow: 0 0 0 rgba(234,179,8,0); }
-      50% { box-shadow: 0 0 10px 2px rgba(234,179,8,0.85); }
+      0%, 100% { box-shadow: inset 0 0 0 rgba(234,179,8,0); }
+      50% { box-shadow: inset 0 0 0 60px rgba(250,204,21,0.35), 0 0 14px 3px rgba(234,179,8,0.9); }
     }
-    .st-critico { border-left-color: #eab308 !important; border-left-width: 6px !important; animation: blink-yellow-soft 1.2s linear infinite; background: #fefce8; }
+    .st-critico { border-left-color: #a16207 !important; border-left-width: 8px !important; animation: blink-yellow-soft 1s linear infinite; background: #fef9c3 !important; }
 
     .badge-critico { background: #eab308; color: #1e1b04; font-weight: bold; padding: 2px 7px; border-radius: 10px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 3px; }
     .crit-limit-tag { background: #ef4444; color: #fff; font-weight: bold; padding: 1px 6px; border-radius: 8px; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 2px; margin-left: 4px; }
@@ -118,9 +120,55 @@
     /* Botones extra de la pizarra TV */
     .btn-tv-toggle.tv-toggle-on { background: #eab308; color: #1e1b04; }
     .btn-tv-toggle.tv-scroll-on { background: #16a34a; }
+
+    /* --- Nombre de usuario destacado en dorado con brillo/reflejos --- */
+    @keyframes shine-gold {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    .nombre-dorado {
+      font-weight: bold;
+      background: linear-gradient(90deg, #92702a 0%, #ffe9a8 25%, #fff8dc 50%, #ffe9a8 75%, #92702a 100%);
+      background-size: 250% auto;
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      -webkit-text-fill-color: transparent;
+      animation: shine-gold 2.5s linear infinite;
+      text-shadow: 0 0 6px rgba(255, 215, 90, 0.5);
+      padding: 0 1px;
+    }
+
+    /* --- Alarma global de conexión --- */
+    #offlineBanner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 999999;
+      background: repeating-linear-gradient(45deg, #dc2626, #dc2626 20px, #b91c1c 20px, #b91c1c 40px);
+      color: #fff; text-align: center; font-weight: bold; padding: 10px 12px;
+      font-size: 1rem; display: none; box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      animation: blink 1s infinite;
+    }
+    #offlineBanner.show { display: block; }
+
+    /* --- Indicador de estado de pantalla completa (TV / Gráficas) --- */
+    .fs-indicator { font-size: 0.8rem; font-weight: bold; padding: 3px 8px; border-radius: 10px; display: inline-flex; align-items: center; gap: 4px; }
+    .fs-indicator.fs-on { background: #166534; color: #bbf7d0; }
+    .fs-indicator.fs-off { background: #7f1d1d; color: #fecaca; animation: blink 1.2s infinite; }
+
+    /* --- Presentación de Gráficas en pantalla completa (para TV) --- */
+    body.graf-mode { overflow: hidden; }
+    body.graf-mode .user-bar, body.graf-mode .tabs { display: none !important; }
+    body.graf-mode #panelGraficas {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9000;
+      margin: 0; border-radius: 0; overflow-y: auto;
+      background: #0f172a; color: #e2e8f0; padding: 20px 25px;
+    }
+    body.graf-mode #panelGraficas h2 { color: #facc15 !important; }
+    body.graf-mode #panelGraficas h3 { color: #7dd3fc !important; }
+    body.graf-mode #panelGraficas .card { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; }
+    body.graf-mode #panelGraficas label { color: #cbd5e1; }
   </style>
 </head>
 <body>
+
+<div id="offlineBanner">📡 SIN CONEXIÓN A INTERNET — Los datos no se están actualizando</div>
 
 <div id="mainContainer" class="container">
   <!-- LOGIN -->
@@ -476,6 +524,9 @@
             <input type="checkbox" id="chkPermTec" style="width:auto; margin:0;"> Técnico
           </label>
         </div>
+        <div class="chk-group" style="background:#fefce8; border:1px solid #fde047; padding:6px 10px; border-radius:6px; margin-bottom:10px;">
+          <label style="font-weight:bold; color:#854d0e; margin-top:0;"><input type="checkbox" id="chkUsrDorado"> ✨ Nombre destacado en dorado brillante</label>
+        </div>
         <div style="display:flex; gap:10px;">
           <button class="btn-admin" id="btnSaveUsr" onclick="saveUsuario()" style="width:140px;">Agregar Nuevo</button>
           <button class="btn-secondary hidden" id="btnCancelUsr" onclick="cancelEditUsr()" style="width:100px;">Cancelar</button>
@@ -535,8 +586,14 @@
 
     <!-- GRÁFICAS (SOLO ADMIN) -->
     <div id="panelGraficas" class="card hidden">
-      <h2 style="color: var(--admin)">📈 Gráficas de Producción y Planta</h2>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px; background:#f1f5f9; padding:10px; border-radius:8px; align-items:flex-end;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <h2 style="color: var(--admin); margin:0;">📈 Gráficas de Producción y Planta</h2>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <span id="grafFsIndicator" class="fs-indicator fs-off">🖥️ Pantalla completa: INACTIVA</span>
+          <button type="button" id="btnFullscreenGraf" class="btn-secondary" onclick="togglePantallaTV()">⛶ Pantalla completa</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin:15px 0; background:#f1f5f9; padding:10px; border-radius:8px; align-items:flex-end;">
         <div>
           <label>Desde</label>
           <input type="date" id="graFechaIni" onchange="renderGraficas()">
@@ -553,20 +610,74 @@
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:20px;">
         <div class="card" style="margin-bottom:0;">
           <h3>🏭 Producción por Máquina (Plan vs Real)</h3>
-          <canvas id="chartProduccion" height="220"></canvas>
+          <div style="position:relative; height:260px;"><canvas id="chartProduccion"></canvas></div>
         </div>
         <div class="card" style="margin-bottom:0;">
           <h3>⏱️ Tiempo Muerto Acumulado por Usuario/Técnico</h3>
-          <canvas id="chartTiemposMuertos" height="220"></canvas>
+          <div style="position:relative; height:260px;"><canvas id="chartTiemposMuertos"></canvas></div>
         </div>
         <div class="card" style="margin-bottom:0;">
           <h3>⚙️ Duración Promedio de Set ups por Técnico</h3>
-          <canvas id="chartSetups" height="220"></canvas>
+          <div style="position:relative; height:260px;"><canvas id="chartSetups"></canvas></div>
         </div>
         <div class="card" style="margin-bottom:0;">
           <h3>⚠️ Registros Críticos por Máquina</h3>
-          <canvas id="chartCriticos" height="220"></canvas>
+          <div style="position:relative; height:260px;"><canvas id="chartCriticos"></canvas></div>
         </div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h3>🧩 Gráfica Personalizada</h3>
+        <p style="color:#64748b; margin-top:-8px; font-size:0.9rem;">Elige qué comparar contra qué, usando la información del Registro de Máquinas.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+          <div>
+            <label>Agrupar por (eje X)</label>
+            <select id="graDim">
+              <option value="maquina">Máquina</option>
+              <option value="estatus">Estatus</option>
+              <option value="turno">Turno</option>
+              <option value="tecnico">Técnico</option>
+              <option value="usuario">Supervisor / Usuario</option>
+              <option value="item">Ítem</option>
+              <option value="fecha">Fecha (día)</option>
+              <option value="operador">Operador</option>
+            </select>
+          </div>
+          <div>
+            <label>Medir (eje Y)</label>
+            <select id="graMetric">
+              <option value="conteo">Conteo de registros</option>
+              <option value="piezasPlan">Piezas Plan (suma)</option>
+              <option value="piezasReal">Piezas Real (suma)</option>
+              <option value="piezasDelta">Delta de Piezas (suma)</option>
+              <option value="duracionMin">Duración total (mins)</option>
+              <option value="duracionProm">Duración promedio (mins)</option>
+              <option value="tiempoMuertoMin">Tiempo muerto total (mins)</option>
+              <option value="criticos">Registros críticos (conteo)</option>
+            </select>
+          </div>
+          <div>
+            <label>Tipo de gráfica</label>
+            <select id="graTipo">
+              <option value="bar">Barras</option>
+              <option value="horizontalBar">Barras horizontales</option>
+              <option value="line">Línea</option>
+              <option value="pie">Circular</option>
+            </select>
+          </div>
+          <div>
+            <label>Filtrar estatus</label>
+            <select id="graFiltroEstatus">
+              <option value="TODOS">Todos</option>
+              <option value="Corriendo">Corriendo</option>
+              <option value="Set up">Set up</option>
+              <option value="Ajuste">Ajuste</option>
+              <option value="Caida">Caída</option>
+            </select>
+          </div>
+          <button type="button" class="btn-admin" onclick="renderChartPersonalizado()" style="height:38px;">Generar gráfica</button>
+        </div>
+        <div style="position:relative; height:320px; margin-top:15px;"><canvas id="chartPersonalizado"></canvas></div>
       </div>
     </div>
   </div>
@@ -626,6 +737,7 @@
 <div id="panelTV" class="tv-container hidden">
   <div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; color:white; padding:10px 20px; border-radius:8px; margin-bottom:10px; border:1px solid #334155; flex-wrap:wrap; gap:10px;">
     <h1 style="margin:0; font-size:1.5rem;"><span class="pulse-dot"></span>Monitor de Planta en Vivo</h1>
+    <span id="tvFsIndicator" class="fs-indicator fs-off">🖥️ Pantalla completa: INACTIVA</span>
     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
       <button id="btnMuteTV" onclick="toggleMuteTV()" class="btn-secondary" style="background:#475569;">🔊 Sonido: ACTIVADO</button>
       
@@ -678,6 +790,8 @@
   let tvAutoScrollActive = false;
   let tvAutoScrollRAF = null;
   let chartsInstances = {};
+  let syncFailCount = 0;
+  let lastKnownTvDay = null;
   let alarmBuffer = null;
   let alarmStopTimer = null;
   let syncInFlight = false;
@@ -786,6 +900,18 @@
   }
 
   function getSupervisor(r) { return (r.usuario || r.user || "Desconocido").trim(); }
+
+  // --- Usuarios destacados en dorado (brillo/reflejos) ---
+  function getUserGoldFlag(username) {
+    if(!username) return false;
+    let u = (dbData.usuarios || []).find(x => (x.user||'').trim().toLowerCase() === String(username).trim().toLowerCase());
+    return !!(u && u.dorado && u.dorado !== 'false');
+  }
+  function nameHtml(name) {
+    let safe = escapeHtml(name || 'Desconocido');
+    return getUserGoldFlag(name) ? `<span class="nombre-dorado">${safe}</span>` : safe;
+  }
+  function getSupervisorHtml(r) { return nameHtml(getSupervisor(r)); }
   function normalizeDateStr(f) {
     if(!f) return ""; let str = String(f).trim().split("T")[0];
     if(str.includes('-')) { let p = str.split('-'); return p[0].length===4 ? str : `${p[2]}-${String(p[1]).padStart(2,'0')}-${String(p[0]).padStart(2,'0')}`; }
@@ -949,6 +1075,8 @@
       } else {
         const versionData = await syncVersion();
         if(String(versionData.dataVersion) === String(dbData.dataVersion)) {
+          syncFailCount = 0;
+          setOfflineBanner(false);
           if(!document.getElementById('panelTV').classList.contains('hidden')) {
             updateTVLiveState();
           }
@@ -956,6 +1084,9 @@
         }
         data = await loadFullData();
       }
+
+      syncFailCount = 0;
+      setOfflineBanner(false);
 
       const previous = dbData;
       const tvBefore = getTVFingerprint(dbData);
@@ -990,6 +1121,7 @@
 
       const tvVisible = !document.getElementById('panelTV').classList.contains('hidden');
       if(tvVisible) {
+        checkTvDateRollover();
         const tvAfter = getTVFingerprint(dbData);
         if(tvAfter !== tvBefore) renderTV();
         else updateTVLiveState();
@@ -1006,8 +1138,37 @@
 
     } catch(e) {
       console.error("Error sincronizando:", e);
+      syncFailCount++;
+      // Dos fallos consecutivos (o el evento "offline" del navegador) activan el aviso,
+      // así evitamos falsos positivos por un solo tropiezo de red.
+      if(syncFailCount >= 2 || !navigator.onLine) setOfflineBanner(true);
     } finally {
       syncInFlight = false;
+    }
+  }
+
+  // --- Alarma global de conexión (visible en toda la app, incluida la Pizarra TV) ---
+  function setOfflineBanner(show) {
+    const el = document.getElementById('offlineBanner');
+    if(!el) return;
+    el.classList.toggle('show', !!show);
+  }
+  window.addEventListener('offline', () => setOfflineBanner(true));
+  window.addEventListener('online', () => { syncFailCount = 0; syncData(true); });
+
+  // --- Actualización automática de fecha en la Pizarra TV al pasar la medianoche ---
+  function checkTvDateRollover() {
+    const todayStr = getTodayString();
+    if(lastKnownTvDay === null) { lastKnownTvDay = todayStr; return; }
+    if(lastKnownTvDay !== todayStr) {
+      const fEl = document.getElementById('tvFilterFecha');
+      // Solo se actualiza sola si el monitor seguía mostrando "hoy"; si el usuario
+      // navegó a propósito a un día anterior, se respeta esa selección manual.
+      if(fEl && fEl.value === lastKnownTvDay) {
+        fEl.value = todayStr;
+        renderTV();
+      }
+      lastKnownTvDay = todayStr;
     }
   }
 
@@ -1272,6 +1433,7 @@
       document.getElementById('panelTV').classList.remove('hidden');
       document.body.style.background = "#020617";
       document.getElementById('tvFilterFecha').value = getTodayString();
+      lastKnownTvDay = getTodayString();
       lastTvFingerprint = "";
       renderTV();
 
@@ -1797,7 +1959,7 @@
           if(esCritico && superoLimite) badges += ` <span class="crit-limit-tag">⏰ Límite superado</span>`;
           if(r.editadoPorAdmin && r.editadoPorAdmin !== 'false') badges += ` <span class="badge-admin-edit">✏️ Editado por Admin</span>`;
 
-          let det = `<small><b>Turno:</b> ${r.turno} | <b>Supervisor:</b> ${getSupervisor(r)}</small><br>`;
+          let det = `<small><b>Turno:</b> ${r.turno} | <b>Supervisor:</b> ${getSupervisorHtml(r)}</small><br>`;
           if(st !== 'Caida') det += `<small><b>Item:</b> ${r.item} | <b>Ini:</b> ${formatHora(r.hInicio)} <b>Fin:</b> ${term ? formatHora(r.hFin) : '<i>Pendiente</i>'}</small><br>`;
           if(st === 'Corriendo') det += `<small><b>Op:</b> ${r.operador} ${r.opCubre?`(Cubre:${r.opCubre})`:''} | <b>Duración:</b> ${dur}<br><b>Plan:</b> ${r.piezasPlan||0} | <b>Real:</b> ${r.piezasReal||0} | <b>Delta (Falta):</b> ${r.piezasDelta||0}</small><br>`;
           if(st === 'Ajuste' || st === 'Set up') det += `<small><b>Tec:</b> ${r.tecnico} | <b>Duración:</b> ${dur}</small><br>`;
@@ -1809,7 +1971,7 @@
             tms.forEach(tm => {
               let isTmTerm = !!tm.hFin;
               let tmDur = isTmTerm ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
-              det += `<div class="tm-item"><span>• <b>${tm.tiempoMuerto}:</b> ${tmDur} mins ${isTmTerm?'':'(en curso)'} <small style="color:#64748b;">(${tm.usuario})</small>${(tm.editadoPorAdmin && tm.editadoPorAdmin!=='false') ? ' <span class="badge-admin-edit">✏️ Admin</span>' : ''}${tm.comentarios ? ' - <i>'+tm.comentarios+'</i>' : ''}</span></div>`;
+              det += `<div class="tm-item"><span>• <b>${tm.tiempoMuerto}:</b> ${tmDur} mins ${isTmTerm?'':'(en curso)'} <small style="color:#64748b;">(${nameHtml(tm.usuario)})</small>${(tm.editadoPorAdmin && tm.editadoPorAdmin!=='false') ? ' <span class="badge-admin-edit">✏️ Admin</span>' : ''}${tm.comentarios ? ' - <i>'+tm.comentarios+'</i>' : ''}</span></div>`;
             });
             det += `</div>`;
           }
@@ -1837,7 +1999,7 @@
       <div class="item-row">
         <div>
           <b>${r.maquina}</b> - Turno ${r.turno}<br>
-          <small><b>Titular:</b> ${r.operador} ${r.opCubre ? '| <b>Cubre:</b> '+r.opCubre : ''} | <b>Supervisor:</b> ${getSupervisor(r)}</small>${(r.editadoPorAdmin && r.editadoPorAdmin!=='false') ? ' <span class="badge-admin-edit">✏️ Editado por Admin</span>' : ''}
+          <small><b>Titular:</b> ${r.operador} ${r.opCubre ? '| <b>Cubre:</b> '+r.opCubre : ''} | <b>Supervisor:</b> ${getSupervisorHtml(r)}</small>${(r.editadoPorAdmin && r.editadoPorAdmin!=='false') ? ' <span class="badge-admin-edit">✏️ Editado por Admin</span>' : ''}
           <br><small style="color:#64748b;">📅 <b>Registro:</b> ${r.fechaRegistro || r.timestamp || 'N/A'} ${r.fechaActualizacion ? '| ✏️ <b>Actualizado:</b> '+r.fechaActualizacion : ''}</small>
           ${r.comentarios ? `<br><small style="color:#64748b;"><i>${r.comentarios}</i></small>` : ''}
         </div>
@@ -1862,7 +2024,7 @@
       <div class="item-row">
         <div>
           ${r.incompleto ? '<span class="badge-incompleto">⚠️ Incompleto</span> ' : ''}<b>${r.maquina}</b> - ${r.marca||'Sin marca'} (Turno ${r.turno})<br>
-          <small><b>Brix:</b> ${r.brixAnt} ➔ ${r.brixNue || '<i>Pendiente</i>'} | <b>pH:</b> ${r.phAnt} ➔ ${r.phNue || '<i>Pendiente</i>'} | <b>Registrado por:</b> ${getSupervisor(r)}</small>${(r.editadoPorAdmin && r.editadoPorAdmin!=='false') ? ' <span class="badge-admin-edit">✏️ Editado por Admin</span>' : ''}<br>
+          <small><b>Brix:</b> ${r.brixAnt} ➔ ${r.brixNue || '<i>Pendiente</i>'} | <b>pH:</b> ${r.phAnt} ➔ ${r.phNue || '<i>Pendiente</i>'} | <b>Registrado por:</b> ${getSupervisorHtml(r)}</small>${(r.editadoPorAdmin && r.editadoPorAdmin!=='false') ? ' <span class="badge-admin-edit">✏️ Editado por Admin</span>' : ''}<br>
           <small style="color:#0284c7; font-weight:bold;">🕒 Capturado a las: ${r.horaRegistro || r.fechaRegistro || 'N/A'}</small>
           ${r.comentarios ? `<br><small style="color:#64748b;"><i>${r.comentarios}</i></small>` : ''}
         </div>
@@ -1886,7 +2048,7 @@
       <div class="item-row" style="border-left-color:#7c3aed;">
         <div>
           ${badge}<b>${escapeHtml(r.maquina)}</b> - ${escapeHtml(r.deposito)}<br>
-          <small><b>Cantidad:</b> ${escapeHtml(r.cantAnt||'-')} ml ➔ ${r.cantNue ? escapeHtml(r.cantNue)+' ml' : '<i>Pendiente</i>'} | <b>Registrado por:</b> ${escapeHtml(getSupervisor(r))}</small>${(r.editadoPorAdmin && r.editadoPorAdmin!=='false') ? ' <span class="badge-admin-edit">✏️ Editado por Admin</span>' : ''}<br>
+          <small><b>Cantidad:</b> ${escapeHtml(r.cantAnt||'-')} ml ➔ ${r.cantNue ? escapeHtml(r.cantNue)+' ml' : '<i>Pendiente</i>'} | <b>Registrado por:</b> ${getSupervisorHtml(r)}</small>${(r.editadoPorAdmin && r.editadoPorAdmin!=='false') ? ' <span class="badge-admin-edit">✏️ Editado por Admin</span>' : ''}<br>
           <small style="color:#64748b;">📅 <b>Reg:</b> ${escapeHtml(r.fechaRegistro||'N/A')} ${r.fechaActualizacion?'| ✏️ <b>Act:</b> '+escapeHtml(r.fechaActualizacion):''}</small>
           ${r.comentarios ? `<br><small style="color:#64748b;"><i>${escapeHtml(r.comentarios)}</i></small>` : ''}
         </div>
@@ -1911,7 +2073,7 @@
         let dur = term ? (r.tiempo || '-') : (getPendingMinutes(r.fecha, r.hInicio) + ' mins (en curso)');
         return `<div class="item-row">
           <div>
-            <b>${escapeHtml(r.maquina)}</b> - ${escapeHtml(r.estatus)} ${term ? '✅' : '⏳'} | <b>Supervisor:</b> ${escapeHtml(getSupervisor(r))}<br>
+            <b>${escapeHtml(r.maquina)}</b> - ${escapeHtml(r.estatus)} ${term ? '✅' : '⏳'} | <b>Supervisor:</b> ${getSupervisorHtml(r)}<br>
             <small>${r.item ? 'Item: '+escapeHtml(r.item)+' | ' : ''}Turno: ${escapeHtml(r.turno||'-')} | Ini: ${formatHora(r.hInicio)} ${term ? '| Fin: '+formatHora(r.hFin) : ''} | Duración: ${escapeHtml(String(dur))}</small>
             ${r.comentarios ? `<br><small style="color:#64748b;"><i>${escapeHtml(r.comentarios)}</i></small>` : ''}
           </div>
@@ -1982,7 +2144,7 @@
           </div>
           <div style="font-size:0.9rem; margin-top:6px;">
             <b>Ítem:</b> ${r.item||'-'} | <b>Técnico:</b> ${r.tecnico||'-'} | <b>Turno:</b> ${r.turno||'-'}<br>
-            <b>Supervisor:</b> ${getSupervisor(r)} | <b>Ini:</b> ${formatHora(r.hInicio)} | <b>Fin:</b> ${r.hFin?formatHora(r.hFin):'En curso'}<br>
+            <b>Supervisor:</b> ${getSupervisorHtml(r)} | <b>Ini:</b> ${formatHora(r.hInicio)} | <b>Fin:</b> ${r.hFin?formatHora(r.hFin):'En curso'}<br>
             <b>Duración Total:</b> ${dur}
             ${r.comentarios ? `<br><i>Obs: ${r.comentarios}</i>` : ''}
           </div>
@@ -2191,7 +2353,7 @@
       if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
       reqs.forEach(r => {
         const dur = r.hFin ? (r.tiempo || '-') : (getPendingMinutes(r.fecha, r.hInicio) + ' mins (en curso)');
-        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${escapeHtml(r.maquina)}</b> (${escapeHtml(r.estatus)}) | Usuario: ${escapeHtml(getSupervisor(r))}<br><small>Item: ${escapeHtml(r.item||'-')} | Turno: ${escapeHtml(r.turno||'-')} | H.Ini: ${formatHora(r.hInicio)} | H.Fin: ${formatHora(r.hFin)} | Duración: ${escapeHtml(dur)}</small></div></div>`;
+        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${escapeHtml(r.maquina)}</b> (${escapeHtml(r.estatus)}) | Usuario: ${getSupervisorHtml(r)}<br><small>Item: ${escapeHtml(r.item||'-')} | Turno: ${escapeHtml(r.turno||'-')} | H.Ini: ${formatHora(r.hInicio)} | H.Fin: ${formatHora(r.hFin)} | Duración: ${escapeHtml(dur)}</small></div></div>`;
       });
     }
 
@@ -2232,7 +2394,7 @@
       html += `<h3 style="margin-top:15px;">👷 Registros de Operadores (${reqs.length})</h3>`;
       if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
       reqs.forEach(r => {
-        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${escapeHtml(r.maquina)}</b> - Turno ${escapeHtml(r.turno)} | Usuario: ${escapeHtml(getSupervisor(r))}<br><small>Titular: ${escapeHtml(r.operador)} ${r.opCubre?'| Cubre: '+escapeHtml(r.opCubre):''}</small></div></div>`;
+        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${escapeHtml(r.maquina)}</b> - Turno ${escapeHtml(r.turno)} | Usuario: ${getSupervisorHtml(r)}<br><small>Titular: ${escapeHtml(r.operador)} ${r.opCubre?'| Cubre: '+escapeHtml(r.opCubre):''}</small></div></div>`;
       });
     }
 
@@ -2244,7 +2406,7 @@
       html += `<h3 style="margin-top:15px;">🧪 Registros de Soluble (${reqs.length})</h3>`;
       if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
       reqs.forEach(r => {
-        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${escapeHtml(r.maquina)}</b> - ${escapeHtml(r.marca)} | Usuario: ${escapeHtml(getSupervisor(r))}<br><small>Brix: ${escapeHtml(r.brixAnt)}➔${escapeHtml(r.brixNue)} | pH: ${escapeHtml(r.phAnt)}➔${escapeHtml(r.phNue)} | Hora: ${escapeHtml(r.horaRegistro||'N/A')}</small></div></div>`;
+        html += `<div class="item-row"><div><b>[${normalizeDateStr(r.fecha)}] ${escapeHtml(r.maquina)}</b> - ${escapeHtml(r.marca)} | Usuario: ${getSupervisorHtml(r)}<br><small>Brix: ${escapeHtml(r.brixAnt)}➔${escapeHtml(r.brixNue)} | pH: ${escapeHtml(r.phAnt)}➔${escapeHtml(r.phNue)} | Hora: ${escapeHtml(r.horaRegistro||'N/A')}</small></div></div>`;
       });
     }
 
@@ -2268,7 +2430,7 @@
       if(reqs.length === 0) html += `<p style="color:#94a3b8;">Sin datos.</p>`;
       reqs.forEach(r => {
         const badge = r.incompleto ? '<span class="badge-incompleto">⚠️ Incompleto</span> ' : '';
-        html += `<div class="item-row" style="border-left-color:#7c3aed;"><div>${badge}<b>[${normalizeDateStr(r.fecha)}] ${escapeHtml(r.maquina)}</b> - ${escapeHtml(r.deposito)} | Usuario: ${escapeHtml(getSupervisor(r))}<br><small>Cantidad: ${escapeHtml(r.cantAnt||'-')} ml ➔ ${r.cantNue ? escapeHtml(r.cantNue)+' ml' : 'Pendiente'} ${r.comentarios ? '| Obs: '+escapeHtml(r.comentarios) : ''}</small></div></div>`;
+        html += `<div class="item-row" style="border-left-color:#7c3aed;"><div>${badge}<b>[${normalizeDateStr(r.fecha)}] ${escapeHtml(r.maquina)}</b> - ${escapeHtml(r.deposito)} | Usuario: ${getSupervisorHtml(r)}<br><small>Cantidad: ${escapeHtml(r.cantAnt||'-')} ml ➔ ${r.cantNue ? escapeHtml(r.cantNue)+' ml' : 'Pendiente'} ${r.comentarios ? '| Obs: '+escapeHtml(r.comentarios) : ''}</small></div></div>`;
       });
     }
 
@@ -2514,9 +2676,30 @@
   }
 
   document.addEventListener('fullscreenchange', () => {
+    const isFs = !!document.fullscreenElement;
     const btn = document.getElementById('btnFullscreenTV');
-    if(btn) btn.textContent = document.fullscreenElement ? '⛶ Salir de pantalla completa' : '⛶ Pantalla completa';
-    document.body.classList.toggle('tv-mode', !!document.fullscreenElement);
+    if(btn) btn.textContent = isFs ? '⛶ Salir de pantalla completa' : '⛶ Pantalla completa';
+    document.body.classList.toggle('tv-mode', isFs);
+
+    const fsInd = document.getElementById('tvFsIndicator');
+    if(fsInd) {
+      fsInd.textContent = isFs ? '🖥️ Pantalla completa: ACTIVA' : '🖥️ Pantalla completa: INACTIVA';
+      fsInd.classList.toggle('fs-on', isFs);
+      fsInd.classList.toggle('fs-off', !isFs);
+    }
+
+    const btnGraf = document.getElementById('btnFullscreenGraf');
+    if(btnGraf) btnGraf.textContent = isFs ? '⛶ Salir de pantalla completa' : '⛶ Pantalla completa';
+    const fsIndGraf = document.getElementById('grafFsIndicator');
+    if(fsIndGraf) {
+      fsIndGraf.textContent = isFs ? '🖥️ Pantalla completa: ACTIVA' : '🖥️ Pantalla completa: INACTIVA';
+      fsIndGraf.classList.toggle('fs-on', isFs);
+      fsIndGraf.classList.toggle('fs-off', !isFs);
+    }
+    document.body.classList.toggle('graf-mode', isFs && !document.getElementById('panelGraficas').classList.contains('hidden'));
+
+    // Si el monitor pierde la pantalla completa mientras auto-scroll estaba activo,
+    // lo dejamos funcionando igual: solo cambia el indicador visual.
   });
 
   // --- Botón: acomodar críticos hasta arriba en la Pizarra TV ---
@@ -2538,34 +2721,48 @@
     const btn = document.getElementById('btnTVAutoScroll');
     if(btn) { btn.classList.add('tv-scroll-on'); btn.textContent = '⏸️ Pausar auto-scroll'; }
 
-    const SPEED_PX_POR_FRAME = 0.6; // lento, para poder leer todo mientras se desplaza
-    const PAUSA_EN_EXTREMOS_MS = 2500;
+    setupTVAutoScrollClones();
 
-    const state = new Map();
+    const SPEED_PX_POR_FRAME = 0.6; // lento, para poder leer todo mientras se desplaza
 
     const step = () => {
       if(!tvAutoScrollActive) return;
-      const now = Date.now();
       document.querySelectorAll('#tvBoard .tv-section').forEach(sec => {
-        if(sec.scrollHeight <= sec.clientHeight + 2) return; // nada que desplazar
+        const loopHeight = parseFloat(sec.dataset.loopHeight || '0');
+        if(!loopHeight) return; // no hay overflow que desplazar en esta columna
 
-        let st = state.get(sec);
-        if(!st) { st = { pausedUntil: 0 }; state.set(sec, st); }
-        if(now < st.pausedUntil) return;
-
-        const maxScroll = sec.scrollHeight - sec.clientHeight;
-        if(sec.scrollTop >= maxScroll - 1) {
-          // Llegó abajo: pausa breve, luego regresa arriba para reiniciar el bucle.
-          sec.scrollTop = maxScroll;
-          st.pausedUntil = now + PAUSA_EN_EXTREMOS_MS;
-          setTimeout(() => { sec.scrollTop = 0; }, PAUSA_EN_EXTREMOS_MS);
-        } else {
-          sec.scrollTop += SPEED_PX_POR_FRAME;
-        }
+        sec.scrollTop += SPEED_PX_POR_FRAME;
+        // El contenido está duplicado una vez debajo del original (misma altura =
+        // loopHeight). Al cruzar esa altura, restamos exactamente loopHeight: como
+        // el contenido de ahí en adelante es idéntico al original, el salto es
+        // imperceptible y el scroll se ve continuo, sin pausas ni "regresos".
+        if(sec.scrollTop >= loopHeight) sec.scrollTop -= loopHeight;
       });
       tvAutoScrollRAF = requestAnimationFrame(step);
     };
     tvAutoScrollRAF = requestAnimationFrame(step);
+  }
+
+  // Duplica una vez el contenido de cada columna de la TV (solo si tiene overflow)
+  // para lograr un scroll infinito fluido. Se debe volver a llamar cada vez que el
+  // contenido de #tvBoard se reconstruye (ver renderTV).
+  function setupTVAutoScrollClones() {
+    document.querySelectorAll('#tvBoard .tv-section').forEach(sec => {
+      sec.querySelectorAll('[data-scroll-clone]').forEach(el => el.remove());
+      sec.scrollTop = 0;
+
+      const originalHeight = sec.scrollHeight;
+      if(originalHeight <= sec.clientHeight + 2) {
+        sec.dataset.loopHeight = '';
+        return;
+      }
+
+      const clone = document.createElement('div');
+      clone.setAttribute('data-scroll-clone', '1');
+      clone.innerHTML = sec.innerHTML;
+      sec.appendChild(clone);
+      sec.dataset.loopHeight = String(originalHeight);
+    });
   }
 
   function stopTVAutoScroll() {
@@ -2573,6 +2770,8 @@
     if(tvAutoScrollRAF) { cancelAnimationFrame(tvAutoScrollRAF); tvAutoScrollRAF = null; }
     const btn = document.getElementById('btnTVAutoScroll');
     if(btn) { btn.classList.remove('tv-scroll-on'); btn.textContent = '▶️ Auto-scroll'; }
+    // Quita los clones y regresa cada sección a su contenido original.
+    document.querySelectorAll('#tvBoard .tv-section [data-scroll-clone]').forEach(el => el.remove());
   }
 
   function renderTV() {
@@ -2590,12 +2789,84 @@
     let itemFilterRaw = (document.getElementById('tvFilterItem') ? document.getElementById('tvFilterItem').value : '').trim();
     let itemFilter = itemFilterRaw.toLowerCase();
 
-    let alarmLimitMinTop = parseInt(dbData.alarmMinutes, 10) || 150;
+    let alarmLimitMin = parseInt(dbData.alarmMinutes, 10) || 150;
+    let hasAlarmTriggered = false;
     const esCritico = (r) => !!r.critico && r.critico !== 'false';
-    const superoLimite = (r) => !r.hFin && (r.estatus === 'Set up' || r.estatus === 'Ajuste') && getPendingMinutes(r.fecha, r.hInicio) >= alarmLimitMinTop;
+    const superoLimite = (r) => !r.hFin && (r.estatus === 'Set up' || r.estatus === 'Ajuste') && getPendingMinutes(r.fecha, r.hInicio) >= alarmLimitMin;
+
+    // Tarjeta de registro reutilizada tanto por la vista normal (agrupada por nave)
+    // como por el modo de búsqueda por ítem, para que ambas muestren exactamente
+    // la misma información (item, piezas, operador, tiempos muertos, etc.).
+    const htmlCard = (r, cls) => {
+      let elapsedMin = getPendingMinutes(r.fecha, r.hInicio);
+      let isAlarmed = false;
+
+      // Alarmas activas para Setup y Ajustes excedidos
+      if(!r.hFin && (r.estatus === 'Set up' || r.estatus === 'Ajuste') && elapsedMin >= alarmLimitMin) {
+        isAlarmed = true;
+        hasAlarmTriggered = true;
+      }
+
+      let critico = esCritico(r);
+      let cardClass = `${cls} ${isAlarmed ? 'tvc-alarmed' : ''} ${critico ? 'tvc-critico' : ''}`;
+
+      let tmsHtml = '';
+      if(showTM) {
+        let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
+        if(tms.length > 0) {
+          tmsHtml = `<div style="background:rgba(0,0,0,0.3); padding:4px 6px; border-radius:4px; margin-top:5px; font-size:0.8rem; color:#fde047;">⏱️ <b>T. Muertos:</b>`;
+          tms.forEach(tm => {
+            let durTm = tm.hFin ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
+            tmsHtml += `<br>• ${tm.tiempoMuerto}: <b>${durTm}m</b> ${!tm.hFin ? '⌛' : ''} ${tm.comentarios ? '(<i>'+tm.comentarios+'</i>)' : ''}`;
+          });
+          tmsHtml += `</div>`;
+        }
+      }
+
+      return `
+        <div class="tv-card ${cardClass}" data-reg-id="${escapeHtmlAttr(r.id)}">
+          <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;">
+            <span>🏭 ${r.maquina} <span style="font-size:0.8rem; background:#475569; padding:2px 4px; border-radius:4px;">${r.estatus}</span></span>
+            <span style="font-size:0.85rem; color:#cbd5e1;">Sup: ${getSupervisorHtml(r)}</span>
+          </div>
+
+          ${critico ? `<div style="color:#eab308; font-weight:bold; font-size:0.85rem; margin-top:2px;">⚠️ CRÍTICO ${(isAlarmed || superoLimite(r)) ? '<span class="crit-limit-tag">⏰ Límite superado</span>' : ''}</div>` : ''}
+          ${(r.editadoPorAdmin && r.editadoPorAdmin!=='false') ? `<div style="font-size:0.75rem; color:#fde047;">✏️ Editado por Admin</div>` : ''}
+          
+          ${r.item ? `<div style="color:#38bdf8; font-size:0.9rem; margin-top:2px;">📦 Item: <b>${r.item}</b></div>` : ''}
+          ${r.tecnico ? `<div style="color:#a7f3d0; font-size:0.85rem;">🔧 Tec: ${r.tecnico}</div>` : ''}
+          ${r.operador ? `<div style="color:#fde047; font-size:0.85rem;">👷 Op: ${r.operador} ${r.opCubre ? '(Cubre: '+r.opCubre+')' : ''}</div>` : ''}
+          
+          ${r.estatus === 'Corriendo' ? `
+            <div style="display:flex; gap:8px; font-size:0.8rem; background:rgba(0,0,0,0.25); padding:4px 6px; border-radius:4px; margin-top:4px;">
+              <span>Plan: <b>${r.piezasPlan||0}</b></span> |
+              <span>Real: <b>${r.piezasReal||0}</b></span> |
+              <span>Delta: <b style="color:${(r.piezasDelta||0)<0?'#f87171':'#4ade80'};">${r.piezasDelta||0}</b></span>
+            </div>
+          ` : ''}
+
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-top:5px; border-top:1px dashed #475569; padding-top:4px;">
+            <span>Ini: ${formatHora(r.hInicio) || r.turno}</span> 
+            <span>${r.hFin ? 'Fin: '+formatHora(r.hFin) : '<i style="color:#fcd34d;">En proceso...</i>'}</span>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+            <span data-live-duration style="font-size:0.8rem; color:#cbd5e1;">⏱️ Duración: ${r.hFin ? (r.tiempo || elapsedMin + ' mins') : elapsedMin + ' mins en curso'}</span>
+            ${!r.hFin && r.estatus !== 'Caida' ? `<span data-live-badge style="font-size:0.75rem; background:${isAlarmed?'#ef4444':'#0284c7'}; color:white; padding:2px 6px; border-radius:10px; font-weight:bold;">${elapsedMin} min</span>` : ''}
+          </div>
+
+          ${tmsHtml}
+
+          ${r.comentarios ? `<div style="font-size:0.8rem; margin-top:4px; color:#cbd5e1;">💬 ${r.comentarios}</div>` : ''}
+        </div>`;
+    };
+
+    // Clase visual (color) según estatus, usada tanto en el modo búsqueda como en el normal.
+    const clsForReg = (r) => r.estatus==='Corriendo' ? 'tvc-corriendo' : r.estatus==='Ajuste' ? 'tvc-ajuste' : r.estatus==='Caida' ? 'tvc-caida' : (r.hFin ? 'tvc-term' : 'tvc-setup');
 
     // --- MODO BÚSQUEDA POR ÍTEM: ignora fecha/naves y muestra TODO el historial
-    // del ítem buscado, del registro más reciente al más antiguo. ---
+    // del ítem buscado, del registro más reciente al más antiguo, con la MISMA
+    // información completa que las tarjetas normales (piezas, operador, etc.). ---
     if(itemFilter) {
       let todos = (dbData.registrosSetup || []).filter(r => String(r.item || '').toLowerCase().includes(itemFilter));
       todos.sort((a, b) => {
@@ -2620,26 +2891,13 @@
 
       Object.keys(porFecha).sort((a,b) => b.localeCompare(a)).forEach(f => {
         searchHtml += `<div class="tv-section-title">📅 ${f} (${porFecha[f].length})</div>`;
-        porFecha[f].forEach(r => {
-          let critico = esCritico(r);
-          let cls = r.estatus==='Corriendo'?'tvc-corriendo': r.estatus==='Ajuste'?'tvc-ajuste': r.estatus==='Caida'?'tvc-caida': (r.hFin?'tvc-term':'tvc-setup');
-          searchHtml += `
-            <div class="tv-card ${cls} ${critico?'tvc-critico':''}">
-              <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                <span>🏭 ${escapeHtml(r.maquina)} <span style="font-size:0.8rem; background:#475569; padding:2px 4px; border-radius:4px;">${escapeHtml(r.estatus)}</span></span>
-                <span style="font-size:0.85rem; color:#cbd5e1;">Sup: ${escapeHtml(getSupervisor(r))}</span>
-              </div>
-              ${critico ? `<div style="color:#eab308; font-weight:bold; font-size:0.85rem;">⚠️ CRÍTICO ${superoLimite(r) ? '<span class="crit-limit-tag">⏰ Límite superado</span>' : ''}</div>` : ''}
-              <div style="font-size:0.85rem; margin-top:2px;">Ini: ${formatHora(r.hInicio)} ${r.hFin ? '| Fin: '+formatHora(r.hFin) : '| <i style="color:#fcd34d;">En proceso...</i>'} | Duración: ${r.hFin ? (r.tiempo||'-') : getPendingMinutes(r.fecha,r.hInicio)+' mins en curso'}</div>
-              ${r.tecnico ? `<div style="color:#a7f3d0; font-size:0.85rem;">🔧 Tec: ${escapeHtml(r.tecnico)}</div>` : ''}
-              ${r.comentarios ? `<div style="font-size:0.8rem; margin-top:4px; color:#cbd5e1;">💬 ${escapeHtml(r.comentarios)}</div>` : ''}
-            </div>`;
-        });
+        porFecha[f].forEach(r => { searchHtml += htmlCard(r, clsForReg(r)); });
       });
       searchHtml += `</div></div>`;
 
       if(boardEl2) boardEl2.innerHTML = searchHtml;
       window.scrollTo(0, winY);
+      if(tvAutoScrollActive) setupTVAutoScrollClones();
       lastTvFingerprint = getTVFingerprint(dbData);
       return;
     }
@@ -2679,9 +2937,6 @@
       if(!navesData[n]) navesData[n] = navesConDatos[n];
     });
 
-    let hasAlarmTriggered = false;
-    let alarmLimitMin = parseInt(dbData.alarmMinutes, 10) || 150;
-
     let bHtml = "";
     Object.keys(navesData).forEach(nave => {
       let regs = navesData[nave];
@@ -2698,70 +2953,6 @@
         t = regs.filter(r => r.hFin && r.estatus !== 'Caida');
         c = regs.filter(r => r.estatus === 'Caida');
       }
-
-      const htmlCard = (r, cls) => {
-        let elapsedMin = getPendingMinutes(r.fecha, r.hInicio);
-        let isAlarmed = false;
-
-        // Alarmas activas para Setup y Ajustes excedidos
-        if(!r.hFin && (r.estatus === 'Set up' || r.estatus === 'Ajuste') && elapsedMin >= alarmLimitMin) {
-          isAlarmed = true;
-          hasAlarmTriggered = true;
-        }
-
-        let critico = esCritico(r);
-        let cardClass = `${cls} ${isAlarmed ? 'tvc-alarmed' : ''} ${critico ? 'tvc-critico' : ''}`;
-
-        let tmsHtml = '';
-        if(showTM) {
-          let tms = (dbData.registrosTiemposMuertos||[]).filter(x => x.regId === r.id);
-          if(tms.length > 0) {
-            tmsHtml = `<div style="background:rgba(0,0,0,0.3); padding:4px 6px; border-radius:4px; margin-top:5px; font-size:0.8rem; color:#fde047;">⏱️ <b>T. Muertos:</b>`;
-            tms.forEach(tm => {
-              let durTm = tm.hFin ? tm.duracion : getPendingMinutes(r.fecha, tm.hInicio);
-              tmsHtml += `<br>• ${tm.tiempoMuerto}: <b>${durTm}m</b> ${!tm.hFin ? '⌛' : ''} ${tm.comentarios ? '(<i>'+tm.comentarios+'</i>)' : ''}`;
-            });
-            tmsHtml += `</div>`;
-          }
-        }
-
-        return `
-          <div class="tv-card ${cardClass}" data-reg-id="${escapeHtmlAttr(r.id)}">
-            <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;">
-              <span>🏭 ${r.maquina} <span style="font-size:0.8rem; background:#475569; padding:2px 4px; border-radius:4px;">${r.estatus}</span></span>
-              <span style="font-size:0.85rem; color:#cbd5e1;">Sup: ${getSupervisor(r)}</span>
-            </div>
-
-            ${critico ? `<div style="color:#eab308; font-weight:bold; font-size:0.85rem; margin-top:2px;">⚠️ CRÍTICO ${(isAlarmed || superoLimite(r)) ? '<span class="crit-limit-tag">⏰ Límite superado</span>' : ''}</div>` : ''}
-            ${(r.editadoPorAdmin && r.editadoPorAdmin!=='false') ? `<div style="font-size:0.75rem; color:#fde047;">✏️ Editado por Admin</div>` : ''}
-            
-            ${r.item ? `<div style="color:#38bdf8; font-size:0.9rem; margin-top:2px;">📦 Item: <b>${r.item}</b></div>` : ''}
-            ${r.tecnico ? `<div style="color:#a7f3d0; font-size:0.85rem;">🔧 Tec: ${r.tecnico}</div>` : ''}
-            ${r.operador ? `<div style="color:#fde047; font-size:0.85rem;">👷 Op: ${r.operador} ${r.opCubre ? '(Cubre: '+r.opCubre+')' : ''}</div>` : ''}
-            
-            ${r.estatus === 'Corriendo' ? `
-              <div style="display:flex; gap:8px; font-size:0.8rem; background:rgba(0,0,0,0.25); padding:4px 6px; border-radius:4px; margin-top:4px;">
-                <span>Plan: <b>${r.piezasPlan||0}</b></span> |
-                <span>Real: <b>${r.piezasReal||0}</b></span> |
-                <span>Delta: <b style="color:${(r.piezasDelta||0)<0?'#f87171':'#4ade80'};">${r.piezasDelta||0}</b></span>
-              </div>
-            ` : ''}
-
-            <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-top:5px; border-top:1px dashed #475569; padding-top:4px;">
-              <span>Ini: ${formatHora(r.hInicio) || r.turno}</span> 
-              <span>${r.hFin ? 'Fin: '+formatHora(r.hFin) : '<i style="color:#fcd34d;">En proceso...</i>'}</span>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-              <span data-live-duration style="font-size:0.8rem; color:#cbd5e1;">⏱️ Duración: ${r.hFin ? (r.tiempo || elapsedMin + ' mins') : elapsedMin + ' mins en curso'}</span>
-              ${!r.hFin && r.estatus !== 'Caida' ? `<span data-live-badge style="font-size:0.75rem; background:${isAlarmed?'#ef4444':'#0284c7'}; color:white; padding:2px 6px; border-radius:10px; font-weight:bold;">${elapsedMin} min</span>` : ''}
-            </div>
-
-            ${tmsHtml}
-
-            ${r.comentarios ? `<div style="font-size:0.8rem; margin-top:4px; color:#cbd5e1;">💬 ${r.comentarios}</div>` : ''}
-          </div>`;
-      };
 
       let seccionesHtml;
       if(tvCriticosArriba) {
@@ -2808,6 +2999,7 @@
     document.querySelectorAll('.tv-section').forEach((sec, idx) => {
       if(sectionScrolls[idx] !== undefined) sec.scrollTop = sectionScrolls[idx];
     });
+    if(tvAutoScrollActive) setupTVAutoScrollClones();
 
     lastTvFingerprint = getTVFingerprint(dbData);
     if (hasAlarmTriggered && !isMuted) {
@@ -2907,10 +3099,10 @@
     if(divU) {
       divU.innerHTML = (dbData.usuarios||[]).map(u => `
         <div class="item-row">
-          <span><b>${u.user}</b> <small>(Accesos: ${u.permisos||'Ninguno'})</small></span>
+          <span><b>${nameHtml(u.user)}</b> <small>(Accesos: ${u.permisos||'Ninguno'})</small> ${(u.dorado && u.dorado!=='false') ? '<span class="badge-critico" style="background:#facc15;">✨ Dorado</span>' : ''}</span>
           <div class="item-actions">
-            <button class="btn-edit" onclick="startEditUsuario('${u.user}', '${u.pass}', '${u.permisos||''}')">✏️</button>
-            <button class="btn-danger" onclick="delUsuario('${u.user}')">🗑️</button>
+            <button class="btn-edit" onclick="startEditUsuario('${jsQ(u.user)}', '${jsQ(u.pass)}', '${jsQ(u.permisos||'')}', ${(u.dorado && u.dorado!=='false') ? 'true' : 'false'})">✏️</button>
+            <button class="btn-danger" onclick="delUsuario('${jsQ(u.user)}')">🗑️</button>
           </div>
         </div>`).join('');
     }
@@ -3072,7 +3264,7 @@
   }
 
   // USUARIOS Y PERMISOS
-  function startEditUsuario(u, p, perms) {
+  function startEditUsuario(u, p, perms, dorado) {
     document.getElementById('editUsrOrig').value = u;
     document.getElementById('addUsrName').value = u;
     document.getElementById('addUsrPass').value = p;
@@ -3082,6 +3274,7 @@
     document.getElementById('chkPermSol').checked = perms.includes('Solubles');
     document.getElementById('chkPermAce').checked = perms.includes('Aceites');
     document.getElementById('chkPermTec').checked = perms.includes('Tecnico');
+    document.getElementById('chkUsrDorado').checked = !!dorado;
     
     document.getElementById('btnSaveUsr').textContent = 'Guardar Cambios';
     document.getElementById('btnCancelUsr').classList.remove('hidden');
@@ -3097,6 +3290,7 @@
     document.getElementById('chkPermSol').checked = false;
     document.getElementById('chkPermAce').checked = false;
     document.getElementById('chkPermTec').checked = false;
+    document.getElementById('chkUsrDorado').checked = false;
     document.getElementById('btnSaveUsr').textContent = 'Agregar Nuevo';
     document.getElementById('btnCancelUsr').classList.add('hidden');
   }
@@ -3115,15 +3309,16 @@
     if(document.getElementById('chkPermAce').checked) permsArr.push('Aceites');
     if(document.getElementById('chkPermTec').checked) permsArr.push('Tecnico');
     let permsStr = permsArr.join(', ');
+    let doradoVal = document.getElementById('chkUsrDorado').checked ? 'true' : '';
 
     if(orig) {
       let item = dbData.usuarios.find(x => x.user === orig);
-      if(item) { item.user = u; item.pass = p; item.permisos = permsStr; }
-      postData({ action: "MANAGE_USUARIO", op: "EDIT", val1: orig, newVal1: u, val2: p, val3: permsStr });
+      if(item) { item.user = u; item.pass = p; item.permisos = permsStr; item.dorado = doradoVal; }
+      postData({ action: "MANAGE_USUARIO", op: "EDIT", val1: orig, newVal1: u, val2: p, val3: permsStr, val4: doradoVal });
     } else {
       if(!dbData.usuarios) dbData.usuarios = [];
-      dbData.usuarios.push({ user: u, pass: p, permisos: permsStr });
-      postData({ action: "MANAGE_USUARIO", op: "ADD", val1: u, val2: p, val3: permsStr });
+      dbData.usuarios.push({ user: u, pass: p, permisos: permsStr, dorado: doradoVal });
+      postData({ action: "MANAGE_USUARIO", op: "ADD", val1: u, val2: p, val3: permsStr, val4: doradoVal });
     }
 
     renderDataLists();
@@ -3248,6 +3443,119 @@
         datasets: [{ label: 'Registros críticos', data: critLabels.map(m => critPorMaquina[m]), backgroundColor: '#eab308' }]
       },
       options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1}}} }
+    });
+
+    renderChartPersonalizado();
+  }
+
+  // --- Gráfica personalizada: el admin elige qué agrupar (eje X) y qué medir (eje Y) ---
+  function renderChartPersonalizado() {
+    if(!isAdmin) return;
+    if(document.getElementById('panelGraficas').classList.contains('hidden')) return;
+    if(typeof Chart === 'undefined') return;
+
+    const dimEl = document.getElementById('graDim'), metricEl = document.getElementById('graMetric');
+    const tipoEl = document.getElementById('graTipo'), filtroEl = document.getElementById('graFiltroEstatus');
+    if(!dimEl || !metricEl || !tipoEl) return;
+
+    const fIniEl = document.getElementById('graFechaIni'), fFinEl = document.getElementById('graFechaFin');
+    const fIni = (fIniEl && fIniEl.value) ? fIniEl.value : getTodayString();
+    const fFin = (fFinEl && fFinEl.value) ? fFinEl.value : getTodayString();
+    const enRango = (fechaStr) => { const f = normalizeDateStr(fechaStr); return f >= fIni && f <= fFin; };
+
+    const dim = dimEl.value, metric = metricEl.value, tipo = tipoEl.value;
+    const filtroEstatus = filtroEl ? filtroEl.value : 'TODOS';
+
+    let setups = (dbData.registrosSetup || []).filter(r => enRango(r.fecha));
+    if(filtroEstatus !== 'TODOS') setups = setups.filter(r => r.estatus === filtroEstatus);
+
+    const dimKey = (r) => {
+      switch(dim) {
+        case 'maquina': return r.maquina || 'Sin dato';
+        case 'estatus': return r.estatus || 'Sin dato';
+        case 'turno': return r.turno || 'Sin dato';
+        case 'tecnico': return r.tecnico || 'Sin técnico';
+        case 'usuario': return getSupervisor(r);
+        case 'item': return r.item || 'Sin ítem';
+        case 'fecha': return normalizeDateStr(r.fecha);
+        case 'operador': return r.operador || 'Sin operador';
+        default: return 'Sin dato';
+      }
+    };
+
+    const groups = {};
+    setups.forEach(r => {
+      const k = dimKey(r);
+      if(!groups[k]) groups[k] = { count:0, piezasPlan:0, piezasReal:0, piezasDelta:0, duracionTotal:0, duracionCuenta:0, criticos:0, tmTotal:0 };
+      const g = groups[k];
+      g.count++;
+      g.piezasPlan += parseInt(r.piezasPlan,10)||0;
+      g.piezasReal += parseInt(r.piezasReal,10)||0;
+      g.piezasDelta += parseInt(r.piezasDelta,10)||0;
+      if(r.hFin) {
+        g.duracionTotal += calcMinutesBetween(r.fecha, r.hInicio, r.hFin);
+        g.duracionCuenta++;
+      }
+      if(!!r.critico && r.critico !== 'false') g.criticos++;
+    });
+
+    if(metric === 'tiempoMuertoMin') {
+      (dbData.registrosTiemposMuertos || []).forEach(t => {
+        const parent = (dbData.registrosSetup||[]).find(r => r.id === t.regId);
+        if(!parent || !enRango(parent.fecha)) return;
+        if(filtroEstatus !== 'TODOS' && parent.estatus !== filtroEstatus) return;
+        const k = dimKey(parent);
+        if(!groups[k]) groups[k] = { count:0, piezasPlan:0, piezasReal:0, piezasDelta:0, duracionTotal:0, duracionCuenta:0, criticos:0, tmTotal:0 };
+        if(t.hFin) groups[k].tmTotal += parseInt(t.duracion,10) || 0;
+      });
+    }
+
+    const valueFor = (k) => {
+      const g = groups[k];
+      switch(metric) {
+        case 'conteo': return g.count;
+        case 'piezasPlan': return g.piezasPlan;
+        case 'piezasReal': return g.piezasReal;
+        case 'piezasDelta': return g.piezasDelta;
+        case 'duracionMin': return g.duracionTotal;
+        case 'duracionProm': return g.duracionCuenta ? Math.round(g.duracionTotal / g.duracionCuenta) : 0;
+        case 'tiempoMuertoMin': return g.tmTotal || 0;
+        case 'criticos': return g.criticos;
+        default: return 0;
+      }
+    };
+
+    let labels = Object.keys(groups);
+    labels.sort((a,b) => valueFor(b) - valueFor(a));
+
+    if(!labels.length) { destroyChart('chartPersonalizado'); return; }
+
+    const values = labels.map(valueFor);
+    const metricLabelMap = {
+      conteo: 'Conteo de registros', piezasPlan: 'Piezas Plan', piezasReal: 'Piezas Real',
+      piezasDelta: 'Delta de Piezas', duracionMin: 'Duración total (mins)', duracionProm: 'Duración promedio (mins)',
+      tiempoMuertoMin: 'Tiempo muerto total (mins)', criticos: 'Registros críticos'
+    };
+    const colors = ['#38bdf8','#f59e0b','#10b981','#eab308','#a78bfa','#f472b6','#22d3ee','#fb923c','#4ade80','#f87171'];
+
+    let chartType = tipo === 'horizontalBar' ? 'bar' : tipo;
+    let options = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display: tipo==='pie'}} };
+    if(tipo === 'horizontalBar') options.indexAxis = 'y';
+    if(tipo !== 'pie') options.scales = { [tipo==='horizontalBar' ? 'x' : 'y']: { beginAtZero:true } };
+
+    makeOrUpdateChart('chartPersonalizado', {
+      type: chartType,
+      data: {
+        labels,
+        datasets: [{
+          label: metricLabelMap[metric] || metric,
+          data: values,
+          backgroundColor: tipo === 'pie' ? labels.map((_,i) => colors[i % colors.length]) : '#38bdf8',
+          borderColor: tipo === 'line' ? '#0284c7' : undefined,
+          fill: tipo === 'line' ? false : undefined
+        }]
+      },
+      options
     });
   }
 </script>
