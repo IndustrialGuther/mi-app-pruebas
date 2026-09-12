@@ -495,6 +495,17 @@
           <button type="button" class="btn-admin" onclick="guardarConfigSonido()">💾 Guardar Ajustes Sonido</button>
           <button type="button" class="btn-secondary" onclick="triggerAlarmBeep(true)">🔊 Probar Sonido Alarma</button>
         </div>
+
+        <hr style="border:0; border-top:1px dashed #cbd5e1; margin:12px 0;">
+
+        <div>
+          <label>🖥️ Velocidad del Auto-scroll (Pizarra TV): <span id="lblTvScrollSpeed">2 (Lento)</span></label>
+          <input type="range" id="cfgTvScrollSpeed" min="1" max="10" step="1" value="2" oninput="actualizarLblTvScrollSpeed(this.value)">
+          <small style="color:#64748b;">1 = muy lento (más fácil de leer) · 10 = muy rápido</small>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+          <button type="button" class="btn-admin" onclick="guardarConfigScrollTV()">💾 Guardar Velocidad Auto-scroll</button>
+        </div>
       </div>
       <hr>
 
@@ -775,7 +786,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbwP9vawpPvqX03Z1k6UwGJhc1d1415mk6uUqDdpeqfwU75m966DraunLGTnKGormEF5/exec";
-  let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], tiemposMuertos:[], depositosAceite:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], registrosTiemposMuertos:[], registrosAceites:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300 };
+  let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], tiemposMuertos:[], depositosAceite:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], registrosTiemposMuertos:[], registrosAceites:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300, tvScrollSpeed: 2 };
   let currentUser = null, isAdmin = false, adminAuthToken = '';
   let dataReady = false, initialLoadPromise = null; // FIX: bandera para saber si ya llego la primera carga completa de datos (usuarios, etc.)
   const SYNC_INTERVAL_MS = 1000;
@@ -1115,6 +1126,14 @@
         const lblS = document.getElementById('lblSoundSpeed');
         if(elS) elS.value = dbData.soundSpeed;
         if(lblS) lblS.textContent = dbData.soundSpeed + ' ms';
+      }
+      if(dbData.tvScrollSpeed !== undefined) {
+        const elTs = document.getElementById('cfgTvScrollSpeed');
+        // No pisamos el control mientras el admin lo está arrastrando activamente.
+        if(elTs && document.activeElement !== elTs) {
+          elTs.value = dbData.tvScrollSpeed;
+          actualizarLblTvScrollSpeed(dbData.tvScrollSpeed);
+        }
       }
 
       renderDataLists();
@@ -2723,15 +2742,17 @@
 
     setupTVAutoScrollClones();
 
-    const SPEED_PX_POR_FRAME = 0.6; // lento, para poder leer todo mientras se desplaza
-
     const step = () => {
       if(!tvAutoScrollActive) return;
+      // Se lee en cada frame (no se fija una sola vez) para que, si el admin cambia
+      // la velocidad desde Catálogos mientras el auto-scroll ya está activo, el
+      // cambio se note de inmediato sin necesidad de apagar y prender el botón.
+      const speedPxPorFrame = tvScrollLevelToPxPerFrame(dbData.tvScrollSpeed);
       document.querySelectorAll('#tvBoard .tv-section').forEach(sec => {
         const loopHeight = parseFloat(sec.dataset.loopHeight || '0');
         if(!loopHeight) return; // no hay overflow que desplazar en esta columna
 
-        sec.scrollTop += SPEED_PX_POR_FRAME;
+        sec.scrollTop += speedPxPorFrame;
         // El contenido está duplicado una vez debajo del original (misma altura =
         // loopHeight). Al cruzar esa altura, restamos exactamente loopHeight: como
         // el contenido de ahí en adelante es idéntico al original, el salto es
@@ -3027,6 +3048,31 @@
     dbData.soundSpeed = speed;
     alert("Ajustes de sonido guardados con éxito.");
     postData({ action: "SAVE_SOUND_CONFIG", soundVol: vol, soundFreq: freq, soundSpeed: speed });
+  }
+
+  // --- Velocidad del auto-scroll de la Pizarra TV (nivel 1 = muy lento, 10 = muy rápido) ---
+  function tvScrollLevelToPxPerFrame(level) {
+    // Escala amigable 1-10 -> píxeles por frame; nivel 2 conserva la velocidad
+    // original con la que se implementó el auto-scroll (0.6 px/frame).
+    let n = parseFloat(level);
+    if(isNaN(n)) n = 2;
+    return Math.max(0.1, n * 0.3);
+  }
+
+  function actualizarLblTvScrollSpeed(val) {
+    const lbl = document.getElementById('lblTvScrollSpeed');
+    if(!lbl) return;
+    let n = parseInt(val, 10) || 2;
+    let etiqueta = n <= 2 ? 'Muy lento' : n <= 4 ? 'Lento' : n <= 6 ? 'Media' : n <= 8 ? 'Rápido' : 'Muy rápido';
+    lbl.textContent = `${n} (${etiqueta})`;
+  }
+
+  function guardarConfigScrollTV() {
+    let val = document.getElementById('cfgTvScrollSpeed').value;
+    dbData.tvScrollSpeed = val;
+    actualizarLblTvScrollSpeed(val);
+    alert("Velocidad de auto-scroll guardada correctamente.");
+    postData({ action: "SAVE_SCROLL_CONFIG", tvScrollSpeed: val });
   }
 
   // --- ADMIN CATALOGOS Y USUARIOS ---
