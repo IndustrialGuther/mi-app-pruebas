@@ -3440,10 +3440,17 @@
 
     if(chartsInstances[canvasId]) {
       const ch = chartsInstances[canvasId];
-      ch.data = config.data;
-      if(config.options) ch.options = config.options;
-      ch.update('none');
-      return;
+      if(ch.config.type !== config.type) {
+        // Chart.js no soporta cambiar el tipo de una gráfica ya creada solo
+        // actualizando sus datos (por ejemplo de barras a línea o circular);
+        // hay que destruirla y crearla de nuevo con el tipo correcto.
+        destroyChart(canvasId);
+      } else {
+        ch.data = config.data;
+        if(config.options) ch.options = config.options;
+        ch.update('none');
+        return;
+      }
     }
     chartsInstances[canvasId] = new Chart(canvas.getContext('2d'), config);
   }
