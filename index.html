@@ -2753,14 +2753,19 @@
     }
     document.body.classList.toggle('graf-mode', isFs && !document.getElementById('panelGraficas').classList.contains('hidden'));
 
-    // El cambio de layout (posición fixed/estática, tema claro/oscuro) puede dejar
-    // a Chart.js con medidas viejas del canvas. Forzamos un resize explícito de
-    // todas las gráficas tras que el CSS termine de reacomodarse, para que no se
-    // vean descuadradas ni al entrar ni al salir de pantalla completa.
-    const forceResizeCharts = () => {
-      Object.values(chartsInstances).forEach(ch => { try { ch.resize(); } catch(e) {} });
+    // resize() puede quedarse con medidas equivocadas si el layout (fixed/estático,
+    // grid, tema claro/oscuro) todavía no terminó de acomodarse en el momento en
+    // que se llama, y ese tamaño incorrecto se queda "pegado" de forma permanente.
+    // Por eso, en vez de pedirle a Chart.js que se re-mida, destruimos las gráficas
+    // y las volvemos a crear desde cero: así siempre leen el tamaño real y actual
+    // del contenedor, tanto al entrar como al salir de pantalla completa.
+    const rebuildCharts = () => {
+      Object.keys(chartsInstances).forEach(id => destroyChart(id));
+      const panelGraf = document.getElementById('panelGraficas');
+      if(panelGraf && !panelGraf.classList.contains('hidden')) renderGraficas();
     };
-    requestAnimationFrame(() => { forceResizeCharts(); setTimeout(forceResizeCharts, 150); setTimeout(forceResizeCharts, 400); });
+    setTimeout(rebuildCharts, 200);
+    setTimeout(rebuildCharts, 600);
 
     // Si el monitor pierde la pantalla completa mientras auto-scroll estaba activo,
     // lo dejamos funcionando igual: solo cambia el indicador visual.
