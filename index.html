@@ -604,6 +604,11 @@
           <button type="button" id="btnFullscreenGraf" class="btn-secondary" onclick="togglePantallaTV()">⛶ Pantalla completa</button>
         </div>
       </div>
+
+      <div id="graLibWarning" class="hidden" style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:8px 12px; border-radius:6px; margin-top:10px; font-size:0.9rem;">
+        ⚠️ No se pudo cargar la librería de gráficas (sin conexión a internet o el CDN está bloqueado). Reintentando automáticamente...
+      </div>
+
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin:15px 0; background:#f1f5f9; padding:10px; border-radius:8px; align-items:flex-end;">
         <div>
           <label>Desde</label>
@@ -613,8 +618,33 @@
           <label>Hasta</label>
           <input type="date" id="graFechaFin" onchange="renderGraficas()">
         </div>
-        <div style="display:flex; align-items:flex-end;">
+        <div style="display:flex; align-items:flex-end; gap:8px;">
           <button type="button" class="btn-secondary" onclick="document.getElementById('graFechaIni').value=getTodayString(); document.getElementById('graFechaFin').value=getTodayString(); renderGraficas();">Hoy</button>
+          <button type="button" class="btn-secondary" onclick="setRangoGraficasDias(30); renderGraficas();">Últimos 30 días</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <h3>📊 Dashboard de Set Up</h3>
+        <p style="color:#64748b; margin-top:-8px; font-size:0.9rem;">Cantidad de Set ups y tiempo promedio por día, calculado en vivo desde los registros de máquinas (RegistrosSetup).</p>
+        <div style="display:grid; grid-template-columns: minmax(280px, 1fr) 2fr; gap:20px; align-items:start;">
+          <div style="overflow-x:auto; max-height:520px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:6px;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+              <thead style="position:sticky; top:0;">
+                <tr style="background:#1e3a5f; color:#fff;">
+                  <th style="padding:6px 8px; text-align:left;">Fecha</th>
+                  <th style="padding:6px 8px; text-align:right;">Cantidad</th>
+                  <th style="padding:6px 8px; text-align:right;">Tiempo Prom. (mins)</th>
+                </tr>
+              </thead>
+              <tbody id="tblSetupDashboardBody"></tbody>
+              <tfoot id="tblSetupDashboardFoot"></tfoot>
+            </table>
+          </div>
+          <div>
+            <div style="position:relative; height:230px; margin-bottom:20px;"><canvas id="chartSetupCantidadDia"></canvas></div>
+            <div style="position:relative; height:230px;"><canvas id="chartSetupTiempoDia"></canvas></div>
+          </div>
         </div>
       </div>
 
@@ -783,7 +813,7 @@
 <datalist id="listItems"></datalist>
 <datalist id="listTecnicos"></datalist>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbwP9vawpPvqX03Z1k6UwGJhc1d1415mk6uUqDdpeqfwU75m966DraunLGTnKGormEF5/exec";
   let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], tiemposMuertos:[], depositosAceite:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], registrosTiemposMuertos:[], registrosAceites:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300, tvScrollSpeed: 2 };
@@ -1476,8 +1506,7 @@
       document.getElementById('btnTabGraficas').classList.add('admin-active');
       document.getElementById('panelGraficas').classList.remove('hidden');
       const fi = document.getElementById('graFechaIni'), ff = document.getElementById('graFechaFin');
-      if(fi && !fi.value) fi.value = getTodayString();
-      if(ff && !ff.value) ff.value = getTodayString();
+      if(fi && !fi.value && ff && !ff.value) setRangoGraficasDias(30);
       renderGraficas();
     }
     renderHistoriales();
@@ -3398,10 +3427,137 @@
     chartsInstances[canvasId] = new Chart(canvas.getContext('2d'), config);
   }
 
+  // Ajusta el rango de fechas del panel de Gráficas a los últimos N días (incluye hoy).
+  function setRangoGraficasDias(dias) {
+    const fIniEl = document.getElementById('graFechaIni'), fFinEl = document.getElementById('graFechaFin');
+    if(!fIniEl || !fFinEl) return;
+    const hoy = new Date();
+    const desde = new Date(hoy);
+    desde.setDate(desde.getDate() - (dias - 1));
+    const toStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    fIniEl.value = toStr(desde);
+    fFinEl.value = getTodayString();
+  }
+
+  function calcStdDev(arr) {
+    if(!arr || arr.length < 2) return 0;
+    const mean = arr.reduce((a,b) => a+b, 0) / arr.length;
+    const variance = arr.reduce((a,b) => a + Math.pow(b-mean, 2), 0) / (arr.length - 1);
+    return Math.sqrt(variance);
+  }
+
+  // Replica el "Dashboard de Set Up" (tabla + gráficas + estadísticas) directamente
+  // desde los registros de RegistrosSetup con estatus "Set up" ya terminados,
+  // agrupados por día. Se llama desde renderGraficas() en cada refresco en vivo.
+  function renderDashboardSetup(fIni, fFin, enRango) {
+    const setupsTerm = (dbData.registrosSetup || []).filter(r => r.estatus === 'Set up' && r.hFin && enRango(r.fecha));
+
+    const porDia = {};
+    setupsTerm.forEach(r => {
+      const f = normalizeDateStr(r.fecha);
+      if(!porDia[f]) porDia[f] = [];
+      porDia[f].push(calcMinutesBetween(r.fecha, r.hInicio, r.hFin));
+    });
+
+    const dias = Object.keys(porDia).sort((a,b) => a.localeCompare(b));
+    const cantidades = dias.map(f => porDia[f].length);
+    const promedios = dias.map(f => {
+      const arr = porDia[f];
+      return arr.reduce((a,b) => a+b, 0) / arr.length;
+    });
+
+    const tbody = document.getElementById('tblSetupDashboardBody');
+    const tfoot = document.getElementById('tblSetupDashboardFoot');
+
+    if(tbody) {
+      if(!dias.length) {
+        tbody.innerHTML = `<tr><td colspan="3" style="padding:10px; text-align:center; color:#94a3b8;">Sin Set ups terminados en este rango de fechas.</td></tr>`;
+      } else {
+        tbody.innerHTML = dias.map((f, i) => `
+          <tr style="border-bottom:1px solid #e2e8f0;">
+            <td style="padding:5px 8px;">${f}</td>
+            <td style="padding:5px 8px; text-align:right;">${cantidades[i]}</td>
+            <td style="padding:5px 8px; text-align:right;">${promedios[i].toFixed(1)}</td>
+          </tr>`).join('');
+      }
+    }
+
+    if(tfoot) {
+      if(!dias.length) {
+        tfoot.innerHTML = '';
+      } else {
+        const promCant = cantidades.reduce((a,b) => a+b, 0) / cantidades.length;
+        const promTiempo = promedios.reduce((a,b) => a+b, 0) / promedios.length;
+        const desvCant = calcStdDev(cantidades);
+        const desvTiempo = calcStdDev(promedios);
+        const maxCant = Math.max(...cantidades), minCant = Math.min(...cantidades);
+        const maxTiempo = Math.max(...promedios), minTiempo = Math.min(...promedios);
+        const fila = (label, vc, vt) => `
+          <tr style="background:#f1f5f9; font-weight:bold;">
+            <td style="padding:5px 8px;">${label}</td>
+            <td style="padding:5px 8px; text-align:right;">${vc}</td>
+            <td style="padding:5px 8px; text-align:right;">${vt}</td>
+          </tr>`;
+        tfoot.innerHTML =
+          fila('Promedio', promCant.toFixed(1), promTiempo.toFixed(1)) +
+          fila('Desviación Est', desvCant.toFixed(2), desvTiempo.toFixed(2)) +
+          fila('Max', maxCant, maxTiempo.toFixed(1)) +
+          fila('Min', minCant, minTiempo.toFixed(1));
+      }
+    }
+
+    makeOrUpdateChart('chartSetupCantidadDia', {
+      type: 'bar',
+      data: { labels: dias, datasets: [{ label: 'Cantidad de Set up', data: cantidades, backgroundColor: '#0284c7' }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, title: { display: true, text: 'Cantidad de Set up por Día' } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
+    });
+
+    makeOrUpdateChart('chartSetupTiempoDia', {
+      type: 'line',
+      data: {
+        labels: dias,
+        datasets: [{
+          label: 'Tiempo Promedio (mins)',
+          data: promedios.map(v => Math.round(v * 10) / 10),
+          borderColor: '#0284c7', backgroundColor: 'rgba(2,132,199,0.15)', fill: true, tension: 0.25
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, title: { display: true, text: 'Tiempo Promedio de Set up (mins)' } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  }
+
+  let grafLibRetryTimer = null;
   function renderGraficas() {
     if(!isAdmin) return;
     if(document.getElementById('panelGraficas').classList.contains('hidden')) return;
-    if(typeof Chart === 'undefined') return;
+
+    const warnEl = document.getElementById('graLibWarning');
+    if(typeof Chart === 'undefined') {
+      // El CDN de Chart.js no cargó (sin internet o bloqueado). Mostramos el aviso
+      // y reintentamos solos cada pocos segundos sin que el usuario tenga que
+      // recargar la página manualmente.
+      if(warnEl) warnEl.classList.remove('hidden');
+      if(!grafLibRetryTimer) {
+        grafLibRetryTimer = setInterval(() => {
+          if(typeof Chart !== 'undefined') {
+            clearInterval(grafLibRetryTimer);
+            grafLibRetryTimer = null;
+            if(warnEl) warnEl.classList.add('hidden');
+            renderGraficas();
+          }
+        }, 3000);
+      }
+      return;
+    }
+    if(warnEl) warnEl.classList.add('hidden');
 
     const fIniEl = document.getElementById('graFechaIni'), fFinEl = document.getElementById('graFechaFin');
     const fIni = (fIniEl && fIniEl.value) ? fIniEl.value : getTodayString();
@@ -3411,6 +3567,8 @@
       const f = normalizeDateStr(fechaStr);
       return f >= fIni && f <= fFin;
     };
+
+    renderDashboardSetup(fIni, fFin, enRango);
 
     const setups = (dbData.registrosSetup || []).filter(r => enRango(r.fecha));
 
