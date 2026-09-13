@@ -164,6 +164,13 @@
     body.graf-mode #panelGraficas h3 { color: #7dd3fc !important; }
     body.graf-mode #panelGraficas .card { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; }
     body.graf-mode #panelGraficas label { color: #cbd5e1; }
+
+    /* --- Tabla del Dashboard de Set Up: contraste correcto en claro y oscuro --- */
+    .graf-table tbody tr { border-bottom: 1px solid #e2e8f0; color: #1e293b; }
+    .graf-table tbody td, .graf-table tfoot td { color: inherit; }
+    .graf-table .graf-summary-row { background: #f1f5f9; color: #1e293b; font-weight: bold; }
+    body.graf-mode .graf-table tbody tr { border-bottom-color: #334155; color: #e2e8f0; }
+    body.graf-mode .graf-table .graf-summary-row { background: #0f172a; color: #fde68a; }
   </style>
 </head>
 <body>
@@ -629,7 +636,7 @@
         <p style="color:#64748b; margin-top:-8px; font-size:0.9rem;">Cantidad de Set ups y tiempo promedio por día, calculado en vivo desde los registros de máquinas (RegistrosSetup).</p>
         <div style="display:grid; grid-template-columns: minmax(280px, 1fr) 2fr; gap:20px; align-items:start;">
           <div style="overflow-x:auto; max-height:520px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:6px;">
-            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+            <table class="graf-table" style="width:100%; border-collapse:collapse; font-size:0.85rem;">
               <thead style="position:sticky; top:0;">
                 <tr style="background:#1e3a5f; color:#fff;">
                   <th style="padding:6px 8px; text-align:left;">Fecha</th>
@@ -2746,6 +2753,15 @@
     }
     document.body.classList.toggle('graf-mode', isFs && !document.getElementById('panelGraficas').classList.contains('hidden'));
 
+    // El cambio de layout (posición fixed/estática, tema claro/oscuro) puede dejar
+    // a Chart.js con medidas viejas del canvas. Forzamos un resize explícito de
+    // todas las gráficas tras que el CSS termine de reacomodarse, para que no se
+    // vean descuadradas ni al entrar ni al salir de pantalla completa.
+    const forceResizeCharts = () => {
+      Object.values(chartsInstances).forEach(ch => { try { ch.resize(); } catch(e) {} });
+    };
+    requestAnimationFrame(() => { forceResizeCharts(); setTimeout(forceResizeCharts, 150); setTimeout(forceResizeCharts, 400); });
+
     // Si el monitor pierde la pantalla completa mientras auto-scroll estaba activo,
     // lo dejamos funcionando igual: solo cambia el indicador visual.
   });
@@ -3474,7 +3490,7 @@
         tbody.innerHTML = `<tr><td colspan="3" style="padding:10px; text-align:center; color:#94a3b8;">Sin Set ups terminados en este rango de fechas.</td></tr>`;
       } else {
         tbody.innerHTML = dias.map((f, i) => `
-          <tr style="border-bottom:1px solid #e2e8f0;">
+          <tr>
             <td style="padding:5px 8px;">${f}</td>
             <td style="padding:5px 8px; text-align:right;">${cantidades[i]}</td>
             <td style="padding:5px 8px; text-align:right;">${promedios[i].toFixed(1)}</td>
@@ -3493,7 +3509,7 @@
         const maxCant = Math.max(...cantidades), minCant = Math.min(...cantidades);
         const maxTiempo = Math.max(...promedios), minTiempo = Math.min(...promedios);
         const fila = (label, vc, vt) => `
-          <tr style="background:#f1f5f9; font-weight:bold;">
+          <tr class="graf-summary-row">
             <td style="padding:5px 8px;">${label}</td>
             <td style="padding:5px 8px; text-align:right;">${vc}</td>
             <td style="padding:5px 8px; text-align:right;">${vt}</td>
