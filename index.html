@@ -117,6 +117,37 @@
     .crit-limit-tag { background: #ef4444; color: #fff; font-weight: bold; padding: 1px 6px; border-radius: 8px; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 2px; margin-left: 4px; }
     .badge-admin-edit { background: #0f172a; color: #fde047; font-weight: bold; padding: 1px 6px; border-radius: 6px; font-size: 0.7rem; display: inline-block; margin-left: 4px; }
 
+    /* --- Ítem seleccionable con filtro (Registro de Máquinas) --- */
+    .item-combo { position: relative; }
+    .item-combo > input { padding-right: 30px; }
+    .item-combo-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-40%); color: #64748b; pointer-events: none; font-size: 0.8rem; }
+    .item-combo-list { position: absolute; left: 0; right: 0; top: 100%; z-index: 60; background: #fff; border: 1px solid #94a3b8; border-radius: 6px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); max-height: 240px; overflow-y: auto; margin-top: 2px; -webkit-overflow-scrolling: touch; }
+    .item-combo-opt { padding: 10px 12px; cursor: pointer; font-size: 0.92rem; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
+    .item-combo-opt:hover, .item-combo-opt.active { background: #e0f2fe; }
+    .item-combo-opt mark { background: #fde68a; color: inherit; padding: 0; border-radius: 2px; }
+    .item-combo-opt.opt-nuevo { background: #fff7ed; color: #9a3412; font-weight: bold; position: sticky; bottom: 0; border-top: 2px solid #fdba74; border-bottom: none; }
+    .item-combo-opt.opt-nuevo:hover { background: #ffedd5; }
+    .item-combo-empty { padding: 10px 12px; color: #64748b; font-size: 0.82rem; }
+    .item-combo.selected > input { border-color: #10b981; background: #f0fdf4; }
+    .item-combo.manual > input { border-color: #f97316; background: #fff7ed; }
+    #regItemHint { display: block; margin-top: 4px; font-size: 0.78rem; }
+    #regItemHint.hint-ok { color: #047857; }
+    #regItemHint.hint-warn { color: #b45309; }
+
+    /* --- Duración esperada (registros Corriendo) y alarma por tiempo excedido --- */
+    @keyframes blink-exceed {
+      0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 10px 2px rgba(239,68,68,0.9); }
+      50% { opacity: 0.25; transform: scale(1.06); box-shadow: none; }
+    }
+    .exp-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; font-size: 0.8rem; }
+    .tv-card .exp-label { color: #93c5fd; }
+    .exp-sign { background: #dc2626; color: #fff; font-weight: bold; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 3px; animation: blink-exceed 0.8s linear infinite; }
+    .exp-sign.exp-static { animation: none; background: #7f1d1d; }
+    .tv-card .exp-sign { color: #fff !important; }
+    .time-excede { color: #dc2626; font-weight: bold; }
+    .tv-card .time-excede { color: #ff6b6b !important; font-weight: bold; }
+    .tvc-critico .time-excede { color: #b91c1c !important; }
+
     /* Botones extra de la pizarra TV */
     .btn-tv-toggle.tv-toggle-on { background: #eab308; color: #1e1b04; }
     .btn-tv-toggle.tv-scroll-on { background: #16a34a; }
@@ -325,7 +356,17 @@
 
         <div id="regDinamico" class="hidden" style="margin-top:10px; padding-top:10px; border-top:1px solid #e2e8f0;">
           <div class="g-turno hidden"><label id="lblRegTurno">Turno *</label><select id="regTurno"></select></div>
-          <div class="g-item hidden"><label id="lblRegItem">Ítem *</label><input list="listItems" id="regItem" placeholder="Buscar ítem..."></div>
+          <div class="g-item hidden">
+            <label id="lblRegItem">Ítem *</label>
+            <div class="item-combo" id="regItemCombo">
+              <input type="text" id="regItemSearch" autocomplete="off" placeholder="Escribe para filtrar y selecciona un ítem de la lista..." oninput="onRegItemSearchInput()" onfocus="openRegItemList()" onclick="openRegItemList()" onkeydown="onRegItemKeydown(event)">
+              <span class="item-combo-arrow">▼</span>
+              <div class="item-combo-list hidden" id="regItemList" onclick="onRegItemListClick(event)"></div>
+            </div>
+            <input type="text" id="regItemManual" class="hidden" autocomplete="off" placeholder="Escribe aquí el N. de parte nuevo (completo y bien escrito)..." oninput="onRegItemManualInput()">
+            <small id="regItemHint" class="hidden"></small>
+            <input type="hidden" id="regItem">
+          </div>
           <div class="g-tecnico hidden"><label id="lblRegTecnico">Técnico *</label><input list="listTecnicos" id="regTecnico" placeholder="Técnico..."></div>
           <div class="g-operador hidden"><label id="lblRegOperador">Operador Titular *</label><input list="listOperadores" id="regOperador"></div>
           <div class="g-opCubre hidden"><label>Operador que cubre (Opcional)</label><input list="listOperadores" id="regOpCubre" placeholder="Opcional"></div>
@@ -598,6 +639,20 @@
       <!-- OTROS CATALOGOS -->
       <h3>👷 Operadores</h3><div style="display:flex; gap:5px;"><input type="text" id="addOp"><button class="btn-admin" onclick="addCat('Operadores', 'addOp')">Agregar</button></div><div id="listAdminOperadores"></div><hr>
       <h3>📦 Ítems</h3><div style="display:flex; gap:5px;"><input type="text" id="addItem"><button class="btn-admin" onclick="addCat('Items', 'addItem')">Agregar</button></div><div id="listAdminItems"></div><hr>
+
+      <!-- DURACIÓN POR PIEZA (por N. de parte) -->
+      <h3>⏲️ Duración por Pieza (por N. de Parte)</h3>
+      <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:10px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <input type="hidden" id="editDurOrig">
+          <input type="text" id="addDurItem" list="listItemsDur" placeholder="N. de parte (Ej: ABC-123)" autocomplete="off" style="flex:2; min-width:160px;">
+          <input type="number" id="addDurMin" min="0" step="any" inputmode="decimal" placeholder="Minutos por pieza" style="flex:1; min-width:130px;">
+          <button class="btn-admin" id="btnSaveDur" onclick="saveDuracionItem()" style="width:140px;">Agregar</button>
+          <button class="btn-secondary hidden" id="btnCancelDur" onclick="cancelEditDur()" style="width:100px;">Cancelar</button>
+        </div>
+        <small style="color:#64748b;">Registra el N. de parte y cuántos minutos dura cada pieza (acepta decimales, ej. 0.5). Se reconoce por número de parte. En el Monitor en Vivo, la <b>duración esperada</b> de un registro <b>Corriendo</b> = minutos por pieza × piezas plan. Si el N. de parte ya existe, se actualizan sus minutos. Este catálogo es independiente del catálogo de Ítems (el que alimenta el seleccionable del registro).</small>
+      </div>
+      <div id="listAdminDuraciones"></div><hr>
       <h3>🔧 Técnicos</h3><div style="display:flex; gap:5px;"><input type="text" id="addTecnico"><button class="btn-admin" onclick="addCat('Tecnicos', 'addTecnico')">Agregar</button></div><div id="listAdminTecnicos"></div><hr>
       <h3>🕒 Turnos</h3><div style="display:flex; gap:5px;"><input type="text" id="addTurno"><button class="btn-admin" onclick="addCat('Turnos', 'addTurno')">Agregar</button></div><div id="listAdminTurnos"></div>
     </div>
@@ -672,6 +727,19 @@
           <h3>⚠️ Registros Críticos por Máquina</h3>
           <div style="position:relative; height:260px;"><canvas id="chartCriticos"></canvas></div>
         </div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h3>⏲️ Duración Esperada vs Real por Ítem</h3>
+        <p style="color:#64748b; margin-top:-8px; font-size:0.9rem;">Compara, por N. de parte, la <b>duración esperada</b> (piezas plan × minutos por pieza del catálogo) contra la <b>duración real</b> (de la hora de inicio a la hora final registradas). Solo cuenta registros <b>Corriendo</b> ya terminados, dentro del rango de fechas de arriba. Barra real en <span style="color:#16a34a; font-weight:bold;">verde</span> = dentro de lo esperado, en <span style="color:#dc2626; font-weight:bold;">rojo</span> = excedió.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+          <div style="min-width:240px; flex:1; max-width:420px;">
+            <label>Ítem</label>
+            <select id="graDurItem" onchange="renderChartDuracionItem()"><option value="__TODOS__">Todos los ítems (promedio por registro)</option></select>
+          </div>
+        </div>
+        <div id="graDurInfo" style="margin-top:8px; font-size:0.85rem; color:#64748b;"></div>
+        <div style="position:relative; height:320px; margin-top:10px;"><canvas id="chartDuracionItem"></canvas></div>
       </div>
 
       <div class="card" style="margin-top:20px;">
@@ -818,12 +886,13 @@
 
 <datalist id="listOperadores"></datalist>
 <datalist id="listItems"></datalist>
+<datalist id="listItemsDur"></datalist>
 <datalist id="listTecnicos"></datalist>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbwP9vawpPvqX03Z1k6UwGJhc1d1415mk6uUqDdpeqfwU75m966DraunLGTnKGormEF5/exec";
-  let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], tiemposMuertos:[], depositosAceite:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], registrosTiemposMuertos:[], registrosAceites:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300, tvScrollSpeed: 2 };
+  let dbData = { naves:[], maquinas:[], operadores:[], turnos:[], marcas:[], items:[], tecnicos:[], tiemposMuertos:[], depositosAceite:[], duracionItems:[], usuarios:[], registrosOperadores:[], registrosSolubles:[], registrosSetup:[], registrosTiemposMuertos:[], registrosAceites:[], alarmMinutes: 150, soundVol: 50, soundFreq: 880, soundSpeed: 300, tvScrollSpeed: 2 };
   let currentUser = null, isAdmin = false, adminAuthToken = '';
   let dataReady = false, initialLoadPromise = null; // FIX: bandera para saber si ya llego la primera carga completa de datos (usuarios, etc.)
   const SYNC_INTERVAL_MS = 1000;
@@ -1289,6 +1358,8 @@
 
     fillDatalist('listOperadores', dbData.operadores);
     fillDatalist('listItems', dbData.items);
+    fillDatalist('listItemsDur', dbData.items);
+    refreshRegItemCombo();
     fillDatalist('listTecnicos', dbData.tecnicos);
 
     fillSelectPreserving('opTurno', dbData.turnos);
@@ -1841,6 +1912,336 @@
     document.getElementById('filtroFechaAce').value = getTodayString(); renderHistoriales();
   }
 
+  // ======================================================================
+  // ÍTEM SELECCIONABLE CON FILTRO (Registro de Máquinas)
+  // Solo se puede registrar un ítem del catálogo, o elegir "El ítem no aparece"
+  // para capturar uno nuevo manualmente. El valor final vive en #regItem (hidden),
+  // por lo que el resto del código sigue leyendo document.getElementById('regItem').value.
+  // ======================================================================
+  const REG_ITEM_NUEVO_LABEL = '➕ El ítem no aparece (capturarlo manualmente)';
+  let regItemMode = 'none';      // 'none' (sin elegir) | 'catalogo' | 'manual'
+  let regItemFilter = '';
+  let regItemActiveIdx = -1;
+  let regItemVisible = [];
+  let regItemCatSig = '';
+
+  function normItemKey(v) { return String(v == null ? '' : v).trim().replace(/\s+/g, ' ').toUpperCase(); }
+
+  function getItemsCatalogList() {
+    const seen = new Set();
+    const out = [];
+    (dbData.items || []).forEach(x => {
+      const v = String(x == null ? '' : x).trim();
+      const k = normItemKey(v);
+      if(v && !seen.has(k)) { seen.add(k); out.push(v); }
+    });
+    return out.sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+  }
+
+  function findCatalogItemExact(text) {
+    const k = normItemKey(text);
+    if(!k) return null;
+    return getItemsCatalogList().find(x => normItemKey(x) === k) || null;
+  }
+
+  function highlightItemMatch(text, q) {
+    if(!q) return escapeHtml(text);
+    const i = text.toLowerCase().indexOf(q);
+    if(i < 0) return escapeHtml(text);
+    return escapeHtml(text.slice(0, i)) + '<mark>' + escapeHtml(text.slice(i, i + q.length)) + '</mark>' + escapeHtml(text.slice(i + q.length));
+  }
+
+  function setRegItemHint(text, kind) {
+    const h = document.getElementById('regItemHint');
+    if(!h) return;
+    h.textContent = text || '';
+    h.classList.toggle('hidden', !text);
+    h.classList.toggle('hint-ok', kind === 'ok');
+    h.classList.toggle('hint-warn', kind === 'warn');
+  }
+
+  function renderRegItemList() {
+    const list = document.getElementById('regItemList');
+    if(!list) return;
+    const prevScroll = list.scrollTop;
+    const q = String(regItemFilter || '').trim().toLowerCase();
+    const all = getItemsCatalogList();
+    const filtered = q ? all.filter(x => x.toLowerCase().includes(q)) : all;
+    const MAX = 100; // evita listas enormes en celulares
+    regItemVisible = filtered.slice(0, MAX);
+    if(regItemActiveIdx >= regItemVisible.length) regItemActiveIdx = -1;
+
+    let html = '';
+    if(!filtered.length) {
+      html += `<div class="item-combo-empty">${all.length ? 'Sin coincidencias' : 'No hay ítems en el catálogo'}${q ? ' para "' + escapeHtml(String(regItemFilter).trim()) + '"' : ''}. Si no aparece, elige la última opción.</div>`;
+    } else {
+      html += regItemVisible.map((x, i) => `<div class="item-combo-opt${i === regItemActiveIdx ? ' active' : ''}" data-idx="${i}">${highlightItemMatch(x, q)}</div>`).join('');
+      if(filtered.length > MAX) html += `<div class="item-combo-empty">Mostrando ${MAX} de ${filtered.length}. Sigue escribiendo para filtrar…</div>`;
+    }
+    html += `<div class="item-combo-opt opt-nuevo" data-nuevo="1">${REG_ITEM_NUEVO_LABEL}</div>`;
+    list.innerHTML = html;
+    list.scrollTop = prevScroll;
+  }
+
+  function openRegItemList() {
+    const list = document.getElementById('regItemList');
+    const search = document.getElementById('regItemSearch');
+    if(!list || !search) return;
+    if(list.classList.contains('hidden')) {
+      // Si ya hay una selección, se muestra el catálogo completo (y el texto queda
+      // seleccionado para que al escribir se reemplace y se pueda filtrar de nuevo).
+      regItemFilter = (regItemMode === 'none') ? search.value : '';
+      regItemActiveIdx = -1;
+      renderRegItemList();
+      list.scrollTop = 0;
+      list.classList.remove('hidden');
+      if(regItemMode !== 'none') { try { search.select(); } catch(e) {} }
+    }
+  }
+
+  function closeRegItemList() {
+    const list = document.getElementById('regItemList');
+    if(list) list.classList.add('hidden');
+    regItemActiveIdx = -1;
+  }
+
+  function onRegItemSearchInput() {
+    const search = document.getElementById('regItemSearch');
+    const list = document.getElementById('regItemList');
+    if(!search || !list) return;
+    // Escribir invalida cualquier selección anterior: hay que elegir de la lista.
+    regItemMode = 'none';
+    document.getElementById('regItem').value = '';
+    const manual = document.getElementById('regItemManual');
+    if(manual) { manual.value = ''; manual.classList.add('hidden'); }
+    const combo = document.getElementById('regItemCombo');
+    if(combo) combo.classList.remove('selected', 'manual');
+    setRegItemHint('');
+    regItemFilter = search.value;
+    regItemActiveIdx = -1;
+    renderRegItemList();
+    list.scrollTop = 0;
+    list.classList.remove('hidden');
+  }
+
+  function selectRegItem(val) {
+    regItemMode = 'catalogo';
+    document.getElementById('regItem').value = val;
+    document.getElementById('regItemSearch').value = val;
+    const manual = document.getElementById('regItemManual');
+    if(manual) { manual.value = ''; manual.classList.add('hidden'); }
+    const combo = document.getElementById('regItemCombo');
+    if(combo) { combo.classList.add('selected'); combo.classList.remove('manual'); }
+    setRegItemHint('');
+    closeRegItemList();
+  }
+
+  function chooseRegItemNuevo(noFocus) {
+    regItemMode = 'manual';
+    document.getElementById('regItemSearch').value = REG_ITEM_NUEVO_LABEL;
+    const manual = document.getElementById('regItemManual');
+    const combo = document.getElementById('regItemCombo');
+    if(combo) { combo.classList.remove('selected'); combo.classList.add('manual'); }
+    closeRegItemList();
+    if(manual) {
+      manual.classList.remove('hidden');
+      manual.value = '';
+    }
+    document.getElementById('regItem').value = '';
+    onRegItemManualInput();
+    if(manual && !noFocus) manual.focus();
+  }
+
+  function onRegItemManualInput() {
+    if(regItemMode !== 'manual') return;
+    const manual = document.getElementById('regItemManual');
+    const hidden = document.getElementById('regItem');
+    if(!manual || !hidden) return;
+    const v = String(manual.value || '').trim().replace(/\s+/g, ' ');
+    if(!v) {
+      hidden.value = '';
+      setRegItemHint('Captura el N. de parte completo y correcto (este ítem aún no está en el catálogo).', 'warn');
+      return;
+    }
+    const match = findCatalogItemExact(v);
+    if(match) {
+      hidden.value = match;
+      setRegItemHint('✅ Ese ítem ya existe en el seleccionable; se registrará como "' + match + '".', 'ok');
+    } else {
+      hidden.value = v;
+      setRegItemHint('⚠️ Ítem nuevo (no está en el catálogo). Verifica que el N. de parte esté completo y bien escrito.', 'warn');
+    }
+  }
+
+  function onRegItemListClick(ev) {
+    const opt = ev.target && ev.target.closest ? ev.target.closest('.item-combo-opt') : null;
+    if(!opt) return;
+    if(opt.dataset.nuevo) { chooseRegItemNuevo(); return; }
+    const idx = parseInt(opt.dataset.idx, 10);
+    if(!isNaN(idx) && regItemVisible[idx] !== undefined) selectRegItem(regItemVisible[idx]);
+  }
+
+  function onRegItemKeydown(ev) {
+    const list = document.getElementById('regItemList');
+    const isOpen = !!list && !list.classList.contains('hidden');
+    const key = ev.key;
+    if(key === 'ArrowDown' || key === 'ArrowUp') {
+      ev.preventDefault();
+      if(!isOpen) { openRegItemList(); return; }
+      const n = regItemVisible.length;
+      if(!n) return;
+      regItemActiveIdx = key === 'ArrowDown' ? (regItemActiveIdx + 1) % n : (regItemActiveIdx <= 0 ? n - 1 : regItemActiveIdx - 1);
+      renderRegItemList();
+      const act = list.querySelector('.item-combo-opt.active');
+      if(act && act.scrollIntoView) act.scrollIntoView({block: 'nearest'});
+    } else if(key === 'Enter') {
+      ev.preventDefault(); // evita enviar el formulario desde este campo
+      if(!isOpen) return;
+      if(regItemActiveIdx >= 0 && regItemVisible[regItemActiveIdx] !== undefined) selectRegItem(regItemVisible[regItemActiveIdx]);
+      else if(regItemVisible.length === 1) selectRegItem(regItemVisible[0]);
+    } else if(key === 'Escape' || key === 'Tab') {
+      closeRegItemList();
+    }
+  }
+
+  // Se llama desde renderDataLists (cada sincronización): solo refresca la lista
+  // abierta si el catálogo de ítems realmente cambió; nunca toca el texto del usuario.
+  function refreshRegItemCombo() {
+    const sig = (dbData.items || []).join('\u0001');
+    if(sig === regItemCatSig) return;
+    regItemCatSig = sig;
+    const list = document.getElementById('regItemList');
+    if(list && !list.classList.contains('hidden')) renderRegItemList();
+    if(regItemMode === 'manual') onRegItemManualInput();
+  }
+
+  function resetRegItemCombo() {
+    regItemMode = 'none';
+    regItemFilter = '';
+    regItemActiveIdx = -1;
+    const hidden = document.getElementById('regItem'); if(hidden) hidden.value = '';
+    const search = document.getElementById('regItemSearch'); if(search) search.value = '';
+    const manual = document.getElementById('regItemManual'); if(manual) { manual.value = ''; manual.classList.add('hidden'); }
+    const combo = document.getElementById('regItemCombo'); if(combo) combo.classList.remove('selected', 'manual');
+    setRegItemHint('');
+    closeRegItemList();
+  }
+
+  // Asigna un ítem por código (ej. al editar un registro): si existe en el catálogo
+  // queda como seleccionado; si no, se abre la captura manual con ese valor.
+  function setRegItemValue(val) {
+    const v = String(val == null ? '' : val).trim();
+    resetRegItemCombo();
+    if(!v) return;
+    const match = findCatalogItemExact(v);
+    if(match) {
+      selectRegItem(match);
+    } else {
+      chooseRegItemNuevo(true);
+      document.getElementById('regItemManual').value = v;
+      onRegItemManualInput();
+    }
+  }
+
+  // Valida que el ítem venga del seleccionable (o de la captura manual del "no aparece").
+  function validarRegItem() {
+    const grp = document.querySelector('#regDinamico .g-item');
+    if(!grp || grp.classList.contains('hidden')) return true; // el estatus elegido no pide ítem
+    const val = String(document.getElementById('regItem').value || '').trim();
+    if(val) return true;
+    if(regItemMode === 'manual') {
+      alert('Captura el N. de parte del ítem nuevo.');
+      const m = document.getElementById('regItemManual'); if(m) m.focus();
+    } else {
+      alert('Selecciona un ítem de la lista (puedes escribir para filtrar). Si no aparece, elige la opción "El ítem no aparece" y captúralo.');
+      const s = document.getElementById('regItemSearch'); if(s) s.focus();
+    }
+    return false;
+  }
+
+  document.addEventListener('pointerdown', ev => {
+    const combo = document.getElementById('regItemCombo');
+    if(combo && !combo.contains(ev.target)) closeRegItemList();
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const f = document.querySelector('#formSetup form');
+    // form.reset() no limpia el <input type="hidden">, así que se limpia el combo al reiniciar el formulario.
+    if(f) f.addEventListener('reset', () => setTimeout(resetRegItemCombo, 0));
+  });
+
+  // ======================================================================
+  // DURACIÓN ESPERADA (registros Corriendo) = minutos por pieza (por N. de parte) × piezas plan
+  // ======================================================================
+  let duracionMapCache = null, duracionMapRef = null, duracionMapLen = -1;
+
+  function invalidateDuracionCache() { duracionMapCache = null; }
+
+  function parseMinPorPieza(v) {
+    const n = parseFloat(String(v == null ? '' : v).replace(',', '.'));
+    return (isFinite(n) && n > 0) ? n : 0;
+  }
+
+  function getDuracionMap() {
+    const arr = dbData.duracionItems || [];
+    if(!duracionMapCache || duracionMapRef !== arr || duracionMapLen !== arr.length) {
+      const m = new Map();
+      arr.forEach(d => {
+        const k = normItemKey(d.item);
+        const n = parseMinPorPieza(d.minutos);
+        if(k && n) m.set(k, n);
+      });
+      duracionMapCache = m; duracionMapRef = arr; duracionMapLen = arr.length;
+    }
+    return duracionMapCache;
+  }
+
+  function getMinPorPieza(item) { return getDuracionMap().get(normItemKey(item)) || 0; }
+
+  function fmtNum(n, dec) {
+    const f = Math.pow(10, dec == null ? 2 : dec);
+    return String(Math.round(n * f) / f);
+  }
+
+  // Devuelve {minPorPieza, piezasPlan, esperada} o null si no aplica (no es Corriendo,
+  // el ítem no tiene duración registrada o no hay piezas plan).
+  function getDuracionEsperada(r) {
+    if(!r || r.estatus !== 'Corriendo') return null;
+    const mpp = getMinPorPieza(r.item);
+    const plan = parseFloat(String(r.piezasPlan == null ? '' : r.piezasPlan).replace(',', '.'));
+    if(!(mpp > 0) || !(plan > 0)) return null;
+    return { minPorPieza: mpp, piezasPlan: plan, esperada: mpp * plan };
+  }
+
+  // Estado de tiempo del registro Corriendo: tiempo real vs esperado.
+  function getEstadoExcedido(r) {
+    const d = getDuracionEsperada(r);
+    if(!d) return null;
+    const enProceso = !r.hFin;
+    const real = enProceso ? getPendingMinutes(r.fecha, r.hInicio) : calcMinutesBetween(r.fecha, r.hInicio, r.hFin);
+    return { ...d, real: real, enProceso: enProceso, excedido: real > d.esperada };
+  }
+
+  function expSignText(est) {
+    const diff = Math.max(1, Math.round(est.real - est.esperada));
+    return est.enProceso ? `🚨 TIEMPO EXCEDIDO +${diff} min` : `⚠️ Excedió +${diff} min`;
+  }
+
+  // El historial de supervisores no se refresca solo cada segundo; este chequeo liviano
+  // lo vuelve a dibujar únicamente cuando un registro Corriendo en proceso cruza su duración esperada.
+  let lastExcedSig = '';
+  function checkExcedidosHistorial() {
+    try {
+      if(!currentUser && !isAdmin) return;
+      const sig = (dbData.registrosSetup || [])
+        .filter(r => r.estatus === 'Corriendo' && !r.hFin)
+        .map(r => { const e = getEstadoExcedido(r); return (e && e.excedido) ? r.id : ''; })
+        .filter(Boolean).join('|');
+      if(sig !== lastExcedSig) { lastExcedSig = sig; renderHistoriales(); }
+    } catch(e) { /* no interrumpir la app por este chequeo */ }
+  }
+  setInterval(checkExcedidosHistorial, 15000);
+
   // --- FORMULARIO REGISTRO MÁQUINAS (AJUSTE Y SETUP SIN PIEZAS) ---
   function toggleRegCampos() {
     let est = document.getElementById('regEstatus').value;
@@ -1904,6 +2305,7 @@
 
   function guardarSetup(e) {
     e.preventDefault();
+    if(!validarRegItem()) return; // el ítem debe venir del seleccionable (o de "El ítem no aparece")
     let id = document.getElementById('regId').value;
     let action = id ? "EDIT_REGISTRO_SETUP" : "ADD_REGISTRO_SETUP";
     let nowStr = getNowMxString();
@@ -1964,7 +2366,7 @@
     document.getElementById('regMaquina').value = r.maquina; document.getElementById('regEstatus').value = r.estatus;
     document.getElementById('regCritico').checked = !!r.critico && r.critico !== 'false';
     toggleRegCampos();
-    document.getElementById('regTurno').value = r.turno||''; document.getElementById('regItem').value = r.item||'';
+    document.getElementById('regTurno').value = r.turno||''; setRegItemValue(r.item||'');
     document.getElementById('regTecnico').value = r.tecnico||''; document.getElementById('regOperador').value = r.operador||'';
     document.getElementById('regOpCubre').value = r.opCubre||''; document.getElementById('regHInicio').value = formatTimeInput(r.hInicio);
     document.getElementById('regHFin').value = formatTimeInput(r.hFin);
@@ -2008,15 +2410,20 @@
           if(esCritico) cls += ' st-critico';
           
           let dur = term ? (r.tiempo || '-') : (getPendingMinutes(r.fecha, r.hInicio) + ' mins (en curso)');
+          // Corriendo: duración esperada y alarma si el tiempo de proceso la excede
+          let estExp = (st === 'Corriendo') ? getEstadoExcedido(r) : null;
+          if(estExp && estExp.excedido) dur = `<span class="time-excede">${dur}</span>`;
 
           let badges = '';
           if(esCritico) badges += ` <span class="badge-critico">⚠️ CRÍTICO</span>`;
           if(esCritico && superoLimite) badges += ` <span class="crit-limit-tag">⏰ Límite superado</span>`;
+          if(estExp && estExp.excedido) badges += ` <span class="exp-sign${estExp.enProceso ? '' : ' exp-static'}">${expSignText(estExp)}</span>`;
           if(r.editadoPorAdmin && r.editadoPorAdmin !== 'false') badges += ` <span class="badge-admin-edit">✏️ Editado por Admin</span>`;
 
           let det = `<small><b>Turno:</b> ${r.turno} | <b>Supervisor:</b> ${getSupervisorHtml(r)}</small><br>`;
           if(st !== 'Caida') det += `<small><b>Item:</b> ${r.item} | <b>Ini:</b> ${formatHora(r.hInicio)} <b>Fin:</b> ${term ? formatHora(r.hFin) : '<i>Pendiente</i>'}</small><br>`;
           if(st === 'Corriendo') det += `<small><b>Op:</b> ${r.operador} ${r.opCubre?`(Cubre:${r.opCubre})`:''} | <b>Duración:</b> ${dur}<br><b>Plan:</b> ${r.piezasPlan||0} | <b>Real:</b> ${r.piezasReal||0} | <b>Delta (Falta):</b> ${r.piezasDelta||0}</small><br>`;
+          if(estExp) det += `<small><b>🎯 Duración esperada:</b> ${fmtNum(estExp.esperada, 1)} min <span style="color:#64748b;">(${fmtNum(estExp.piezasPlan, 2)} pz × ${fmtNum(estExp.minPorPieza, 2)} min/pz)</span></small><br>`;
           if(st === 'Ajuste' || st === 'Set up') det += `<small><b>Tec:</b> ${r.tecnico} | <b>Duración:</b> ${dur}</small><br>`;
           
           // Tiempos Muertos adjuntos
@@ -2676,7 +3083,7 @@
       t.id,t.regId,t.tiempoMuerto,t.hInicio,t.hFin,t.duracion,t.usuario,t.fechaActualizacion,t.editadoPorAdmin
     ].join('|')).join('||');
     const maq = (data.maquinas || []).map(m => typeof m==='object' ? `${m.maquina}|${m.nave}` : m).join('|');
-    return `${getTodayString()}::${regs}::${tms}::${maq}::${(data.naves||[]).join('|')}::${data.alarmMinutes}::${data.soundVol}::${data.soundFreq}::${data.soundSpeed}`;
+    return `${getTodayString()}::${regs}::${tms}::${maq}::${(data.naves||[]).join('|')}::${data.alarmMinutes}::${data.soundVol}::${data.soundFreq}::${data.soundSpeed}::${(data.duracionItems||[]).map(d => d.item+'='+d.minutos).join('|')}`;
   }
 
   function updateTVLiveState() {
@@ -2692,13 +3099,27 @@
       const elapsedEl = card.querySelector('[data-live-duration]');
       const badgeEl = card.querySelector('[data-live-badge]');
       const alarmed = !r.hFin && (r.estatus === 'Set up' || r.estatus === 'Ajuste') && elapsed >= alarmLimitMin;
+      // Corriendo: tiempo en proceso vs duración esperada (minutos por pieza × piezas plan)
+      const estExp = (r.estatus === 'Corriendo') ? getEstadoExcedido(r) : null;
+      const excedidoExp = !!(estExp && estExp.excedido);
 
       if(elapsedEl) {
         elapsedEl.textContent = r.hFin ? `⏱️ Duración: ${r.tiempo || calcMinutesBetween(r.fecha,r.hInicio,r.hFin) + ' mins'}` : `⏱️ Duración: ${elapsed} mins en curso`;
       }
       if(badgeEl) {
         badgeEl.textContent = `${elapsed} min`;
-        badgeEl.style.background = alarmed ? '#ef4444' : '#0284c7';
+        badgeEl.style.background = (alarmed || excedidoExp) ? '#ef4444' : '#0284c7';
+      }
+      if(elapsedEl) elapsedEl.classList.toggle('time-excede', excedidoExp);
+      const signEl = card.querySelector('[data-exp-sign]');
+      if(signEl) {
+        if(estExp && excedidoExp) {
+          signEl.style.display = 'inline-flex';
+          signEl.classList.toggle('exp-static', !estExp.enProceso);
+          signEl.textContent = expSignText(estExp);
+        } else {
+          signEl.style.display = 'none';
+        }
       }
       card.classList.toggle('tvc-alarmed', alarmed);
       if(alarmed) hasAlarmTriggered = true;
@@ -2879,6 +3300,8 @@
       }
 
       let critico = esCritico(r);
+      // Corriendo: duración esperada (minutos por pieza del N. de parte × piezas plan)
+      const estExp = (r.estatus === 'Corriendo') ? getEstadoExcedido(r) : null;
       let cardClass = `${cls} ${isAlarmed ? 'tvc-alarmed' : ''} ${critico ? 'tvc-critico' : ''}`;
 
       let tmsHtml = '';
@@ -2922,9 +3345,15 @@
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-            <span data-live-duration style="font-size:0.8rem; color:#cbd5e1;">⏱️ Duración: ${r.hFin ? (r.tiempo || elapsedMin + ' mins') : elapsedMin + ' mins en curso'}</span>
-            ${!r.hFin && r.estatus !== 'Caida' ? `<span data-live-badge style="font-size:0.75rem; background:${isAlarmed?'#ef4444':'#0284c7'}; color:white; padding:2px 6px; border-radius:10px; font-weight:bold;">${elapsedMin} min</span>` : ''}
+            <span data-live-duration class="${estExp && estExp.excedido ? 'time-excede' : ''}" style="font-size:0.8rem; color:#cbd5e1;">⏱️ Duración: ${r.hFin ? (r.tiempo || elapsedMin + ' mins') : elapsedMin + ' mins en curso'}</span>
+            ${!r.hFin && r.estatus !== 'Caida' ? `<span data-live-badge style="font-size:0.75rem; background:${(isAlarmed || (estExp && estExp.excedido))?'#ef4444':'#0284c7'}; color:white; padding:2px 6px; border-radius:10px; font-weight:bold;">${elapsedMin} min</span>` : ''}
           </div>
+
+          ${estExp ? `
+            <div data-exp-wrap class="exp-row">
+              <span class="exp-label">🎯 Duración esperada: <b>${fmtNum(estExp.esperada, 1)} min</b> <small>(${fmtNum(estExp.piezasPlan, 2)} pz × ${fmtNum(estExp.minPorPieza, 2)} min/pz)</small></span>
+              <span data-exp-sign class="exp-sign${estExp.enProceso ? '' : ' exp-static'}" style="display:${estExp.excedido ? 'inline-flex' : 'none'};">${expSignText(estExp)}</span>
+            </div>` : ''}
 
           ${tmsHtml}
 
@@ -3190,6 +3619,25 @@
       }
     }
 
+    // DURACIÓN POR PIEZA (por N. de parte)
+    let divDur = document.getElementById('listAdminDuraciones');
+    if(divDur) {
+      const durs = (dbData.duracionItems || []).slice().sort((a, b) => String(a.item).localeCompare(String(b.item), undefined, {numeric: true, sensitivity: 'base'}));
+      if(!durs.length) {
+        divDur.innerHTML = '<p style="color:#94a3b8;">Sin duraciones configuradas.</p>';
+      } else {
+        const catKeys = new Set(getItemsCatalogList().map(normItemKey));
+        divDur.innerHTML = durs.map(d => `
+          <div class="item-row">
+            <span><b>${escapeHtml(d.item)}</b> — <span style="color:#0369a1; font-weight:bold;">${escapeHtml(fmtNum(parseMinPorPieza(d.minutos), 2))} min/pz</span>${catKeys.has(normItemKey(d.item)) ? '' : ' <small style="color:#b45309;">(no está en el catálogo de Ítems)</small>'}</span>
+            <div class="item-actions">
+              <button class="btn-edit" onclick="startEditDur('${escapeHtmlAttr(jsQ(d.item))}', '${escapeHtmlAttr(fmtNum(parseMinPorPieza(d.minutos), 4))}')">✏️</button>
+              <button class="btn-danger" onclick="delDuracionItem('${escapeHtmlAttr(jsQ(d.item))}')">🗑️</button>
+            </div>
+          </div>`).join('');
+      }
+    }
+
     // USUARIOS
     let divU = document.getElementById('listAdminUsuarios');
     if(divU) {
@@ -3317,6 +3765,71 @@
     dbData.depositosAceite = (dbData.depositosAceite||[]).filter(x => !(x.maquina === maq && x.deposito === dep));
     renderAdminLists();
     postData({ action: "MANAGE_CATALOGO", op: "DELETE", catalogo: "DepositosAceite", val1: maq, val2: dep });
+  }
+
+  // DURACIÓN POR PIEZA (catálogo por N. de parte)
+  function startEditDur(item, min) {
+    document.getElementById('editDurOrig').value = item;
+    document.getElementById('addDurItem').value = item;
+    document.getElementById('addDurMin').value = min;
+    document.getElementById('btnSaveDur').textContent = 'Guardar Cambios';
+    document.getElementById('btnCancelDur').classList.remove('hidden');
+    window.scrollTo({top: document.getElementById('btnSaveDur').offsetTop - 100, behavior: 'smooth'});
+  }
+
+  function cancelEditDur() {
+    document.getElementById('editDurOrig').value = '';
+    document.getElementById('addDurItem').value = '';
+    document.getElementById('addDurMin').value = '';
+    document.getElementById('btnSaveDur').textContent = 'Agregar';
+    document.getElementById('btnCancelDur').classList.add('hidden');
+  }
+
+  function saveDuracionItem() {
+    const orig = document.getElementById('editDurOrig').value;
+    const item = document.getElementById('addDurItem').value.trim().replace(/\s+/g, ' ');
+    const mins = parseMinPorPieza(document.getElementById('addDurMin').value);
+    if(!item) return alert('Indica el N. de parte.');
+    if(!mins) return alert('Indica los minutos por pieza (número mayor a 0).');
+
+    if(!dbData.duracionItems) dbData.duracionItems = [];
+    const key = normItemKey(item);
+
+    if(orig) {
+      const origKey = normItemKey(orig);
+      if(key !== origKey && dbData.duracionItems.some(x => normItemKey(x.item) === key)) {
+        return alert('Ya existe una duración registrada para ese N. de parte.');
+      }
+      const it = dbData.duracionItems.find(x => normItemKey(x.item) === origKey);
+      if(it) { it.item = item; it.minutos = String(mins); }
+      else dbData.duracionItems.push({ item: item, minutos: String(mins) });
+      invalidateDuracionCache();
+      postData({ action: "MANAGE_CATALOGO", op: "EDIT", catalogo: "DuracionItems", val1: orig, newVal1: item, val2: mins });
+    } else {
+      const ex = dbData.duracionItems.find(x => normItemKey(x.item) === key);
+      if(ex) {
+        if(!confirm(`"${ex.item}" ya tiene ${fmtNum(parseMinPorPieza(ex.minutos), 2)} min/pz. ¿Actualizar a ${fmtNum(mins, 2)} min/pz?`)) return;
+        ex.minutos = String(mins);
+      } else {
+        dbData.duracionItems.push({ item: item, minutos: String(mins) });
+      }
+      invalidateDuracionCache();
+      postData({ action: "MANAGE_CATALOGO", op: "ADD", catalogo: "DuracionItems", val1: item, val2: mins });
+    }
+
+    renderAdminLists();
+    cancelEditDur();
+    if(!document.getElementById('panelTV').classList.contains('hidden')) renderTV();
+  }
+
+  function delDuracionItem(item) {
+    if(!confirm(`¿Eliminar la duración por pieza del N. de parte "${item}"?`)) return;
+    const key = normItemKey(item);
+    dbData.duracionItems = (dbData.duracionItems || []).filter(x => normItemKey(x.item) !== key);
+    invalidateDuracionCache();
+    renderAdminLists();
+    postData({ action: "MANAGE_CATALOGO", op: "DELETE", catalogo: "DuracionItems", val1: item });
+    if(!document.getElementById('panelTV').classList.contains('hidden')) renderTV();
   }
 
   function editCat(cat, oldVal) {
@@ -3677,7 +4190,137 @@
       options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{stepSize:1}}} }
     });
 
+    renderChartDuracionItem();
     renderChartPersonalizado();
+  }
+
+  // --- Duración Esperada vs Real por ítem (columnas) ---
+  // Esperada = minutos por pieza del N. de parte (Catálogos) × piezas plan.
+  // Real = tiempo entre hora de inicio y hora final registradas.
+  // Solo cuenta registros "Corriendo" ya terminados (con hora final) cuyo ítem tenga duración registrada.
+  let graDurItemSig = '';
+  function renderChartDuracionItem() {
+    if(!isAdmin) return;
+    if(document.getElementById('panelGraficas').classList.contains('hidden')) return;
+    if(typeof Chart === 'undefined') return;
+
+    const selEl = document.getElementById('graDurItem');
+    const infoEl = document.getElementById('graDurInfo');
+    if(!selEl) return;
+
+    const fIniEl = document.getElementById('graFechaIni'), fFinEl = document.getElementById('graFechaFin');
+    const fIni = (fIniEl && fIniEl.value) ? fIniEl.value : getTodayString();
+    const fFin = (fFinEl && fFinEl.value) ? fFinEl.value : getTodayString();
+    const enRango = (fechaStr) => { const f = normalizeDateStr(fechaStr); return f >= fIni && f <= fFin; };
+
+    const base = (dbData.registrosSetup || [])
+      .filter(r => r.estatus === 'Corriendo' && r.hFin && enRango(r.fecha))
+      .map(r => {
+        const d = getDuracionEsperada(r);
+        if(!d) return null;
+        return { r: r, esperada: d.esperada, real: calcMinutesBetween(r.fecha, r.hInicio, r.hFin), piezasPlan: d.piezasPlan, minPorPieza: d.minPorPieza };
+      })
+      .filter(Boolean);
+
+    // Selector de ítem: solo se reconstruye si cambió la lista (así no se cierra mientras el admin lo usa).
+    const items = new Map();
+    base.forEach(x => { const k = normItemKey(x.r.item); if(!items.has(k)) items.set(k, String(x.r.item).trim()); });
+    const itemList = Array.from(items.entries()).sort((a, b) => a[1].localeCompare(b[1], undefined, {numeric: true, sensitivity: 'base'}));
+    const sig = itemList.map(x => x[0]).join('|');
+    if(sig !== graDurItemSig) {
+      const prev = selEl.value;
+      selEl.innerHTML = '<option value="__TODOS__">Todos los ítems (promedio por registro)</option>' +
+        itemList.map(([k, label]) => `<option value="${escapeHtmlAttr(k)}">${escapeHtml(label)}</option>`).join('');
+      selEl.value = itemList.some(([k]) => k === prev) ? prev : '__TODOS__';
+      graDurItemSig = sig;
+    }
+
+    const sel = selEl.value;
+    const r1 = (n) => Math.round(n * 10) / 10;
+    const labels = [], esperadas = [], reales = [], excede = [], detalle = [];
+    let considerados = base;
+
+    if(sel === '__TODOS__') {
+      const g = new Map();
+      base.forEach(x => {
+        const k = normItemKey(x.r.item);
+        if(!g.has(k)) g.set(k, { n: 0, e: 0, r: 0 });
+        const o = g.get(k); o.n++; o.e += x.esperada; o.r += x.real;
+      });
+      itemList.forEach(([k, label]) => {
+        const o = g.get(k);
+        labels.push(label);
+        esperadas.push(r1(o.e / o.n));
+        reales.push(r1(o.r / o.n));
+        excede.push((o.r / o.n) > (o.e / o.n));
+        detalle.push(`Promedio de ${o.n} registro(s) terminado(s)`);
+      });
+    } else {
+      considerados = base.filter(x => normItemKey(x.r.item) === sel)
+        .sort((a, b) => (normalizeDateStr(a.r.fecha) + ' ' + formatTimeInput(a.r.hInicio)).localeCompare(normalizeDateStr(b.r.fecha) + ' ' + formatTimeInput(b.r.hInicio)));
+      considerados.forEach(x => {
+        const f = normalizeDateStr(x.r.fecha);
+        labels.push(`${f.slice(8)}/${f.slice(5, 7)} · ${x.r.maquina} · ${formatHora(x.r.hInicio)}`);
+        esperadas.push(r1(x.esperada));
+        reales.push(r1(x.real));
+        excede.push(x.real > x.esperada);
+        detalle.push(`Plan ${fmtNum(x.piezasPlan, 2)} pz × ${fmtNum(x.minPorPieza, 2)} min/pz | Real ${fmtNum(x.r.piezasReal || 0, 2)} pz`);
+      });
+    }
+
+    if(!labels.length) {
+      destroyChart('chartDuracionItem');
+      if(infoEl) infoEl.textContent = 'Sin registros Corriendo terminados con duración esperada en este rango de fechas. Verifica que el N. de parte tenga su duración por pieza en Catálogos y que el registro tenga piezas plan y hora final.';
+      return;
+    }
+    const nExcede = considerados.filter(x => x.real > x.esperada).length;
+    if(infoEl) infoEl.textContent = `${considerados.length} registro(s) terminado(s) considerados · ${nExcede} excedieron la duración esperada · ${considerados.length - nExcede} dentro de lo esperado.`;
+
+    const oscuro = document.body.classList.contains('graf-mode');
+    const txtColor = oscuro ? '#e2e8f0' : '#475569';
+    const gridColor = oscuro ? 'rgba(148,163,184,0.25)' : 'rgba(0,0,0,0.08)';
+
+    makeOrUpdateChart('chartDuracionItem', {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Duración esperada (min)', data: esperadas, backgroundColor: '#38bdf8' },
+          { label: 'Duración real (min)', data: reales, backgroundColor: (ctx) => excede[ctx.dataIndex] ? '#ef4444' : '#22c55e' }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: txtColor,
+              generateLabels: (chart) => [
+                { text: 'Duración esperada', fillStyle: '#38bdf8', strokeStyle: '#38bdf8', fontColor: txtColor, hidden: !chart.isDatasetVisible(0), datasetIndex: 0 },
+                { text: 'Real (dentro de lo esperado)', fillStyle: '#22c55e', strokeStyle: '#22c55e', fontColor: txtColor, hidden: !chart.isDatasetVisible(1), datasetIndex: 1 },
+                { text: 'Real (excedió)', fillStyle: '#ef4444', strokeStyle: '#ef4444', fontColor: txtColor, hidden: !chart.isDatasetVisible(1), datasetIndex: 1 }
+              ]
+            }
+          },
+          tooltip: {
+            callbacks: {
+              afterBody: (tt) => {
+                const i = tt && tt[0] ? tt[0].dataIndex : -1;
+                if(i < 0) return '';
+                const diff = r1(reales[i] - esperadas[i]);
+                const estado = excede[i] ? `⚠️ Excedió +${Math.abs(diff)} min` : `✅ Dentro de lo esperado (${diff} min)`;
+                return [detalle[i], estado];
+              }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { color: txtColor }, grid: { color: gridColor } },
+          y: { beginAtZero: true, title: { display: true, text: 'Minutos', color: txtColor }, ticks: { color: txtColor }, grid: { color: gridColor } }
+        }
+      }
+    });
   }
 
   // --- Gráfica personalizada: el admin elige qué agrupar (eje X) y qué medir (eje Y) ---
